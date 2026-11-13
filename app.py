@@ -32,7 +32,19 @@ DEFAULT_SETTINGS = {
     "rename": False,   # renomear a copia com prefixo da camera
     "prefixes": {"Ronin": "RON", "Fixa Wide": "WIDE", "Fixa Zoom": "ZOOM", "Action": "ACT", "Drone": "DRN", "Áudio": "AUD", "Fotos": ""},
     "mhl": False,      # manifesto padrao cinema (ASC MHL)
+    "folders_on": None,  # pastas ligadas no ultimo trabalho (None = todas)
+    "dropbox_on": False,
+    "dropbox_dir": "",   # onde ficam as pastas de entrega no Dropbox
+    "dropbox_folders": ["Drop", "Fotos", "4x5", "9x16"],
+    "dropbox_folders_on": None,
 }
+
+
+def dropbox_guess():
+    """Pasta do Dropbox no Mac (app novo usa ~/Library/CloudStorage, antigo usa ~/Dropbox)."""
+    home = Path.home()
+    cands = sorted((home / "Library" / "CloudStorage").glob("Dropbox*")) + [home / "Dropbox"]
+    return next((str(c) for c in cands if c.is_dir()), "")
 JOB = {"thread": None, "progress": {}}
 LOCK = threading.Lock()
 
@@ -108,7 +120,11 @@ def create_job(body):
         raise ValueError("Escreva o nome do evento.")
     folders = [safe_name(f) for f in body.get("folders", []) if safe_name(f)]
     if not folders:
-        raise ValueError("A lista de pastas esta vazia.")
+        raise ValueError("Ligue pelo menos uma pasta.")
+    db_dir = (body.get("dropbox_dir") or "").strip() if body.get("dropbox_on") else ""
+    db_folders = [safe_name(f) for f in body.get("dropbox_folders", []) if safe_name(f)]
+    if db_dir and not Path(db_dir).is_dir():
+        raise ValueError("A pasta do Dropbox nao esta acessivel. Escolha de novo em Dropbox.")
     days = body.get("days") or [body["date"]]
     job = base / f"{fmt_date(days[0])} - {event}"
     targets = []
@@ -128,11 +144,21 @@ def create_job(body):
         for t in targets:
             for f in folders:
                 (Path(backup) / t.relative_to(base) / f).mkdir(parents=True, exist_ok=True)
-    s.update({"base_dir": str(base), "backup_dir": backup, "folders": folders,
-              "mode": body.get("mode", "padrao")})
+    db_job = ""
+    if db_dir:  # espelho de entrega: mesmo nome do trabalho, pastas proprias do Dropbox
+        dbj = Path(db_dir) / job.name
+        dbj.mkdir(parents=True, exist_ok=True)
+        for f in db_folders:
+            (dbj / f).mkdir(exist_ok=True)
+        db_job = str(dbj)
+    s.update({"base_dir": str(base), "backup_dir": backup, "folders_on": folders,
+              "mode": body.get("mode", "padrao"), "dropbox_on": bool(body.get("dropbox_on")),
+              "dropbox_folders_on": db_folders})
+    if db_dir:
+        s["dropbox_dir"] = db_dir
     save_settings(s)
     update_catalog(job)
-    return {"job_dir": str(job), "targets": [str(t) for t in targets]}
+    return {"job_dir": str(job), "targets": [str(t) for t in targets], "dropbox_job": db_job}
 
 
 def open_job(path):
@@ -291,8 +317,9 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, (HERE / "ui.html").read_bytes(), "text/html")
             if u.path == "/api/init":
                 s = settings()
-                return self.send(200, {"settings": {k: s[k] for k in ("base_dir", "backup_dir", "folders", "mode", "rename", "prefixes", "mhl")},
-                                       "date": suggested_date()})
+                return self.send(200, {"settings": {k: s[k] for k in ("base_dir", "backup_dir", "folders", "mode", "rename", "prefixes", "mhl",
+                                                                       "folders_on", "dropbox_on", "dropbox_dir", "dropbox_folders", "dropbox_folders_on")},
+                                       "date": suggested_date(), "dropbox_guess": dropbox_guess()})
             if u.path == "/api/cards":
                 return self.send(200, list_cards(q.get("target", ""), q.get("backup", "")))
             if u.path == "/api/subfolders":
@@ -318,13 +345,14 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, open_job(body["path"]))
             if self.path == "/api/settings":
                 s = settings()
-                for k in ("base_dir", "backup_dir", "rename", "mhl"):
+                for k in ("base_dir", "backup_dir", "rename", "mhl", "dropbox_on", "dropbox_dir"):
                     if k in body:
                         s[k] = body[k]
                 if isinstance(body.get("prefixes"), dict):
                     s["prefixes"] = {k: safe_name(v) for k, v in body["prefixes"].items()}
-                if isinstance(body.get("folders"), list):
-                    s["folders"] = [safe_name(f) for f in body["folders"] if safe_name(f)]
+                for k in ("folders", "folders_on", "dropbox_folders", "dropbox_folders_on"):
+                    if isinstance(body.get(k), list):
+                        s[k] = [safe_name(f) for f in body[k] if safe_name(f)]
                 save_settings(s)
                 return self.send(200, {"ok": True})
             if self.path == "/api/folders":

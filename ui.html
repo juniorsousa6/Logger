@@ -159,9 +159,9 @@ input[type=date]:disabled{opacity:.5}
 .routes{margin:12px 0 2px 34px;display:grid;grid-template-columns:70px 1fr auto;gap:8px 10px;align-items:center;font-size:13px}
 .routes select{border:1px solid var(--line2);background:var(--sunken);border-radius:4px;padding:5px 8px;font:12px var(--mono)}
 .routes .n{color:var(--mut);font:12px var(--mono)}
-.empty{text-align:center;padding:46px 20px;color:var(--mut)}
-.empty b{display:block;color:var(--text);font-weight:600;margin-bottom:4px}
-.empty .ring{width:46px;height:46px;margin:0 auto 16px;border:1px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin 1.4s linear infinite}
+.emptybox{text-align:center;padding:46px 20px;color:var(--mut)}
+.emptybox b{display:block;color:var(--text);font-weight:600;margin-bottom:4px}
+.emptybox .ring{width:46px;height:46px;margin:0 auto 16px;border:1px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin 1.4s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .ign{font:12px var(--mono);color:var(--faint);margin-top:12px}
 
@@ -213,6 +213,18 @@ input[type=date]:disabled{opacity:.5}
 .sheet h2{font:600 13px var(--mono);letter-spacing:.14em;text-transform:uppercase;margin:0}
 .sheet h3{font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:30px 0 8px;font-weight:400}
 .sheet .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.field.stack{flex-direction:column;align-items:stretch;gap:12px;padding:14px 0}
+.field.stack .head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.togs{display:flex;flex-wrap:wrap;gap:6px}
+.tog{border:1px solid var(--line2);background:none;border-radius:4px;padding:6px 11px;font:12px var(--mono);color:var(--mut);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:color .15s,border-color .15s,background .15s}
+.tog::before{content:"";width:6px;height:6px;border:1px solid var(--faint);transition:background .15s,border-color .15s}
+.tog:hover{color:var(--text);border-color:var(--mut)}
+.tog.on{border-color:var(--acc-line);color:var(--acc);background:var(--acc-dim)}
+.tog.on::before{background:var(--acc);border-color:var(--acc);box-shadow:0 0 6px var(--acc)}
+.tog.add{border-style:dashed;color:var(--faint)}.tog.add::before{display:none}
+.tog-in{border:1px solid var(--acc-line);background:var(--sunken);border-radius:4px;padding:5px 10px;font:12px var(--mono);width:130px;outline:none}
+.dbprev{font:12px var(--mono);color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dbprev b{color:var(--text);font-weight:400}
 .flist .f{display:flex;align-items:center;gap:2px;border-bottom:1px solid var(--line)}
 .flist .f::before{content:"/";color:var(--faint);font-family:var(--mono);margin-right:8px}
 .flist input{flex:1;border:0;background:none;padding:10px 0;outline:none;font-family:var(--mono);font-size:13px}
@@ -278,7 +290,9 @@ input[type=date]:disabled{opacity:.5}
       <div class="field" id="daysField" hidden><span class="k">Dias</span><span class="v days" id="dayDates"></span></div>
       <div class="field"><span class="k">Salvar em</span><span class="v"><button class="chip" id="baseChip"></button></span></div>
       <div class="field"><span class="k">Backup</span><span class="v"><button class="x" id="backupClear" title="Sem backup" hidden>Remover</button><button class="chip" id="backupChip"></button></span></div>
-      <div class="field"><span class="k">Pastas</span><span class="v"><span class="sub mono" id="folderSum"></span><button class="link" id="editFolders">Editar</button></span></div>
+      <div class="field stack"><div class="head"><span class="k">Pastas no HD</span><span class="sub mono" id="folderCount"></span></div><div class="togs" id="hdTogs"></div></div>
+      <div class="field stack" id="dbField"><div class="head"><span class="k">Espelhar no Dropbox</span><span class="v"><button class="chip" id="dbChip" hidden></button><input type="checkbox" class="sw" id="dbOn" aria-label="Criar também no Dropbox"></span></div>
+        <div class="togs" id="dbTogs" hidden></div><div class="dbprev" id="dbPrev" hidden></div></div>
     </div>
     <div class="err" id="jobErr"></div>
     <p style="margin-top:24px"><button class="link mut" id="openExisting">Continuar um trabalho que já existe →</button></p>
@@ -331,6 +345,9 @@ input[type=date]:disabled{opacity:.5}
   <h3>Pastas de cada trabalho</h3>
   <div class="flist" id="flist"></div>
   <button class="link" id="addFolder" style="margin-top:12px">+ Adicionar pasta</button>
+  <h3>Pastas de entrega no Dropbox</h3>
+  <div class="flist" id="dblist"></div>
+  <button class="link" id="addDb" style="margin-top:12px">+ Adicionar pasta</button>
   <h3>Cópia</h3>
   <label class="opt"><input type="checkbox" class="sw" id="rename"><span>Prefixo da câmera no nome<small>WIDE_C8970.MP4, ACT_DJI_….MP4… útil quando duas câmeras geram nomes parecidos. Só a cópia muda, o cartão nunca.</small></span></label>
   <div class="pfx" id="pfx"></div>
@@ -436,8 +453,9 @@ function go(v){
 const setTrack = f => { const el = document.querySelector(`#track div[data-s="${S.view}"] i`); if (el) el.style.setProperty("--f", f); };
 function updateBar(){
   const b = $("abBtn"), info = $("abInfo"); b.hidden = false; b.disabled = false; b.classList.toggle("ghost", S.view==="done");
-  if (S.view==="job"){ b.textContent = "Criar pastas"; b.disabled = !$("event").value.trim() || !S.base;
-    info.textContent = !S.base ? "// escolha onde salvar" : !$("event").value.trim() ? "// dê um nome ao evento" : "// pronto para criar"; }
+  if (S.view==="job"){ b.textContent = "Criar pastas"; b.disabled = !$("event").value.trim() || !S.base || !S.on.size;
+    info.textContent = !S.base ? "// escolha onde salvar" : !$("event").value.trim() ? "// dê um nome ao evento" : !S.on.size ? "// ligue pelo menos uma pasta"
+      : `// ${S.on.size} pasta${S.on.size>1?"s":""} no HD` + (S.dbOn && S.dbDir ? ` + ${S.dbSel.size} no Dropbox` : ""); }
   else if (S.view==="cards"){ const sel = selected(), bytes = sel.reduce((a,c)=>a+(c.bytesRaw||0),0);
     b.textContent = sel.length ? `Copiar ${sel.length} ${sel.length>1?"cartões":"cartão"}` : "Copiar"; b.disabled = !sel.length;
     info.textContent = sel.length ? "// " + hb(bytes) + (S.backup ? " · com backup" : "") : "// selecione os cartões"; }
@@ -448,10 +466,13 @@ $("abBtn").onclick = () => ({job:createJob, cards:startCopy, done:() => { go("ca
 
 (async () => {
   const init = await api("/api/init"), st = init.settings;
-  S.folders = st.folders; S.prefixes = st.prefixes || {}; S.base = st.base_dir || ""; S.backup = st.backup_dir || "";
+  S.folders = st.folders; S.on = new Set((st.folders_on ?? st.folders).filter(f => st.folders.includes(f)));
+  S.dbOn = !!st.dropbox_on; S.dbDir = st.dropbox_dir || init.dropbox_guess || ""; S.dbFolders = st.dropbox_folders || [];
+  S.dbSel = new Set((st.dropbox_folders_on ?? S.dbFolders).filter(f => S.dbFolders.includes(f)));
+  S.prefixes = st.prefixes || {}; S.base = st.base_dir || ""; S.backup = st.backup_dir || "";
   $("rename").checked = !!st.rename; $("mhl").checked = !!st.mhl; $("date").value = init.date;
   if (st.mode === "multi") setMode("multi");
-  renderChips(); renderFolderSum(); renderDays(); preview(); renderFlist(); renderPfx(); updateBar();
+  renderChips(); renderTogs(); renderDays(); preview(); renderFlist(); renderDbList(); renderPfx(); updateBar();
 })();
 
 /* etapa 1 */
@@ -477,7 +498,8 @@ function renderDays(reset){
 const days = () => S.mode==="multi" ? [...$("dayDates").querySelectorAll("input")].map(i=>i.value) : [$("date").value];
 function preview(){ const ev = $("event").value.trim();
   $("namePrev").textContent = ev ? `${fd(days()[0])} - ${ev}` + (S.mode==="multi" ? `  (+ ${S.ndays} pastas de dia)` : "") : " ";
-  const parts = [!!ev, !!$("date").value, !!S.base], f = parts.filter(Boolean).length / parts.length;
+  renderDbPrev();
+  const parts = [!!ev, !!$("date").value, !!S.base, S.on && S.on.size > 0], f = parts.filter(Boolean).length / parts.length;
   $("evFill").style.width = (f*100) + "%"; $("formPct").textContent = Math.round(f*100) + "%"; setTrack(f); }
 function renderChips(){
   const bc = $("baseChip"), kc = $("backupChip");
@@ -492,12 +514,49 @@ async function pick(prompt){
 $("baseChip").onclick = async () => { const p = await pick("Onde salvar os trabalhos?"); if (p){ S.base = p; api("/api/settings",{base_dir:p}); renderChips(); preview(); updateBar(); } };
 $("backupChip").onclick = async () => { const p = await pick("HD de backup"); if (p){ S.backup = p; api("/api/settings",{backup_dir:p}); renderChips(); } };
 $("backupClear").onclick = () => { S.backup = ""; api("/api/settings",{backup_dir:""}); renderChips(); };
-function renderFolderSum(){ $("folderSum").textContent = S.folders.join(" · "); }
-$("editFolders").onclick = () => openSheet("sSet");
+/* pastas como botões liga/desliga (HD e Dropbox) */
+function togs(el, list, sel, onAdd, onChange){
+  el.innerHTML = list.map(f => `<button class="tog ${sel.has(f)?"on":""}" data-f="${esc(f)}" aria-pressed="${sel.has(f)}">${esc(f)}</button>`).join("")
+    + `<button class="tog add" title="Nova pasta">+ pasta</button>`;
+  el.querySelectorAll(".tog[data-f]").forEach(b => b.onclick = () => { const f = b.dataset.f; sel.has(f) ? sel.delete(f) : sel.add(f); onChange(); });
+  el.querySelector(".tog.add").onclick = e => {
+    const i = document.createElement("input"); i.className = "tog-in"; i.placeholder = "nome da pasta"; e.currentTarget.replaceWith(i); i.focus();
+    let fin = false; const done = ok => { if (fin) return; fin = true; const v = i.value.trim().replace(/[\/:]/g, "");
+      if (ok && v && !list.includes(v)) onAdd(v); else onChange(); };
+    i.onkeydown = ev => { if (ev.key === "Enter") done(true); if (ev.key === "Escape") done(false); }; i.onblur = () => done(true);
+  };
+}
+function renderTogs(){
+  togs($("hdTogs"), S.folders, S.on, v => { S.folders.push(v); S.on.add(v); saveFolders(); renderFlist(); },
+       () => { api("/api/settings", {folders_on:S.folders.filter(f => S.on.has(f))}); renderTogs(); });
+  $("folderCount").textContent = `${S.on.size} de ${S.folders.length}`;
+  $("dbOn").checked = S.dbOn; $("dbTogs").hidden = $("dbChip").hidden = $("dbPrev").hidden = !S.dbOn;
+  $("dbChip").innerHTML = S.dbDir ? `<span class="dot"></span>${esc(S.dbDir.split("/").filter(Boolean).slice(-2).join(" › "))}` : "Escolher pasta…";
+  $("dbChip").className = "chip" + (S.dbDir ? "" : " empty"); $("dbChip").title = S.dbDir;
+  togs($("dbTogs"), S.dbFolders, S.dbSel, v => { S.dbFolders.push(v); S.dbSel.add(v); saveDb(); renderDbList(); },
+       () => { api("/api/settings", {dropbox_folders_on:S.dbFolders.filter(f => S.dbSel.has(f))}); renderTogs(); });
+  renderDbPrev(); updateBar(); if ($("evFill")) { const ev = $("event").value.trim(); const parts = [!!ev, !!$("date").value, !!S.base, S.on.size > 0];
+    const f = parts.filter(Boolean).length / parts.length; $("evFill").style.width = (f*100)+"%"; $("formPct").textContent = Math.round(f*100)+"%"; setTrack(f); }
+}
+function renderDbPrev(){
+  if (!S.dbFolders) return;
+  const ev = $("event").value.trim(), name = ev ? `${fd(days()[0])} - ${ev}` : "AAAA_MM_DD - evento";
+  const sub = S.dbFolders.filter(f => S.dbSel.has(f));
+  $("dbPrev").innerHTML = S.dbDir ? `› Dropbox/…/<b>${esc(name)}</b>${sub.length ? " / " + sub.map(esc).join(", ") : ""}` : "› escolha a pasta de entregas do Dropbox";
+}
+$("dbOn").onchange = async () => {
+  S.dbOn = $("dbOn").checked;
+  if (S.dbOn && !S.dbDir) { const p = await pick("Onde ficam as pastas de entrega no Dropbox?"); if (p) S.dbDir = p; else S.dbOn = false; }
+  api("/api/settings", {dropbox_on:S.dbOn, dropbox_dir:S.dbDir}); renderTogs();
+};
+$("dbChip").onclick = async () => { const p = await pick("Onde ficam as pastas de entrega no Dropbox?"); if (p){ S.dbDir = p; api("/api/settings", {dropbox_dir:p}); renderTogs(); } };
+function saveDb(){ S.dbFolders = S.dbFolders.map(f=>f.trim()).filter(Boolean); S.dbSel = new Set([...S.dbSel].filter(f => S.dbFolders.includes(f)));
+  api("/api/settings", {dropbox_folders:S.dbFolders, dropbox_folders_on:S.dbFolders.filter(f => S.dbSel.has(f))}); renderTogs(); }
 async function createJob(){
   $("jobErr").textContent = ""; $("abBtn").classList.add("busy");
   try { await openJob(await api("/api/create", {base_dir:S.base, backup_dir:S.backup, event:$("event").value, date:$("date").value,
-      days:days(), mode:S.mode, folders:S.folders})); }
+      days:days(), mode:S.mode, folders:S.folders.filter(f => S.on.has(f)),
+      dropbox_on:S.dbOn && !!S.dbDir, dropbox_dir:S.dbDir, dropbox_folders:S.dbFolders.filter(f => S.dbSel.has(f))})); }
   catch(e){ $("jobErr").textContent = e.message; }
   finally { $("abBtn").classList.remove("busy"); }
 }
@@ -508,7 +567,7 @@ async function openJob(r){
   const today = fd(new Date().toISOString().slice(0,10));
   S.target = r.targets.find(t => t.split("/").pop().startsWith(today)) || r.targets[0];
   $("jobName").textContent = r.job_dir.split("/").pop();
-  $("jobWhere").textContent = volName(r.job_dir.split("/").slice(0,-1).join("/")) + (S.backup ? "  +  backup em " + volName(S.backup) : "");
+  $("jobWhere").textContent = volName(r.job_dir.split("/").slice(0,-1).join("/")) + (S.backup ? "  +  backup em " + volName(S.backup) : "") + (r.dropbox_job ? "  +  Dropbox" : "");
   renderDayTabs(); await loadSubs(); S.cards = []; renderCards(); go("cards"); scan();
 }
 function renderDayTabs(){
@@ -533,7 +592,7 @@ function renderCards(){
   if (box.contains(document.activeElement) && document.activeElement.tagName==="SELECT") return;
   const known = S.cards.filter(c => c.profile), unknown = S.cards.filter(c => !c.profile);
   const ign = unknown.length ? `<div class="ign">// ignorados: ${unknown.map(c=>esc(c.volume)).join(", ")} (não parecem cartão de câmera)</div>` : "";
-  if (!known.length){ box.innerHTML = `<div class="hud empty"><div class="ring"></div><b>Conecte os cartões</b>Eles aparecem aqui sozinhos, já identificados.</div>` + ign; updateBar(); return; }
+  if (!known.length){ box.innerHTML = `<div class="hud emptybox"><div class="ring"></div><b>Conecte os cartões</b>Eles aparecem aqui sozinhos, já identificados.</div>` + ign; updateBar(); return; }
   box.innerHTML = "";
   for (const c of known){
     c.bytesRaw = parseSize(c.bytes);
@@ -636,20 +695,25 @@ function closeSheets(){ $("scrim").classList.remove("on"); document.querySelecto
 $("scrim").onclick = closeSheets; document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeSheets);
 document.addEventListener("keydown", e => { if (e.key==="Escape") closeSheets(); if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); openSheet("sFind"); } });
 $("openSet").onclick = () => openSheet("sSet"); $("openFind").onclick = () => openSheet("sFind");
-function saveFolders(){ S.folders = S.folders.map(f=>f.trim()).filter(Boolean); api("/api/settings", {folders:S.folders}); renderFolderSum(); renderPfx(); }
-function renderFlist(){
-  $("flist").innerHTML = "";
-  S.folders.forEach((f,i) => {
+function saveFolders(){ S.folders = S.folders.map(f=>f.trim()).filter(Boolean); S.on = new Set([...S.on].filter(f => S.folders.includes(f)));
+  api("/api/settings", {folders:S.folders, folders_on:S.folders.filter(f => S.on.has(f))}); renderTogs(); renderPfx(); }
+function editList(el, arr, sel, save){
+  el.innerHTML = "";
+  arr.forEach((f,i) => {
     const d = document.createElement("div"); d.className = "f";
     d.innerHTML = `<input value="${esc(f)}" aria-label="Nome da pasta"><button class="x" title="Subir">↑</button><button class="x" title="Remover">✕</button>`;
-    const [inp, up, del] = d.children;
-    inp.oninput = () => { S.folders[i] = inp.value; renderFolderSum(); }; inp.onchange = saveFolders;
-    up.onclick = () => { if(i){ [S.folders[i-1],S.folders[i]] = [S.folders[i],S.folders[i-1]]; saveFolders(); renderFlist(); } };
-    del.onclick = () => { S.folders.splice(i,1); saveFolders(); renderFlist(); };
-    $("flist").appendChild(d);
+    const [inp, up, del] = d.children; let old = f;
+    inp.oninput = () => { const v = inp.value; if (sel.has(old)) { sel.delete(old); sel.add(v); } arr[i] = v; old = v; renderTogs(); };
+    inp.onchange = save;
+    up.onclick = () => { if(i){ [arr[i-1],arr[i]] = [arr[i],arr[i-1]]; save(); editList(el, arr, sel, save); } };
+    del.onclick = () => { arr.splice(i,1); save(); editList(el, arr, sel, save); };
+    el.appendChild(d);
   });
 }
-$("addFolder").onclick = () => { S.folders.push("nova pasta"); renderFlist(); const ins = $("flist").querySelectorAll("input"); ins[ins.length-1].select(); };
+function renderFlist(){ editList($("flist"), S.folders, S.on, saveFolders); }
+function renderDbList(){ editList($("dblist"), S.dbFolders, S.dbSel, saveDb); }
+$("addFolder").onclick = () => { S.folders.push("nova pasta"); S.on.add("nova pasta"); renderFlist(); const ins = $("flist").querySelectorAll("input"); ins[ins.length-1].select(); };
+$("addDb").onclick = () => { S.dbFolders.push("nova pasta"); S.dbSel.add("nova pasta"); renderDbList(); const ins = $("dblist").querySelectorAll("input"); ins[ins.length-1].select(); };
 function renderPfx(){
   $("pfx").hidden = !$("rename").checked;
   const names = [...new Set([...S.folders, ...S.subs])];

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.0.1.zip",
-  "notes": "Corrige a instalação em versões novas do macOS."
+  "version": "1.1.0",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.1.0.zip",
+  "notes": "Pastas viram botões liga/desliga e o trabalho pode ser espelhado no Dropbox com pastas de entrega próprias."
 }
