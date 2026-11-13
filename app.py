@@ -49,6 +49,8 @@ def dropbox_guess():
     return next((str(c) for c in cands if c.is_dir()), "")
 JOB = {"thread": None, "progress": {}}
 LOCK = threading.Lock()
+SETTINGS_LOCK = threading.RLock()  # dois salvamentos ao mesmo tempo nao podem apagar um ao outro
+SETTINGS_WRITERS = {"/api/settings", "/api/volume-kind", "/api/folders", "/api/create", "/api/log"}
 
 
 def settings():
@@ -74,7 +76,9 @@ def fmt_date(iso):  # 2026-11-15 -> 2026_11_15
 
 
 def safe_name(s):
-    return unicodedata.normalize("NFC", "".join(ch for ch in s if ch not in '/:\\').strip())
+    """Nome valido de pasta: sem / : \\, sem caracteres de controle e sem comecar com ponto."""
+    s = "".join(ch for ch in str(s or "") if ch not in '/:\\' and unicodedata.category(ch)[0] != "C")
+    return unicodedata.normalize("NFC", s.strip().lstrip(".").strip())
 
 
 def subfolders(path):
@@ -127,7 +131,12 @@ def create_job(body):
     db_folders = [safe_name(f) for f in body.get("dropbox_folders", []) if safe_name(f)]
     if db_dir and not Path(db_dir).is_dir():
         raise ValueError("A pasta do Dropbox nao esta acessivel. Escolha de novo em Dropbox.")
-    days = body.get("days") or [body["date"]]
+    days = body.get("days") or [body.get("date", "")]
+    for d in days:
+        try:
+            dt.date.fromisoformat(str(d))
+        except ValueError:
+            raise ValueError(f"Data invalida: {d!r}. Use o calendario.") from None
     job = base / f"{fmt_date(days[0])} - {event}"
     targets = []
     if body.get("mode") == "multi":
@@ -287,10 +296,22 @@ def empty_folders(target):
     return out
 
 
+START = threading.Lock()
+
+
 def start_log(body):
-    with LOCK:
+    # um clique duplo (ou duas janelas) nao pode iniciar duas copias ao mesmo tempo
+    if not START.acquire(blocking=False):
+        raise ValueError("Ja tem um logger comecando.")
+    try:
         if JOB["thread"] and JOB["thread"].is_alive():
             raise ValueError("Ja tem um logger rodando.")
+        return _start_log(body)
+    finally:
+        START.release()
+
+
+def _start_log(body):
     target = Path(body["target"])
     if not target.is_dir():
         raise ValueError("Pasta de destino nao existe.")
@@ -307,6 +328,9 @@ def start_log(body):
             continue
         c = cl.scan_card(vol, prof, ledger)  # escaneia de novo na hora de copiar
         dests = sel["dests"]
+        if not isinstance(dests, list) or len(dests) != len(prof["routes"]):
+            raise ValueError(f"Os destinos do cartao {vol.name} mudaram. Atualize a tela e tente de novo.")
+        dests = [safe_name(d) if isinstance(d, str) else d for d in dests]
         if any(d is None for d in dests):
             raise ValueError(f"Escolha a pasta do cartao {vol.name} antes de copiar.")
         # rota marcada como "ignorar" sai da lista
@@ -407,8 +431,11 @@ def notify(title, msg, ok=True):
 def eject(paths):
     res = []
     for p in paths:
-        r = subprocess.run(["diskutil", "eject", p], capture_output=True, text=True)
-        res.append({"path": p, "ok": r.returncode == 0, "msg": (r.stdout + r.stderr).strip()})
+        try:
+            r = subprocess.run(["diskutil", "eject", p], capture_output=True, text=True, timeout=60)
+            res.append({"path": p, "ok": r.returncode == 0, "msg": (r.stdout + r.stderr).strip()})
+        except (OSError, subprocess.TimeoutExpired) as e:
+            res.append({"path": p, "ok": False, "msg": str(e)})
     return res
 
 
@@ -443,15 +470,36 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/search":
                 return self.send(200, media.search(load_catalog(), q.get("q", "")))
             if u.path == "/api/progress":
-                p = dict(JOB["progress"])
-                return self.send(200, p)
+                for _ in range(20):  # a copia mexe no progresso enquanto lemos: tenta de novo
+                    try:
+                        return self.send(200, json.loads(json.dumps(JOB["progress"], ensure_ascii=False, default=str)))
+                    except RuntimeError:
+                        continue
+                return self.send(200, {"phase": JOB["progress"].get("phase", "")})
             return self.send(404, {"error": "nao encontrado"})
+        except KeyError as e:
+            return self.send(400, {"error": f"faltou o campo {e}"})
         except Exception as e:  # noqa: BLE001
             return self.send(400, {"error": str(e)})
 
     def do_POST(self):
-        n = int(self.headers.get("Content-Length", 0))
-        body = json.loads(self.rfile.read(n) or b"{}")
+        origin = self.headers.get("Origin")
+        host = self.headers.get("Host", "")
+        if origin and origin not in ("null", f"http://{host}"):
+            return self.send(403, {"error": "origem nao permitida"})
+        try:
+            n = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(n) or b"{}")
+            if not isinstance(body, dict):
+                raise ValueError("corpo invalido")
+        except ValueError:
+            return self.send(400, {"error": "corpo invalido"})
+        if self.path in SETTINGS_WRITERS:
+            with SETTINGS_LOCK:
+                return self._post(body)
+        return self._post(body)
+
+    def _post(self, body):
         try:
             if self.path == "/api/pick-folder":
                 return self.send(200, {"path": osascript_choose_folder(body.get("prompt", "Escolha a pasta"))})
@@ -497,9 +545,13 @@ class H(BaseHTTPRequestHandler):
             if self.path == "/api/eject":
                 return self.send(200, eject(body["paths"]))
             if self.path == "/api/reveal":
+                if not Path(body["path"]).exists():
+                    raise ValueError("Esse arquivo ou pasta nao existe mais.")
                 subprocess.run(["open", body["path"]])
                 return self.send(200, {"ok": True})
             return self.send(404, {"error": "nao encontrado"})
+        except KeyError as e:
+            return self.send(400, {"error": f"faltou o campo {e}"})
         except Exception as e:  # noqa: BLE001
             return self.send(400, {"error": str(e)})
 

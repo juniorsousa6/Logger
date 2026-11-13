@@ -430,8 +430,11 @@ const $ = id => document.getElementById(id);
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const api = async (path, body) => {
   const r = await fetch(path, body === undefined ? {} : {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
-  const j = await r.json(); if (!r.ok) throw new Error(j.error || "erro"); return j;
+  let j; try { j = await r.json(); } catch { throw new Error("resposta inválida do Logger (" + r.status + ")"); }
+  if (!r.ok) throw new Error(j.error || "erro"); return j;
 };
+let saveQ = Promise.resolve();   /* salva os ajustes um de cada vez, na ordem em que voce mexeu */
+const saveSet = b => (saveQ = saveQ.then(() => api("/api/settings", b)).catch(e => console.warn("ajuste nao salvo", e)));
 const hb = n => { const u=["B","KB","MB","GB","TB"]; let i=0; n=n||0; while(n>=1024&&i<4){n/=1024;i++;} return (i>2?n.toFixed(1):Math.round(n))+" "+u[i]; };
 const fd = iso => (iso||"").replaceAll("-","_");
 const volName = p => { if(!p) return ""; const m = p.match(/^\/Volumes\/([^/]+)/); const last = p.split("/").filter(Boolean).pop(); return m ? (m[1] === last ? m[1] : `${m[1]} › ${last}`) : last; };
@@ -519,9 +522,9 @@ async function pick(prompt){
   const h = window.webkit?.messageHandlers?.logger;   /* dentro do Logger.app: janela nativa do Mac */
   if (h) { try { return await h.postMessage({cmd:"pick", prompt}) || ""; } catch(e){ return ""; } }
   const r = await api("/api/pick-folder", {prompt}); return r.path; }
-$("baseChip").onclick = async () => { const p = await pick("Onde salvar os trabalhos?"); if (p){ S.base = p; api("/api/settings",{base_dir:p}); renderChips(); preview(); updateBar(); } };
-$("backupChip").onclick = async () => { const p = await pick("HD de backup"); if (p){ S.backup = p; api("/api/settings",{backup_dir:p}); renderChips(); } };
-$("backupClear").onclick = () => { S.backup = ""; api("/api/settings",{backup_dir:""}); renderChips(); };
+$("baseChip").onclick = async () => { const p = await pick("Onde salvar os trabalhos?"); if (p){ S.base = p; saveSet({base_dir:p}); renderChips(); preview(); updateBar(); } };
+$("backupChip").onclick = async () => { const p = await pick("HD de backup"); if (p){ S.backup = p; saveSet({backup_dir:p}); renderChips(); } };
+$("backupClear").onclick = () => { S.backup = ""; saveSet({backup_dir:""}); renderChips(); };
 /* pastas como botões liga/desliga (HD e Dropbox) */
 function togs(el, list, sel, onAdd, onChange){
   el.innerHTML = list.map(f => `<button class="tog ${sel.has(f)?"on":""}" data-f="${esc(f)}" aria-pressed="${sel.has(f)}">${esc(f)}</button>`).join("")
@@ -536,13 +539,13 @@ function togs(el, list, sel, onAdd, onChange){
 }
 function renderTogs(){
   togs($("hdTogs"), S.folders, S.on, v => { S.folders.push(v); S.on.add(v); saveFolders(); renderFlist(); },
-       () => { api("/api/settings", {folders_on:S.folders.filter(f => S.on.has(f))}); renderTogs(); });
+       () => { saveSet( {folders_on:S.folders.filter(f => S.on.has(f))}); renderTogs(); });
   $("folderCount").textContent = `${S.on.size} de ${S.folders.length}`;
   $("dbOn").checked = S.dbOn; $("dbTogs").hidden = $("dbChip").hidden = $("dbPrev").hidden = !S.dbOn;
   $("dbChip").innerHTML = S.dbDir ? `<span class="dot"></span>${esc(S.dbDir.split("/").filter(Boolean).slice(-2).join(" › "))}` : "Escolher pasta…";
   $("dbChip").className = "chip" + (S.dbDir ? "" : " empty"); $("dbChip").title = S.dbDir;
   togs($("dbTogs"), S.dbFolders, S.dbSel, v => { S.dbFolders.push(v); S.dbSel.add(v); saveDb(); renderDbList(); },
-       () => { api("/api/settings", {dropbox_folders_on:S.dbFolders.filter(f => S.dbSel.has(f))}); renderTogs(); });
+       () => { saveSet( {dropbox_folders_on:S.dbFolders.filter(f => S.dbSel.has(f))}); renderTogs(); });
   renderDbPrev(); updateBar(); if ($("evFill")) { const ev = $("event").value.trim(); const parts = [!!ev, !!$("date").value, !!S.base, S.on.size > 0];
     const f = parts.filter(Boolean).length / parts.length; $("evFill").style.width = (f*100)+"%"; $("formPct").textContent = Math.round(f*100)+"%"; setTrack(f); }
 }
@@ -555,11 +558,12 @@ function renderDbPrev(){
 $("dbOn").onchange = async () => {
   S.dbOn = $("dbOn").checked;
   if (S.dbOn && !S.dbDir) { const p = await pick("Onde ficam as pastas de entrega no Dropbox?"); if (p) S.dbDir = p; else S.dbOn = false; }
-  api("/api/settings", {dropbox_on:S.dbOn, dropbox_dir:S.dbDir}); renderTogs();
+  saveSet( {dropbox_on:S.dbOn, dropbox_dir:S.dbDir}); renderTogs();
 };
-$("dbChip").onclick = async () => { const p = await pick("Onde ficam as pastas de entrega no Dropbox?"); if (p){ S.dbDir = p; api("/api/settings", {dropbox_dir:p}); renderTogs(); } };
-function saveDb(){ S.dbFolders = S.dbFolders.map(f=>f.trim()).filter(Boolean); S.dbSel = new Set([...S.dbSel].filter(f => S.dbFolders.includes(f)));
-  api("/api/settings", {dropbox_folders:S.dbFolders, dropbox_folders_on:S.dbFolders.filter(f => S.dbSel.has(f))}); renderTogs(); }
+$("dbChip").onclick = async () => { const p = await pick("Onde ficam as pastas de entrega no Dropbox?"); if (p){ S.dbDir = p; saveSet( {dropbox_dir:p}); renderTogs(); } };
+const tidy = arr => { const out = [], seen = new Set(); for (const f of arr.map(f => (f||"").trim()).filter(Boolean)) { const k = f.normalize("NFC").toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push(f); } } arr.splice(0, arr.length, ...out); return arr; };
+function saveDb(){ tidy(S.dbFolders); S.dbSel = new Set([...S.dbSel].filter(f => S.dbFolders.includes(f)));
+  saveSet( {dropbox_folders:S.dbFolders, dropbox_folders_on:S.dbFolders.filter(f => S.dbSel.has(f))}); renderTogs(); }
 async function createJob(){
   $("jobErr").textContent = ""; $("abBtn").classList.add("busy");
   try { await openJob(await api("/api/create", {base_dir:S.base, backup_dir:S.backup, event:$("event").value, date:$("date").value,
@@ -576,7 +580,7 @@ async function openJob(r){
   S.target = r.targets.find(t => t.split("/").pop().startsWith(today)) || r.targets[0];
   $("jobName").textContent = r.job_dir.split("/").pop();
   $("jobWhere").textContent = volName(r.job_dir.split("/").slice(0,-1).join("/")) + (S.backup ? "  +  backup em " + volName(S.backup) : "") + (r.dropbox_job ? "  +  Dropbox" : "");
-  renderDayTabs(); await loadSubs(); S.cards = []; renderCards(); go("cards"); scan();
+  renderDayTabs(); await loadSubs(); S.cards = []; S.cardsSig = ""; renderCards(); go("cards"); scan();
 }
 function renderDayTabs(){
   const multi = S.targets.length > 1; $("dayTabs").hidden = !multi;
@@ -590,7 +594,9 @@ async function loadSubs(){ S.subs = await api("/api/subfolders?path="+encodeURIC
 /* etapa 2 */
 async function scan(){
   if (S.view!=="cards" || S.copying) return;
-  try { S.cards = await api("/api/cards?target="+encodeURIComponent(S.target)+"&backup="+encodeURIComponent(S.backup||"")); renderCards(); $("cardsErr").textContent = ""; }
+  try { const cards = await api("/api/cards?target="+encodeURIComponent(S.target)+"&backup="+encodeURIComponent(S.backup||""));
+    const sig = JSON.stringify(cards);   /* so redesenha quando algo mudou: nao "come" um clique no meio */
+    if (sig !== S.cardsSig){ S.cardsSig = sig; S.cards = cards; renderCards(); } $("cardsErr").textContent = ""; }
   catch(e){ $("cardsErr").textContent = e.message; }
 }
 setInterval(scan, 3000);
@@ -656,13 +662,18 @@ async function startCopy(){
       cards: sel.map(c => ({path:c.path, dests:S.choices[c.path].dests}))}); }
   catch(e){ $("cardsErr").textContent = e.message; $("abBtn").classList.remove("busy"); return; }
   $("abBtn").classList.remove("busy");
-  S.copying = true; S.logged = sel.map(c=>c.path); S.choices = {}; S.open = {}; t0 = 0;
+  S.copying = true; S.logged = sel.map(c=>c.path); S.choices = {}; S.open = {}; S.cardsSig = ""; t0 = 0;
   go("copy"); poll();
 }
 let t0 = 0, b0 = 0;
 const PH = ["copiando","conferindo","relatorio","pronto"];
+let pollFails = 0;
 async function poll(){
-  const p = await api("/api/progress");
+  let p;
+  try { p = await api("/api/progress"); pollFails = 0; }
+  catch(e){ // servidor ocupado por um instante: tenta de novo, sem largar a tela
+    if (++pollFails > 50){ $("cCur").textContent = "Perdi contato com o motor do Logger. Feche e abra o app; o que já foi conferido está salvo."; return; }
+    setTimeout(poll, 1000); return; }
   if (!t0 && p.done_bytes !== undefined){ t0 = Date.now(); b0 = p.done_bytes; }
   const cf = p.total_bytes ? p.done_bytes/p.total_bytes : 0;
   const rf = p.rep_n ? (p.rep_i||0)/p.rep_n : 0;
@@ -722,8 +733,8 @@ function closeSheets(){ $("scrim").classList.remove("on"); document.querySelecto
 $("scrim").onclick = closeSheets; document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeSheets);
 document.addEventListener("keydown", e => { if (e.key==="Escape") closeSheets(); if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); openSheet("sFind"); } });
 $("openSet").onclick = () => openSheet("sSet"); $("openFind").onclick = () => openSheet("sFind");
-function saveFolders(){ S.folders = S.folders.map(f=>f.trim()).filter(Boolean); S.on = new Set([...S.on].filter(f => S.folders.includes(f)));
-  api("/api/settings", {folders:S.folders, folders_on:S.folders.filter(f => S.on.has(f))}); renderTogs(); renderPfx(); }
+function saveFolders(){ tidy(S.folders); S.on = new Set([...S.on].filter(f => S.folders.includes(f)));
+  saveSet( {folders:S.folders, folders_on:S.folders.filter(f => S.on.has(f))}); renderTogs(); renderPfx(); }
 function editList(el, arr, sel, save){
   el.innerHTML = "";
   arr.forEach((f,i) => {
@@ -731,7 +742,7 @@ function editList(el, arr, sel, save){
     d.innerHTML = `<input value="${esc(f)}" aria-label="Nome da pasta"><button class="x" title="Subir">↑</button><button class="x" title="Remover">✕</button>`;
     const [inp, up, del] = d.children; let old = f;
     inp.oninput = () => { const v = inp.value; if (sel.has(old)) { sel.delete(old); sel.add(v); } arr[i] = v; old = v; renderTogs(); };
-    inp.onchange = save;
+    inp.onchange = () => { const n = arr.length; save(); if (arr.length !== n) editList(el, arr, sel, save); };
     up.onclick = () => { if(i){ [arr[i-1],arr[i]] = [arr[i],arr[i-1]]; save(); editList(el, arr, sel, save); } };
     del.onclick = () => { arr.splice(i,1); save(); editList(el, arr, sel, save); };
     el.appendChild(d);
@@ -745,11 +756,11 @@ function renderPfx(){
   $("pfx").hidden = !$("rename").checked;
   const names = [...new Set([...S.folders, ...S.subs])];
   $("pfx").innerHTML = names.map(f => `<span>${esc(f)}</span><input data-f="${esc(f)}" value="${esc(S.prefixes[f] ?? "")}" placeholder="—">`).join("");
-  $("pfx").querySelectorAll("input").forEach(i => i.onchange = () => { S.prefixes[i.dataset.f] = i.value.trim().toUpperCase(); api("/api/settings", {prefixes:S.prefixes}); });
+  $("pfx").querySelectorAll("input").forEach(i => i.onchange = () => { S.prefixes[i.dataset.f] = i.value.trim().toUpperCase(); saveSet( {prefixes:S.prefixes}); });
 }
-$("rename").onchange = () => { renderPfx(); api("/api/settings", {rename:$("rename").checked}); };
-$("mhl").onchange = () => api("/api/settings", {mhl:$("mhl").checked});
-$("autoEject").onchange = () => api("/api/settings", {auto_eject:$("autoEject").checked});
+$("rename").onchange = () => { renderPfx(); saveSet( {rename:$("rename").checked}); };
+$("mhl").onchange = () => saveSet( {mhl:$("mhl").checked});
+$("autoEject").onchange = () => saveSet( {auto_eject:$("autoEject").checked});
 let qT; $("q").oninput = () => { clearTimeout(qT); $("qLine").classList.add("on"); qT = setTimeout(find, 200); };
 async function find(){
   $("qLine").classList.add("on");

@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.3.0.zip",
-  "notes": "Mostra só cartões de memória. HDs e SSDs ficam numa linha à parte, e um HD usado como cartão (Blackmagic, gravador externo) é reconhecido. Dá para corrigir com um clique."
+  "version": "1.3.1",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.3.1.zip",
+  "notes": "Correções achadas na bateria de testes: o app não trava mais se o HD encher no fim de um arquivo; nunca sobra arquivo .partial quando o cartão sai no meio; 'pode formatar' só aparece se todo vídeo do cartão foi copiado; arquivos que você move entre pastas do trabalho não contam como sumidos; editar pastas em Ajustes não perde mais a edição; clique duplo não começa duas cópias."
 }

@@ -260,12 +260,14 @@ def copy_stream(src: Path, dsts, on_bytes=None, mhl=False):
     errors = []
 
     def writer(path, q):
+        ended = False
         try:
             with open(path, "wb") as fo:
                 _nocache(fo)
                 while True:
                     chunk = q.get()
                     if chunk is None:
+                        ended = True
                         break
                     if not errors:
                         fo.write(chunk)
@@ -273,7 +275,8 @@ def copy_stream(src: Path, dsts, on_bytes=None, mhl=False):
                 os.fsync(fo.fileno())
         except Exception as e:  # noqa: BLE001
             errors.append(e)
-            while q.get() is not None:  # esvazia para o leitor nao travar
+            # esvazia a fila para o leitor nao travar (so se o fim ainda nao chegou)
+            while not ended and q.get() is not None:
                 pass
 
     def hasher(q):
@@ -290,6 +293,7 @@ def copy_stream(src: Path, dsts, on_bytes=None, mhl=False):
     ths.append(threading.Thread(target=hasher, args=(qs[-1],), daemon=True))
     for t in ths:
         t.start()
+    read_error = None
     try:
         with open(src, "rb") as fi:
             while True:
@@ -300,28 +304,40 @@ def copy_stream(src: Path, dsts, on_bytes=None, mhl=False):
                     q.put(chunk)
                 if on_bytes:
                     on_bytes(len(chunk))
+    except BaseException as e:  # cartao arrancado, erro de leitura
+        read_error = e
     finally:
         for q in qs:
             q.put(None)
         for t in ths:
             t.join()
-    if errors:
-        for t in tmps:
-            t.unlink(missing_ok=True)
-        raise errors[0]
+    if errors or read_error:
+        for t in tmps:  # nunca deixa .partial para tras
+            try:
+                t.unlink()
+            except OSError:
+                pass
+        raise read_error or errors[0]
     return tmps, h.hexdigest(), algo, (m.hexdigest() if m else None)
 
 
 def verify_commit(src: Path, tmps, dsts, src_hash):
     """Rele cada copia do disco e compara com o hash do cartao. So entao da o nome final."""
-    st = src.stat()
-    for t in tmps:
-        if t.stat().st_size != st.st_size or hash_file(t, nocache=True) != src_hash:
-            for x in tmps:
-                x.unlink(missing_ok=True)
-            raise IOError(f"checksum diferente apos copiar ({t.parent})")
+    try:
+        st = src.stat()
+        for t in tmps:
+            if t.stat().st_size != st.st_size or hash_file(t, nocache=True) != src_hash:
+                raise IOError(f"checksum diferente apos copiar ({t.parent})")
+        for t in tmps:
+            os.utime(t, (st.st_atime, st.st_mtime))  # preserva a data original
+    except BaseException:
+        for x in tmps:  # nunca deixa .partial para tras
+            try:
+                x.unlink()
+            except OSError:
+                pass
+        raise
     for t, d in zip(tmps, dsts):
-        os.utime(t, (st.st_atime, st.st_mtime))  # preserva a data original
         os.replace(t, Path(d))
 
 
@@ -375,6 +391,19 @@ def with_prefix(name: str, prefix: str) -> str:
 
 
 # ---------------------------------------------------------------- scan
+MEDIA_EXT = {"MP4", "MOV", "MXF", "MTS", "M2TS", "AVI", "BRAW", "R3D", "CRM", "INSV", "INSP", "360",
+             "JPG", "JPEG", "HEIC", "HIF", "ARW", "CR2", "CR3", "NEF", "RAF", "RW2", "DNG", "GPR",
+             "WAV", "MP3", "BWF", "AAC", "M4A"}
+
+
+def job_root(p: Path):
+    """Pasta do trabalho (AAAA_MM_DD - ...) que contem p; None se nao tiver."""
+    for a in Path(p).parents:
+        if DATED.match(a.name) and not re.search(r" - Dia \d+$", a.name):
+            return a
+    return None
+
+
 def scan_card(vol: Path, profile, ledger):
     """Lista arquivos novos (ainda nao logados) do cartao, ja com a rota."""
     uuid = volume_uuid(vol)
@@ -392,15 +421,28 @@ def scan_card(vol: Path, profile, ledger):
             old += 1
             continue
         items.append({"src": src, "rel": rel, "size": st.st_size, "key": key, "route": ri})
-    # cartao "pode formatar": nada novo e todo arquivo ja logado ainda existe no HD
+    # cartao "pode formatar": nada novo, nenhuma midia fora das rotas e todo arquivo
+    # ja logado ainda existe no HD (mesmo que voce tenha movido para outra pasta do trabalho)
     missing = 0
     if not items:
+        moved = {}
         for rec in seen.values():
-            if not Path(rec.get("dest", "")).exists():
-                missing += 1
+            dest = Path(rec.get("dest", ""))
+            if dest.exists():
+                continue
+            job = job_root(dest)
+            if job is not None and job.is_dir():
+                if job not in moved:
+                    moved[job] = {(f.name, f.stat().st_size) for f in job.rglob("*") if f.is_file()}
+                size = rec.get("bytes")
+                if any(n == dest.name and (size is None or sz == size) for n, sz in moved[job]):
+                    continue
+            missing += 1
+    ignored_media = [r for r in ignored if Path(r).suffix.upper().lstrip(".") in MEDIA_EXT]
     return {"volume": vol.name, "path": str(vol), "uuid": uuid, "profile": profile["name"],
-            "items": items, "already": old, "ignored": ignored, "missing_on_hd": missing,
-            "safe_to_format": not items and old > 0 and missing == 0,
+            "items": items, "already": old, "ignored": ignored, "ignored_media": ignored_media,
+            "missing_on_hd": missing,
+            "safe_to_format": not items and old > 0 and missing == 0 and not ignored_media,
             "bytes": sum(i["size"] for i in items)}
 
 
@@ -546,7 +588,7 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
         def record(n, it, src, dst, extra, digest, algo, mh):
             with lock:
                 prog["done_files"] += 1
-                seen[it["key"]] = {"hash": digest, "dest": str(dst),
+                seen[it["key"]] = {"hash": digest, "dest": str(dst), "bytes": it["size"],
                                    "quando": dt.datetime.now().isoformat(timespec="seconds")}
                 if n % 20 == 0:
                     save_json(LEDGER_PATH, ledger)
