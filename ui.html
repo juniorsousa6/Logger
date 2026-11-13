@@ -168,6 +168,7 @@ input[type=date]:disabled{opacity:.5}
 .emptybox .ring{width:46px;height:46px;margin:0 auto 16px;border:1px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin 1.4s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .ign{font:12px var(--mono);color:var(--faint);margin-top:12px}
+.ign .link,.ctype .link{font:12px var(--mono);margin-left:4px}
 
 /* etapa 3 */
 .copyhead{display:flex;justify-content:space-between;align-items:flex-end;gap:20px}
@@ -597,9 +598,10 @@ const parseSize = s => { const m = /([\d.]+)\s*(B|KB|MB|GB|TB)/.exec(s||""); ret
 function renderCards(){
   const box = $("cards");
   if (box.contains(document.activeElement) && ["SELECT","INPUT"].includes(document.activeElement.tagName)) return;
-  const known = S.cards.filter(c => c.profile), unknown = S.cards.filter(c => !c.profile);
-  const ign = unknown.length ? `<div class="ign">// ignorados: ${unknown.map(c=>esc(c.volume)).join(", ")} (não parecem cartão de câmera)</div>` : "";
-  if (!known.length){ box.innerHTML = `<div class="hud emptybox"><div class="ring"></div><b>Conecte os cartões</b>Eles aparecem aqui sozinhos, já identificados.</div>` + ign; updateBar(); return; }
+  const known = S.cards.filter(c => c.profile), unknown = S.cards.filter(c => !c.profile && !c.hidden), drives = S.cards.filter(c => c.hidden);
+  const ign = (unknown.length ? `<div class="ign">// ignorados: ${unknown.map(c=>esc(c.volume)).join(", ")} (não parecem cartão de câmera)</div>` : "")
+    + (drives.length ? `<div class="ign">// HDs e SSDs fora da lista: ${drives.map(c => `${esc(c.volume)} <button class="link" data-card="${esc(c.path)}">usar como cartão</button>`).join(" · ")}</div>` : "");
+  if (!known.length){ box.innerHTML = `<div class="hud emptybox"><div class="ring"></div><b>Conecte os cartões</b>Eles aparecem aqui sozinhos, já identificados.</div>` + ign; bindKinds(); updateBar(); return; }
   box.innerHTML = "";
   for (const c of known){
     c.bytesRaw = parseSize(c.bytes);
@@ -614,7 +616,7 @@ function renderCards(){
     const destTxt = c.routes.map((r,i) => { if (!r.files || ch.dests[i] === null) return ""; const dest = ch.dests[i], miss = dest && !S.subs.includes(dest);
       return `<span>${esc(r.label)} → <b class="${miss?"warnf":""}">${dest ? esc(dest) : "não copiar"}</b> (${r.files})</span>`; }).join("");
     d.innerHTML = `<div class="crow"><button class="tick" ${c.new?"":"disabled"} aria-label="Selecionar ${esc(c.volume)}">${ICON.check}</button>
-        <div><div class="cname">${esc(c.volume)}</div><div class="ctype">${esc(c.profile)}${c.already?` · ${c.already} já copiados antes`:""}</div></div>
+        <div><div class="cname">${esc(c.volume)}</div><div class="ctype">${esc(c.profile)}${c.kind==="drive_card"?` · HD usado como cartão <button class="link" data-drive="1">não é cartão</button>`:""}${c.already?` · ${c.already} já copiados antes`:""}</div></div>
         <div class="cstat">${status}</div></div>
       ${total ? `<div class="cprog">${segbar(frac, 32, c.missing_on_hd ? "bad" : "", 4)}<span class="lbl">${Math.round(frac*100)}% já logado</span></div>` : ""}
       ${c.new && ch.use ? asks.map(i => `<div class="ask" data-i="${i}"><p>Não tenho certeza de onde vão os <b>${esc(c.routes[i].label.toLowerCase())}</b> (${c.routes[i].files} arquivo${c.routes[i].files>1?"s":""}, ${c.routes[i].bytes}). Para qual pasta?</p><div class="row">${S.subs.map(f => `<button class="tog" data-f="${esc(f)}">${esc(f)}</button>`).join("")}<button class="tog add">+ pasta</button><button class="tog" data-f="">não copiar</button></div></div>`).join("") : ""}
@@ -627,6 +629,7 @@ function renderCards(){
         e.target.replaceWith(inp); inp.focus();
         inp.onkeydown = k => { if (k.key === "Enter" && inp.value.trim()){ ch.dests[i] = inp.value.trim(); inp.blur(); renderCards(); } if (k.key === "Escape"){ inp.blur(); renderCards(); } }; };
     });
+    const nd = d.querySelector("[data-drive]"); if (nd) nd.onclick = () => setKind(c, "drive");
     const lk = d.querySelector(".dest .link"); if (lk) lk.onclick = () => { S.open[c.path] = !S.open[c.path]; renderCards(); };
     const rt = d.querySelector(".routes");
     c.routes.forEach((r,i) => {
@@ -637,8 +640,10 @@ function renderCards(){
     });
     box.appendChild(d);
   }
-  box.insertAdjacentHTML("beforeend", ign); updateBar();
+  box.insertAdjacentHTML("beforeend", ign); bindKinds(); updateBar();
 }
+async function setKind(c, kind){ await api("/api/volume-kind", {uuid:c.uuid, volume:c.volume, kind}); delete S.choices[c.path]; scan(); }
+function bindKinds(){ $("cards").querySelectorAll("[data-card]").forEach(b => b.onclick = () => setKind(S.cards.find(x => x.path === b.dataset.card), "card")); }
 const selected = () => S.cards.filter(c => c.profile && c.new && S.choices[c.path]?.use);
 const undecided = () => selected().filter(c => c.routes.some((r,i) => r.files && S.choices[c.path].dests[i] === null));
 

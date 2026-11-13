@@ -32,7 +32,8 @@ DEFAULT_SETTINGS = {
     "rename": False,   # renomear a copia com prefixo da camera
     "prefixes": {"Ronin": "RON", "Fixa": "FIXA", "Fixa Wide": "WIDE", "Fixa Zoom": "ZOOM", "Action": "ACT", "Drone": "DRN", "Áudio": "AUD", "Fotos": ""},
     "mhl": False,      # manifesto padrao cinema (ASC MHL)
-    "auto_eject": True,  # ejeta cada cartao assim que ele estiver copiado e conferido
+    "auto_eject": True,
+    "volume_kinds": {},  # uuid / nome -> "card" ou "drive" (quando voce corrige o app)  # ejeta cada cartao assim que ele estiver copiado e conferido
     "folders_on": None,  # pastas ligadas no ultimo trabalho (None = todas)
     "dropbox_on": False,
     "dropbox_dir": "",   # onde ficam as pastas de entrega no Dropbox
@@ -205,29 +206,71 @@ def card_routes(prof, items, remembered, subs):
         elif mem and (resolve_dest(mem, subs) or not subs):
             dest, why = resolve_dest(mem, subs) or mem, "lembrado"
         else:
-            dest = resolve_dest(r["to"], subs) if subs else r["to"]
+            dest = (resolve_dest(r["to"], subs) if subs else r["to"]) or None
             why = "regra" if dest else ""
         routes.append({"label": label, "dest": dest if dest is not None else "", "default": r["to"],
                        "ask": dest is None and n > 0, "why": why, "files": n, "bytes": cl.human(b)})
     return routes
 
 
+def work_volumes(ledger, s):
+    """Volumes que ja receberam copias do Logger (HDs de trabalho/backup): nunca sao cartao."""
+    roots = set()
+    vd = str(cl.VOLUMES_DIR) + os.sep
+    paths = [s.get("base_dir", ""), s.get("backup_dir", "")]
+    for card in ledger.get("cards", {}).values():
+        for rec in list(card.get("files", {}).values())[:20]:
+            paths.append(rec.get("dest", ""))
+    for p in paths:
+        if p and p.startswith(vd):
+            roots.add(p[len(vd):].split(os.sep)[0])
+    return roots
+
+
+def classify_volume(vol, prof, s, work):
+    """'card' (cartao), 'drive_card' (HD/SSD usado como cartao, ex.: Blackmagic) ou 'drive' (esconder)."""
+    uuid = cl.volume_uuid(vol)
+    kinds = s.get("volume_kinds", {})
+    forced = kinds.get(uuid) or kinds.get("name:" + vol.name)
+    kind = cl.media_kind(vol)
+    if forced == "drive":
+        return "drive", "você marcou que não é cartão"
+    if forced == "card":
+        return ("card" if kind == "card" else "drive_card"), ""
+    if kind == "card":
+        return "card", ""
+    if vol.name in work or cl.looks_like_work_drive(vol):
+        return "drive", "HD de trabalho"
+    if kind == "unknown":
+        return "card", ""  # fora do Mac (testes): sem como saber
+    if prof:
+        return "drive_card", ""  # HD/SSD so com arquivos de camera: gravador externo
+    return "drive", "HD/SSD"
+
+
 def list_cards(target, backup=""):
     cfg = cl.load_config()
     ledger = cl.load_ledger()
-    prefs = settings()["card_prefs"]
+    s = settings()
+    prefs = s["card_prefs"]
+    work = work_volumes(ledger, s)
     subs = subfolders(target) if target else []
     out = []
     exclude = [p for p in (target, backup) if p]
     for vol in cl.mounted_volumes(exclude):
         prof = cl.identify(vol, cfg["profiles"])
+        kind, why = classify_volume(vol, prof, s, work)
+        if kind == "drive":
+            out.append({"volume": vol.name, "path": str(vol), "uuid": cl.volume_uuid(vol), "profile": None,
+                        "hidden": True, "why": why})
+            continue
         if not prof:
             out.append({"volume": vol.name, "path": str(vol), "profile": None})
             continue
         c = cl.scan_card(vol, prof, ledger)
         remembered = prefs.get(c["uuid"]) or prefs.get("name:" + vol.name)
         routes = card_routes(prof, c["items"], remembered, subs)
-        out.append({"volume": vol.name, "path": str(vol), "uuid": c["uuid"], "profile": prof["name"],
+        out.append({"volume": vol.name, "path": str(vol), "uuid": c["uuid"], "profile": prof["name"], "kind": kind,
                     "new": len(c["items"]), "bytes": cl.human(c["bytes"]), "already": c["already"],
                     "ignored": len(c["ignored"]), "routes": routes, "ask": any(r["ask"] for r in routes),
                     "safe_to_format": c["safe_to_format"], "missing_on_hd": c["missing_on_hd"]})
@@ -426,6 +469,17 @@ class H(BaseHTTPRequestHandler):
                 for k in ("folders", "folders_on", "dropbox_folders", "dropbox_folders_on"):
                     if isinstance(body.get(k), list):
                         s[k] = [safe_name(f) for f in body[k] if safe_name(f)]
+                save_settings(s)
+                return self.send(200, {"ok": True})
+            if self.path == "/api/volume-kind":
+                s = settings()
+                kinds = s.setdefault("volume_kinds", {})
+                for k in (body.get("uuid"), "name:" + body.get("volume", "")):
+                    if k and k != "name:":
+                        if body.get("kind") in ("card", "drive"):
+                            kinds[k] = body["kind"]
+                        else:
+                            kinds.pop(k, None)
                 save_settings(s)
                 return self.send(200, {"ok": True})
             if self.path == "/api/folders":

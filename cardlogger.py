@@ -78,17 +78,73 @@ def load_ledger():
 
 
 # ---------------------------------------------------------------- volumes
+_INFO_CACHE = {}
+
+
+def volume_info(vol: Path) -> dict:
+    """O que o macOS sabe do disco (diskutil info -plist). Vazio fora do Mac."""
+    try:
+        key = (str(vol), os.stat(vol).st_dev)
+    except OSError:
+        return {}
+    if key in _INFO_CACHE:
+        return _INFO_CACHE[key]
+    info = {}
+    try:
+        import plistlib
+        out = subprocess.run(["diskutil", "info", "-plist", str(vol)], capture_output=True, timeout=10).stdout
+        if out.strip():
+            info = plistlib.loads(out)
+    except (FileNotFoundError, subprocess.TimeoutExpired, ValueError, Exception):  # noqa: BLE001
+        info = {}
+    _INFO_CACHE[key] = info
+    return info
+
+
 def volume_uuid(vol: Path) -> str:
     """UUID do volume no macOS (muda quando o cartao e formatado)."""
-    try:
-        out = subprocess.run(["diskutil", "info", str(vol)], capture_output=True,
-                             text=True, timeout=10).stdout
-        m = re.search(r"Volume UUID:\s+(\S+)", out)
-        if m:
-            return m.group(1)
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
-    return "noid-" + vol.name  # fallback (testes / Linux)
+    u = volume_info(vol).get("VolumeUUID")
+    return u or "noid-" + vol.name  # fallback (testes / Linux)
+
+
+CARD_WORDS = re.compile(r"\b(sd|sdxc|sdhc|microsd|cf|cfast|cfexpress|xqd|card|reader|cardreader|multi-?card)\b", re.I)
+
+
+def media_kind(vol: Path) -> str:
+    """'card' = cartao de memoria (leitor SD do Mac, leitor USB, CFexpress);
+    'drive' = HD/SSD; 'unknown' = sem informacao (fora do Mac)."""
+    i = volume_info(vol)
+    if not i:
+        return "unknown"
+    if i.get("BusProtocol") == "Secure Digital":
+        return "card"  # leitor SD embutido do MacBook
+    if i.get("RemovableMedia") or i.get("Removable"):
+        return "card"  # leitores de cartao informam midia removivel; HD/SSD externo nao
+    names = " ".join(str(i.get(k, "")) for k in ("MediaName", "IORegistryEntryName", "DeviceModel"))
+    if CARD_WORDS.search(names.replace("_", " ")):
+        return "card"
+    return "drive"
+
+
+DATED = re.compile(r"^\d{4}_\d{2}_\d{2}")
+
+
+def looks_like_work_drive(vol: Path, max_depth=2) -> bool:
+    """HD de trabalho: tem pastas AAAA_MM_DD (ate 2 niveis) ou pasta _logs do Logger."""
+    level = [vol]
+    for _ in range(max_depth):
+        nxt = []
+        for d in level:
+            try:
+                for e in os.scandir(d):
+                    if e.is_dir(follow_symlinks=False) and not e.name.startswith("."):
+                        if DATED.match(e.name) or e.name == "_logs":
+                            return True
+                        nxt.append(Path(e.path))
+            except OSError:
+                pass
+        level = nxt[:200]
+    return False
 
 
 def is_card_candidate(vol: Path, job_dir=None) -> bool:

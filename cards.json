@@ -100,6 +100,32 @@
       ]
     },
     {
+      "name": "Gravador externo / Blackmagic",
+      "match": {
+        "has_any_path": [
+          "*.braw",
+          "*/*.braw",
+          "*/*/*.braw",
+          "*.BRAW",
+          "*/*.BRAW",
+          "*/*/*.BRAW"
+        ]
+      },
+      "routes": [
+        {
+          "label": "Vídeos",
+          "to": "",
+          "patterns": [
+            "*.BRAW",
+            "*.MOV",
+            "*.MP4",
+            "*.SIDECAR",
+            "*.XML"
+          ]
+        }
+      ]
+    },
+    {
       "name": "Gravador de audio",
       "match": {
         "has_any_path": [
