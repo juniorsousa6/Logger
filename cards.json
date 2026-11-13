@@ -1,0 +1,157 @@
+{
+  "_ajuda": "Perfis sao testados em ordem; o primeiro que bate ganha. volume_name aceita curingas (*). has_any_path sao caminhos/curingas que precisam existir no cartao. Cada rota tem um 'label' (o que aparece no app), 'to' (subpasta padrao, pode ser trocada no app) e 'patterns'. Arquivos que nao batem em nenhuma rota sao ignorados e listados no relatorio. Drone DJI e Osmo Action usam a mesma pasta DCIM/DJI_*; o drone e reconhecido pelos arquivos .SRT de telemetria. Se errar, troque o destino no app uma vez e ele lembra para aquele cartao.",
+  "profiles": [
+    {
+      "name": "Sony",
+      "match": {
+        "has_any_path": [
+          "PRIVATE/M4ROOT",
+          "DCIM/*MSDCF"
+        ]
+      },
+      "routes": [
+        {
+          "label": "Videos",
+          "to": "Ronin",
+          "patterns": [
+            "PRIVATE/M4ROOT/CLIP/*.MP4",
+            "PRIVATE/M4ROOT/CLIP/*.XML",
+            "*.MTS",
+            "*.MOV",
+            "*.MP4"
+          ]
+        },
+        {
+          "label": "Fotos",
+          "to": "Fotos",
+          "patterns": [
+            "DCIM/*.JPG",
+            "DCIM/*.ARW",
+            "DCIM/*.HIF",
+            "DCIM/*.HEIF"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Drone DJI",
+      "match": {
+        "has_any_path": [
+          "DCIM/DJI_*/*.SRT",
+          "DCIM/DJI_*/*.srt",
+          "DCIM/100MEDIA/*.SRT",
+          "DCIM/100MEDIA/DJI_*"
+        ]
+      },
+      "routes": [
+        {
+          "label": "Tudo",
+          "to": "Drone",
+          "patterns": [
+            "DCIM/*.MP4",
+            "DCIM/*.MOV",
+            "DCIM/*.JPG",
+            "DCIM/*.DNG",
+            "DCIM/*.SRT",
+            "DCIM/*.LRF"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Action (Osmo / GoPro / Insta360)",
+      "match": {
+        "has_any_path": [
+          "DCIM/DJI_*",
+          "DCIM/*GOPRO*",
+          "DCIM/Camera01",
+          "DCIM/*/*.INSV"
+        ]
+      },
+      "routes": [
+        {
+          "label": "Tudo",
+          "to": "Action",
+          "patterns": [
+            "DCIM/*.MP4",
+            "DCIM/*.MOV",
+            "DCIM/*.LRF",
+            "DCIM/*.INSV",
+            "DCIM/*.LRV",
+            "DCIM/*.THM",
+            "DCIM/*.JPG",
+            "DCIM/*.DNG",
+            "DCIM/*.GPR"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Gravador de audio",
+      "match": {
+        "has_any_path": [
+          "*.WAV",
+          "*/*.WAV",
+          "*/*/*.WAV",
+          "*.wav",
+          "*/*.wav",
+          "*/*/*.wav"
+        ]
+      },
+      "routes": [
+        {
+          "label": "Audio",
+          "to": "Áudio",
+          "patterns": [
+            "*.WAV",
+            "*.MP3",
+            "*.BWF"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Outra camera",
+      "match": {
+        "has_any_path": [
+          "DCIM",
+          "PRIVATE",
+          "CLIP",
+          "AVCHD"
+        ]
+      },
+      "routes": [
+        {
+          "label": "Videos",
+          "to": "Fixa Wide",
+          "patterns": [
+            "*.MP4",
+            "*.MOV",
+            "*.MTS",
+            "*.MXF",
+            "*.CRM",
+            "*.BRAW",
+            "*.R3D",
+            "*.XML"
+          ]
+        },
+        {
+          "label": "Fotos",
+          "to": "Fotos",
+          "patterns": [
+            "*.JPG",
+            "*.JPEG",
+            "*.CR3",
+            "*.CR2",
+            "*.NEF",
+            "*.RAF",
+            "*.RW2",
+            "*.DNG",
+            "*.HEIC",
+            "*.HIF"
+          ]
+        }
+      ]
+    }
+  ]
+}

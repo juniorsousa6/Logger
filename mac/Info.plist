@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>Logger</string>
+  <key>CFBundleDisplayName</key><string>Logger</string>
+  <key>CFBundleIdentifier</key><string>app.logger.cartoes</string>
+  <key>CFBundleExecutable</key><string>Logger</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>__VERSION__</string>
+  <key>CFBundleVersion</key><string>__VERSION__</string>
+  <key>CFBundleIconFile</key><string>Logger</string>
+  <key>CFBundleDevelopmentRegion</key><string>pt-BR</string>
+  <key>LSMinimumSystemVersion</key><string>11.0</string>
+  <key>LSApplicationCategoryType</key><string>public.app-category.video</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSHumanReadableCopyright</key><string>Logger de cartões</string>
+  <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
+  <key>NSRemovableVolumesUsageDescription</key><string>O Logger lê os cartões de memória para copiar e conferir os arquivos. Nada é apagado do cartão.</string>
+  <key>NSNetworkVolumesUsageDescription</key><string>O Logger pode salvar trabalhos em HDs de rede.</string>
+  <key>NSAppleEventsUsageDescription</key><string>O Logger usa o Finder para ejetar cartões e mostrar notificações.</string>
+  <key>LoggerUpdateURL</key><string>__UPDATE_URL__</string>
+  <key>LoggerBuiltOn</key><string>__BUILT_ON__</string>
+</dict>
+</plist>
