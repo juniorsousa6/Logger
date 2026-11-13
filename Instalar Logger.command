@@ -43,7 +43,7 @@ APP="$WORK/Logger.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/app"
 
 say "Preparando o Logger $VER para macOS $OS ($(uname -m))…"
-swiftc -O -swift-version 5 -o "$APP/Contents/MacOS/Logger" mac/LoggerApp.swift \
+swiftc -O -swift-version 5 -target "$(uname -m)-apple-macos11.0" -o "$APP/Contents/MacOS/Logger" mac/LoggerApp.swift \
   -framework Cocoa -framework WebKit 2>"$WORK/build.log" || { cat "$WORK/build.log"; fail "Não consegui compilar o app. Me mande o texto que apareceu no Terminal."; }
 
 cp app.py cardlogger.py media.py cards.json ui.html VERSION "$APP/Contents/Resources/app/"

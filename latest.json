@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.0.0.zip",
-  "notes": "Primeira versão como app de Mac: janela própria, atualização automática, cópia mais rápida."
+  "version": "1.0.1",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.0.1.zip",
+  "notes": "Corrige a instalação em versões novas do macOS."
 }
