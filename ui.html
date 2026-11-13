@@ -77,6 +77,7 @@ h1{font-size:28px;letter-spacing:-.02em;font-weight:600;margin:0 0 6px;text-wrap
 .evline i{position:absolute;left:0;top:-.5px;height:2px;background:var(--acc);box-shadow:0 0 10px var(--acc);width:0;transition:width .4s var(--ease)}
 .name-preview{font:12px var(--mono);color:var(--mut);margin:12px 0 26px;min-height:20px;display:flex;justify-content:space-between;gap:12px}
 .name-preview span:first-child{color:var(--text)}
+#formPct{color:var(--faint);white-space:nowrap}#formPct.ready{color:var(--acc)}
 .field{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);min-height:54px}
 .field:last-child{border-bottom:0}
 .field .k{font:11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);flex:0 0 auto}
@@ -510,8 +511,13 @@ const days = () => S.mode==="multi" ? [...$("dayDates").querySelectorAll("input"
 function preview(){ const ev = $("event").value.trim();
   $("namePrev").textContent = ev ? `${fd(days()[0])} - ${ev}` + (S.mode==="multi" ? `  (+ ${S.ndays} pastas de dia)` : "") : " ";
   renderDbPrev();
-  const parts = [!!ev, !!$("date").value, !!S.base, S.on && S.on.size > 0], f = parts.filter(Boolean).length / parts.length;
-  $("evFill").style.width = (f*100) + "%"; $("formPct").textContent = Math.round(f*100) + "%"; setTrack(f); }
+  formStatus(); }
+/* barra do formulario: mostra o que falta preencher, nao uma porcentagem (que parecia carregamento) */
+function formStatus(){ if (!$("evFill")) return;
+  const need = [[!!$("event").value.trim(), "nome do evento"], [!!$("date").value, "data"], [!!S.base, "onde salvar"], [!!(S.on && S.on.size), "uma pasta"]];
+  const miss = need.filter(([ok]) => !ok).map(([, n]) => n), f = 1 - miss.length / need.length;
+  $("evFill").style.width = (f*100) + "%"; $("formPct").textContent = miss.length ? "falta: " + miss.join(", ") : "pronto para criar";
+  $("formPct").classList.toggle("ready", !miss.length); setTrack(f); }
 function renderChips(){
   const bc = $("baseChip"), kc = $("backupChip");
   bc.className = "chip" + (S.base ? "" : " empty"); bc.innerHTML = S.base ? `<span class="dot"></span>${esc(volName(S.base))}` : "Escolher HD…"; bc.title = S.base;
@@ -546,8 +552,7 @@ function renderTogs(){
   $("dbChip").className = "chip" + (S.dbDir ? "" : " empty"); $("dbChip").title = S.dbDir;
   togs($("dbTogs"), S.dbFolders, S.dbSel, v => { S.dbFolders.push(v); S.dbSel.add(v); saveDb(); renderDbList(); },
        () => { saveSet( {dropbox_folders_on:S.dbFolders.filter(f => S.dbSel.has(f))}); renderTogs(); });
-  renderDbPrev(); updateBar(); if ($("evFill")) { const ev = $("event").value.trim(); const parts = [!!ev, !!$("date").value, !!S.base, S.on.size > 0];
-    const f = parts.filter(Boolean).length / parts.length; $("evFill").style.width = (f*100)+"%"; $("formPct").textContent = Math.round(f*100)+"%"; setTrack(f); }
+  renderDbPrev(); updateBar(); formStatus();
 }
 function renderDbPrev(){
   if (!S.dbFolders) return;

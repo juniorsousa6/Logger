@@ -29,6 +29,7 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
   await step('tela inicial sem nome e sem HD: botão travado com explicação', async () => {
     ok(await p.isDisabled('#abBtn'), 'Criar pastas deveria estar travado');
     ok((await p.textContent('#abInfo')).includes('escolha onde salvar'), 'falta a dica de onde salvar');
+    ok((await p.textContent('#formPct')).startsWith('falta: nome do evento'), 'a barra deveria dizer o que falta, não uma porcentagem');
   });
 
   await step('Ajustes: abrir e fechar (X, fundo, Esc)', async () => {
