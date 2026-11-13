@@ -26,12 +26,13 @@ CATALOG_PATH = cl.STATE_DIR / "catalogo.json"
 DEFAULT_SETTINGS = {
     "base_dir": "",
     "backup_dir": "",
-    "folders": ["Ronin", "Fotos", "Áudio", "Action", "Drone", "Fixa Wide"],
+    "folders": ["Ronin", "Fixa", "Fotos", "Áudio", "Action", "Drone"],
     "mode": "padrao",
     "card_prefs": {},  # uuid / nome do volume -> destinos escolhidos da ultima vez
     "rename": False,   # renomear a copia com prefixo da camera
-    "prefixes": {"Ronin": "RON", "Fixa Wide": "WIDE", "Fixa Zoom": "ZOOM", "Action": "ACT", "Drone": "DRN", "Áudio": "AUD", "Fotos": ""},
+    "prefixes": {"Ronin": "RON", "Fixa": "FIXA", "Fixa Wide": "WIDE", "Fixa Zoom": "ZOOM", "Action": "ACT", "Drone": "DRN", "Áudio": "AUD", "Fotos": ""},
     "mhl": False,      # manifesto padrao cinema (ASC MHL)
+    "auto_eject": True,  # ejeta cada cartao assim que ele estiver copiado e conferido
     "folders_on": None,  # pastas ligadas no ultimo trabalho (None = todas)
     "dropbox_on": False,
     "dropbox_dir": "",   # onde ficam as pastas de entrega no Dropbox
@@ -169,10 +170,53 @@ def open_job(path):
     return {"job_dir": str(job), "targets": days or [str(job)]}
 
 
+def _fold(name):
+    """Compara nomes de pasta sem ligar para acento, maiuscula ou espaco."""
+    n = unicodedata.normalize("NFKD", name or "")
+    return " ".join("".join(ch for ch in n if not unicodedata.combining(ch)).casefold().split())
+
+
+def resolve_dest(want, subs):
+    """Acha a pasta do trabalho para o destino padrao. 'Fixa' acha 'Fixa Wide'.
+    Devolve None quando nao existe ou quando ha mais de uma parecida (o app pergunta)."""
+    if not want:
+        return None
+    w = _fold(want)
+    exact = [x for x in subs if _fold(x) == w]
+    if exact:
+        return exact[0]
+    near = [x for x in subs if _fold(x).startswith(w) or w.startswith(_fold(x) + " ")]
+    return near[0] if len(near) == 1 else None
+
+
+def card_routes(prof, items, remembered, subs):
+    """Destino de cada rota: escolha lembrada (se a pasta existe) > padrao do perfil.
+    'ask' = o app nao tem certeza e precisa que voce escolha a pasta."""
+    remembered = remembered if isinstance(remembered, dict) else {}  # formato antigo (lista) e ignorado
+    routes = []
+    for i, r in enumerate(prof["routes"]):
+        label = r.get("label", r["to"])
+        n = sum(1 for it in items if it["route"] == i)
+        b = sum(it["size"] for it in items if it["route"] == i)
+        dest, why = None, ""
+        mem = None if r.get("lock") else remembered.get(label)
+        if mem == "":
+            dest, why = "", "lembrado"          # voce marcou "nao copiar" para esse cartao
+        elif mem and (resolve_dest(mem, subs) or not subs):
+            dest, why = resolve_dest(mem, subs) or mem, "lembrado"
+        else:
+            dest = resolve_dest(r["to"], subs) if subs else r["to"]
+            why = "regra" if dest else ""
+        routes.append({"label": label, "dest": dest if dest is not None else "", "default": r["to"],
+                       "ask": dest is None and n > 0, "why": why, "files": n, "bytes": cl.human(b)})
+    return routes
+
+
 def list_cards(target, backup=""):
     cfg = cl.load_config()
     ledger = cl.load_ledger()
     prefs = settings()["card_prefs"]
+    subs = subfolders(target) if target else []
     out = []
     exclude = [p for p in (target, backup) if p]
     for vol in cl.mounted_volumes(exclude):
@@ -182,18 +226,21 @@ def list_cards(target, backup=""):
             continue
         c = cl.scan_card(vol, prof, ledger)
         remembered = prefs.get(c["uuid"]) or prefs.get("name:" + vol.name)
-        routes = []
-        for i, r in enumerate(prof["routes"]):
-            dest = r["to"]
-            if remembered and i < len(remembered):
-                dest = remembered[i]
-            n = sum(1 for it in c["items"] if it["route"] == i)
-            b = sum(it["size"] for it in c["items"] if it["route"] == i)
-            routes.append({"label": r.get("label", r["to"]), "dest": dest, "files": n, "bytes": cl.human(b)})
+        routes = card_routes(prof, c["items"], remembered, subs)
         out.append({"volume": vol.name, "path": str(vol), "uuid": c["uuid"], "profile": prof["name"],
                     "new": len(c["items"]), "bytes": cl.human(c["bytes"]), "already": c["already"],
-                    "ignored": len(c["ignored"]), "routes": routes,
+                    "ignored": len(c["ignored"]), "routes": routes, "ask": any(r["ask"] for r in routes),
                     "safe_to_format": c["safe_to_format"], "missing_on_hd": c["missing_on_hd"]})
+    return out
+
+
+def empty_folders(target):
+    """Pastas do trabalho que continuam sem nenhum arquivo."""
+    out = []
+    for name in subfolders(target):
+        d = Path(target) / name
+        if not any(f.is_file() and not f.name.startswith(".") for f in d.rglob("*")):
+            out.append(name)
     return out
 
 
@@ -217,13 +264,17 @@ def start_log(body):
             continue
         c = cl.scan_card(vol, prof, ledger)  # escaneia de novo na hora de copiar
         dests = sel["dests"]
+        if any(d is None for d in dests):
+            raise ValueError(f"Escolha a pasta do cartao {vol.name} antes de copiar.")
         # rota marcada como "ignorar" sai da lista
         c["items"] = [it for it in c["items"] if dests[it["route"]]]
         c["bytes"] = sum(it["size"] for it in c["items"])
         c["dests"] = [d or "_ignorado" for d in dests]
+        c["path"] = str(vol)
         cards.append(c)
-        s["card_prefs"][c["uuid"]] = dests
-        s["card_prefs"]["name:" + vol.name] = dests
+        mem = {r.get("label", r["to"]): d for r, d in zip(prof["routes"], dests)}
+        s["card_prefs"][c["uuid"]] = mem
+        s["card_prefs"]["name:" + vol.name] = mem
     backups = []
     backup = (body.get("backup_dir") or "").strip()
     if backup:
@@ -233,17 +284,36 @@ def start_log(body):
     s["backup_dir"] = backup
     s["rename"] = bool(body.get("rename"))
     s["mhl"] = bool(body.get("mhl"))
+    s["auto_eject"] = bool(body.get("auto_eject", s.get("auto_eject", True)))
     if isinstance(body.get("prefixes"), dict):
         s["prefixes"].update({k: safe_name(v) for k, v in body["prefixes"].items()})
     prefixes = s["prefixes"] if s["rename"] else {}
     save_settings(s)
-    prog = {"phase": "comecando", "hold": True}
+    prog = {"phase": "comecando", "hold": True, "ejected": []}
     JOB["progress"] = prog
+    auto_eject = s["auto_eject"]
+
+    def card_done(c, rep):
+        """Cartao copiado e conferido: ejeta sozinho e avisa para colocar o proximo."""
+        vol = c["volume"]
+        if not rep.get("conferido_ok"):
+            notify("Cartão com problema", f"{vol}: não ejetei. Veja o que falhou no Logger.", ok=False)
+            prog["ejected"].append({"volume": vol, "ok": False, "msg": "com problema, não ejetado"})
+            return
+        if not auto_eject or Path(c["path"]).parent != cl.VOLUMES_DIR:
+            return
+        r = eject([c["path"]])[0]
+        prog["ejected"].append({"volume": vol, "ok": r["ok"], "msg": "ejetado" if r["ok"] else r["msg"]})
+        if r["ok"]:
+            notify("Cartão ejetado", f"{vol} copiado, conferido e ejetado. Pode colocar o próximo.")
+        else:
+            notify("Não consegui ejetar", f"{vol} está conferido, mas o Mac não ejetou: {r['msg']}", ok=False)
 
     def work():
         try:
             rep = cl.run_log(target, cards, ledger, per_card_subfolder=bool(body.get("per_card")),
-                             progress=prog, backups=backups, prefixes=prefixes, mhl=s["mhl"])
+                             progress=prog, backups=backups, prefixes=prefixes, mhl=s["mhl"],
+                             on_card_done=card_done)
             prog["phase"] = "relatorio"
             try:
                 path, summary = media.build_report(target, prog)
@@ -263,9 +333,12 @@ def start_log(body):
                 update_catalog(body["job_dir"], summary)
             except Exception as e:  # noqa: BLE001  (relatorio nunca derruba o logger)
                 prog["report_error"] = str(e)
+            prog["empty_folders"] = empty_folders(target)
             prog["phase"] = "pronto"
-            notify("Logger terminou", "Tudo conferido" if rep["tudo_ok"] else "ATENCAO: ha arquivos com problema",
-                   ok=rep["tudo_ok"])
+            msg = "Tudo conferido" if rep["tudo_ok"] else "ATENCAO: ha arquivos com problema"
+            if prog["empty_folders"]:
+                msg += ". Pastas sem arquivo: " + ", ".join(prog["empty_folders"])
+            notify("Logger terminou", msg, ok=rep["tudo_ok"] and not prog["empty_folders"])
         except Exception as e:  # noqa: BLE001
             prog["phase"] = "erro"
             prog["fatal"] = str(e)
@@ -317,7 +390,7 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, (HERE / "ui.html").read_bytes(), "text/html")
             if u.path == "/api/init":
                 s = settings()
-                return self.send(200, {"settings": {k: s[k] for k in ("base_dir", "backup_dir", "folders", "mode", "rename", "prefixes", "mhl",
+                return self.send(200, {"settings": {k: s[k] for k in ("base_dir", "backup_dir", "folders", "mode", "rename", "prefixes", "mhl", "auto_eject",
                                                                        "folders_on", "dropbox_on", "dropbox_dir", "dropbox_folders", "dropbox_folders_on")},
                                        "date": suggested_date(), "dropbox_guess": dropbox_guess()})
             if u.path == "/api/cards":
@@ -345,7 +418,7 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, open_job(body["path"]))
             if self.path == "/api/settings":
                 s = settings()
-                for k in ("base_dir", "backup_dir", "rename", "mhl", "dropbox_on", "dropbox_dir"):
+                for k in ("base_dir", "backup_dir", "rename", "mhl", "auto_eject", "dropbox_on", "dropbox_dir"):
                     if k in body:
                         s[k] = body[k]
                 if isinstance(body.get("prefixes"), dict):

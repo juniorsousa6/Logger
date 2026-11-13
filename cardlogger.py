@@ -407,7 +407,7 @@ def write_ascmhl(root: Path, entries, process="transfer"):
 
 # ---------------------------------------------------------------- copia
 def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None, backups=None,
-            prefixes=None, mhl=False):
+            prefixes=None, mhl=False, on_card_done=None):
     """
     cards: lista de dicts vindos de scan_card, cada um com "dests": lista de
     subpastas (uma por rota do perfil), relativa a job_dir.
@@ -416,6 +416,8 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
     relativo e recriado no backup (ex.: segundo HD).
     prefixes: {pasta_destino: prefixo} para renomear a COPIA (ex.: Fixa Wide -> WIDE_C0001.MP4).
     mhl: tambem gera manifesto ASC MHL (padrao de cinema) em <job_dir>/ascmhl.
+    on_card_done(card, rep): chamado assim que cada cartao termina de copiar e conferir
+    (o app usa para ejetar o cartao e avisar).
     Devolve o relatorio (dict) e grava _logs/ dentro de job_dir.
     """
     job_dir = Path(job_dir)
@@ -459,6 +461,15 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
                 taken.add(str(b))
             bases.append(b)
         c["_bases"] = bases
+
+    def verify_card(rep):
+        for f in rep["copiados"]:
+            for p in [Path(f["destino"])] + [Path(x) for x in f.get("backups", [])]:
+                # o hash de cada arquivo ja foi conferido lendo do HD logo apos a copia;
+                # aqui so garantimos que nada sumiu ou mudou de tamanho no caminho
+                if not p.exists() or p.stat().st_size != f["bytes"]:
+                    rep["erros"].append({"arquivo": str(p), "erro": "falhou na conferencia final"})
+        rep["conferido_ok"] = len(rep["copiados"]) == rep["novos"] and not rep["erros"]
 
     def do_card(c):
         with lock:
@@ -525,29 +536,22 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
                                 (n, it, src, dst, extra, digest, algo, mh)))
                 settle(block=len(pending) > 2)
             settle(block=True)
-        pc["file"] = "pronto"
+        pc["file"] = "conferindo"
         with lock:
             save_json(LEDGER_PATH, ledger)
+        verify_card(rep)
+        pc["file"] = "pronto" if rep["conferido_ok"] else "com problema"
+        if on_card_done:
+            try:
+                on_card_done(c, rep)
+            except Exception as e:  # noqa: BLE001  (ejetar nunca derruba o logger)
+                rep["eject_error"] = str(e)
         return rep
 
     with ThreadPoolExecutor(max_workers=max(1, min(MAX_PARALLEL, len(cards)))) as ex:
         report["cards"] = list(ex.map(do_card, cards))
 
-    # ---- conferencia final: tudo no destino, mesmo tamanho e mesmo hash (em paralelo por cartao)
     prog["phase"] = "conferindo"
-
-    def verify_card(rep):
-        for f in rep["copiados"]:
-            for p in [Path(f["destino"])] + [Path(x) for x in f.get("backups", [])]:
-                prog["current"] = f"conferindo {p.name}"
-                # o hash de cada arquivo ja foi conferido lendo do HD logo apos a copia;
-                # aqui so garantimos que nada sumiu ou mudou de tamanho no caminho
-                if not p.exists() or p.stat().st_size != f["bytes"]:
-                    rep["erros"].append({"arquivo": str(p), "erro": "falhou na conferencia final"})
-        rep["conferido_ok"] = len(rep["copiados"]) == rep["novos"] and not rep["erros"]
-
-    with ThreadPoolExecutor(max_workers=max(1, min(MAX_PARALLEL, len(report["cards"])))) as ex:
-        list(ex.map(verify_card, report["cards"]))
     report["finished"] = dt.datetime.now().isoformat(timespec="seconds")
     report["tudo_ok"] = all(r["conferido_ok"] for r in report["cards"])
 

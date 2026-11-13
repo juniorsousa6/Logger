@@ -159,6 +159,10 @@ input[type=date]:disabled{opacity:.5}
 .routes{margin:12px 0 2px 34px;display:grid;grid-template-columns:70px 1fr auto;gap:8px 10px;align-items:center;font-size:13px}
 .routes select{border:1px solid var(--line2);background:var(--sunken);border-radius:4px;padding:5px 8px;font:12px var(--mono)}
 .routes .n{color:var(--mut);font:12px var(--mono)}
+.ask{margin:14px 0 2px 34px;padding:12px 14px;border:1px dashed var(--warn);border-radius:4px;background:var(--warn-bg)}
+.ask p{margin:0 0 10px;font-size:13px;color:var(--warn)}.ask p b{color:var(--text);font-family:var(--mono);font-weight:500}
+.ask .row{display:flex;flex-wrap:wrap;gap:6px}.ask + .ask{margin-top:8px}
+.ejl{font:12px var(--mono);color:var(--acc);margin-top:10px;min-height:1em}
 .emptybox{text-align:center;padding:46px 20px;color:var(--mut)}
 .emptybox b{display:block;color:var(--text);font-weight:600;margin-bottom:4px}
 .emptybox .ring{width:46px;height:46px;margin:0 auto 16px;border:1px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin 1.4s linear infinite}
@@ -317,6 +321,7 @@ input[type=date]:disabled{opacity:.5}
     <div class="phases" id="cPhases"><div data-p="copiando">Cópia</div><div data-p="conferindo">Conferência</div><div data-p="relatorio">Relatório</div><div data-p="pronto">Pronto</div></div>
     <div class="pcs" id="cPer"></div>
     <div class="phase" id="cCur"></div>
+    <div class="ejl" id="cEj"></div>
   </section>
 
   <section class="view" id="vDone">
@@ -351,6 +356,7 @@ input[type=date]:disabled{opacity:.5}
   <h3>Cópia</h3>
   <label class="opt"><input type="checkbox" class="sw" id="rename"><span>Prefixo da câmera no nome<small>WIDE_C8970.MP4, ACT_DJI_….MP4… útil quando duas câmeras geram nomes parecidos. Só a cópia muda, o cartão nunca.</small></span></label>
   <div class="pfx" id="pfx"></div>
+  <label class="opt"><input type="checkbox" class="sw" id="autoEject"><span>Ejetar o cartão sozinho<small>Assim que um cartão termina de copiar e conferir, o Logger ejeta e avisa "cartão ejetado" para você colocar o próximo. Cartão com problema nunca é ejetado.</small></span></label>
   <label class="opt"><input type="checkbox" class="sw" id="mhl"><span>Manifesto padrão cinema (ASC MHL)<small>Só se uma produtora pedir. Cria a pasta ascmhl com o checksum de cada arquivo.</small></span></label>
   <h3>Sempre ligado</h3>
   <ul class="always"><li>Nada é apagado do cartão</li><li>Cada arquivo é conferido por checksum</li><li>Só arquivos novos são copiados</li><li>Relatório visual e catálogo são gerados sozinhos</li></ul>
@@ -457,8 +463,9 @@ function updateBar(){
     info.textContent = !S.base ? "// escolha onde salvar" : !$("event").value.trim() ? "// dê um nome ao evento" : !S.on.size ? "// ligue pelo menos uma pasta"
       : `// ${S.on.size} pasta${S.on.size>1?"s":""} no HD` + (S.dbOn && S.dbDir ? ` + ${S.dbSel.size} no Dropbox` : ""); }
   else if (S.view==="cards"){ const sel = selected(), bytes = sel.reduce((a,c)=>a+(c.bytesRaw||0),0);
-    b.textContent = sel.length ? `Copiar ${sel.length} ${sel.length>1?"cartões":"cartão"}` : "Copiar"; b.disabled = !sel.length;
-    info.textContent = sel.length ? "// " + hb(bytes) + (S.backup ? " · com backup" : "") : "// selecione os cartões"; }
+    const und = undecided().length;
+    b.textContent = sel.length ? `Copiar ${sel.length} ${sel.length>1?"cartões":"cartão"}` : "Copiar"; b.disabled = !sel.length || und > 0;
+    info.textContent = und ? `// escolha a pasta de ${und} ${und>1?"cartões":"cartão"}` : sel.length ? "// " + hb(bytes) + (S.backup ? " · com backup" : "") : "// selecione os cartões"; }
   else if (S.view==="copy"){ b.hidden = true; info.textContent = ""; }
   else { b.textContent = "Copiar mais cartões"; info.textContent = ""; }
 }
@@ -470,7 +477,7 @@ $("abBtn").onclick = () => ({job:createJob, cards:startCopy, done:() => { go("ca
   S.dbOn = !!st.dropbox_on; S.dbDir = st.dropbox_dir || init.dropbox_guess || ""; S.dbFolders = st.dropbox_folders || [];
   S.dbSel = new Set((st.dropbox_folders_on ?? S.dbFolders).filter(f => S.dbFolders.includes(f)));
   S.prefixes = st.prefixes || {}; S.base = st.base_dir || ""; S.backup = st.backup_dir || "";
-  $("rename").checked = !!st.rename; $("mhl").checked = !!st.mhl; $("date").value = init.date;
+  $("rename").checked = !!st.rename; $("mhl").checked = !!st.mhl; $("autoEject").checked = st.auto_eject !== false; $("date").value = init.date;
   if (st.mode === "multi") setMode("multi");
   renderChips(); renderTogs(); renderDays(); preview(); renderFlist(); renderDbList(); renderPfx(); updateBar();
 })();
@@ -589,32 +596,41 @@ setInterval(scan, 3000);
 const parseSize = s => { const m = /([\d.]+)\s*(B|KB|MB|GB|TB)/.exec(s||""); return m ? +m[1] * 1024 ** ["B","KB","MB","GB","TB"].indexOf(m[2]) : 0; };
 function renderCards(){
   const box = $("cards");
-  if (box.contains(document.activeElement) && document.activeElement.tagName==="SELECT") return;
+  if (box.contains(document.activeElement) && ["SELECT","INPUT"].includes(document.activeElement.tagName)) return;
   const known = S.cards.filter(c => c.profile), unknown = S.cards.filter(c => !c.profile);
   const ign = unknown.length ? `<div class="ign">// ignorados: ${unknown.map(c=>esc(c.volume)).join(", ")} (não parecem cartão de câmera)</div>` : "";
   if (!known.length){ box.innerHTML = `<div class="hud emptybox"><div class="ring"></div><b>Conecte os cartões</b>Eles aparecem aqui sozinhos, já identificados.</div>` + ign; updateBar(); return; }
   box.innerHTML = "";
   for (const c of known){
     c.bytesRaw = parseSize(c.bytes);
-    const ch = S.choices[c.path] ||= {use: c.new > 0, dests: c.routes.map(r=>r.dest)};
+    const ch = S.choices[c.path] ||= {use: c.new > 0, dests: c.routes.map(r => r.ask ? null : r.dest)};
+    const asks = c.routes.map((r,i) => r.files && ch.dests[i] === null ? i : -1).filter(i => i >= 0);
     if (!c.new) ch.use = false;
-    const status = c.new ? `<span class="pill warn">● ${c.new} novo${c.new>1?"s":""} · ${c.bytes}</span>`
+    const status = c.new && asks.length && ch.use ? `<span class="pill warn">? escolha a pasta</span>` : c.new ? `<span class="pill warn">● ${c.new} novo${c.new>1?"s":""} · ${c.bytes}</span>`
       : c.safe_to_format ? `<span class="pill ok">✓ pode formatar</span>`
       : c.missing_on_hd ? `<span class="pill bad">✕ ${c.missing_on_hd} sumiram do HD</span>` : `<span class="pill mut">vazio</span>`;
     const total = (c.already||0) + (c.new||0), frac = total ? (c.already||0)/total : 0;
     const d = document.createElement("div"); d.className = "hud card" + (ch.use ? " sel" : "") + (c.new ? "" : " dim");
-    const destTxt = c.routes.map((r,i) => { if (!r.files) return ""; const dest = ch.dests[i], miss = dest && !S.subs.includes(dest);
+    const destTxt = c.routes.map((r,i) => { if (!r.files || ch.dests[i] === null) return ""; const dest = ch.dests[i], miss = dest && !S.subs.includes(dest);
       return `<span>${esc(r.label)} → <b class="${miss?"warnf":""}">${dest ? esc(dest) : "não copiar"}</b> (${r.files})</span>`; }).join("");
     d.innerHTML = `<div class="crow"><button class="tick" ${c.new?"":"disabled"} aria-label="Selecionar ${esc(c.volume)}">${ICON.check}</button>
         <div><div class="cname">${esc(c.volume)}</div><div class="ctype">${esc(c.profile)}${c.already?` · ${c.already} já copiados antes`:""}</div></div>
         <div class="cstat">${status}</div></div>
       ${total ? `<div class="cprog">${segbar(frac, 32, c.missing_on_hd ? "bad" : "", 4)}<span class="lbl">${Math.round(frac*100)}% já logado</span></div>` : ""}
-      ${c.new ? `<div class="dest">${destTxt}<button class="link">${S.open[c.path]?"Pronto":"Trocar destino"}</button></div>` : ""}
+      ${c.new && ch.use ? asks.map(i => `<div class="ask" data-i="${i}"><p>Não tenho certeza de onde vão os <b>${esc(c.routes[i].label.toLowerCase())}</b> (${c.routes[i].files} arquivo${c.routes[i].files>1?"s":""}, ${c.routes[i].bytes}). Para qual pasta?</p><div class="row">${S.subs.map(f => `<button class="tog" data-f="${esc(f)}">${esc(f)}</button>`).join("")}<button class="tog add">+ pasta</button><button class="tog" data-f="">não copiar</button></div></div>`).join("") : ""}
+      ${c.new && destTxt ? `<div class="dest">${destTxt}<button class="link">${S.open[c.path]?"Pronto":"Trocar destino"}</button></div>` : ""}
       <div class="routes" ${S.open[c.path]&&c.new?"":"hidden"}></div>`;
     d.querySelector(".tick").onclick = () => { if(!c.new) return; ch.use = !ch.use; renderCards(); };
+    d.querySelectorAll(".ask").forEach(a => { const i = +a.dataset.i;
+      a.querySelectorAll(".tog[data-f]").forEach(b => b.onclick = () => { ch.dests[i] = b.dataset.f; renderCards(); });
+      a.querySelector(".tog.add").onclick = e => { const inp = document.createElement("input"); inp.className = "tog-in"; inp.placeholder = "nome da pasta";
+        e.target.replaceWith(inp); inp.focus();
+        inp.onkeydown = k => { if (k.key === "Enter" && inp.value.trim()){ ch.dests[i] = inp.value.trim(); inp.blur(); renderCards(); } if (k.key === "Escape"){ inp.blur(); renderCards(); } }; };
+    });
     const lk = d.querySelector(".dest .link"); if (lk) lk.onclick = () => { S.open[c.path] = !S.open[c.path]; renderCards(); };
     const rt = d.querySelector(".routes");
     c.routes.forEach((r,i) => {
+      if (ch.dests[i] === null) return;
       const opts = [...new Set([...S.subs, ch.dests[i]].filter(Boolean))];
       rt.insertAdjacentHTML("beforeend", `<span>${esc(r.label)}</span><select>${opts.map(o=>`<option ${o===ch.dests[i]?"selected":""}>${esc(o)}</option>`).join("")}<option value="" ${ch.dests[i]===""?"selected":""}>não copiar</option></select><span class="n">${r.files} · ${r.bytes}</span>`);
       rt.lastElementChild.previousElementSibling.onchange = e => { ch.dests[i] = e.target.value; e.target.blur(); renderCards(); };
@@ -624,13 +640,14 @@ function renderCards(){
   box.insertAdjacentHTML("beforeend", ign); updateBar();
 }
 const selected = () => S.cards.filter(c => c.profile && c.new && S.choices[c.path]?.use);
+const undecided = () => selected().filter(c => c.routes.some((r,i) => r.files && S.choices[c.path].dests[i] === null));
 
 /* etapa 3 */
 async function startCopy(){
-  const sel = selected(); if (!sel.length) return;
+  const sel = selected(); if (!sel.length || undecided().length) return;
   $("abBtn").classList.add("busy");
   try { await api("/api/log", {job_dir:S.job, target:S.target, backup_dir:S.backup, per_card:S.targets.length>1,
-      rename:$("rename").checked, prefixes:S.prefixes, mhl:$("mhl").checked,
+      rename:$("rename").checked, prefixes:S.prefixes, mhl:$("mhl").checked, auto_eject:$("autoEject").checked,
       cards: sel.map(c => ({path:c.path, dests:S.choices[c.path].dests}))}); }
   catch(e){ $("cardsErr").textContent = e.message; $("abBtn").classList.remove("busy"); return; }
   $("abBtn").classList.remove("busy");
@@ -660,6 +677,7 @@ async function poll(){
   $("cPer").innerHTML = Object.entries(p.per_card||{}).map(([v,c]) => { const pp = c.total ? c.done/c.total : 1;
     return `<div class="pc"><span>${esc(v)}</span>${segbar(pp, 32, "", 5)}<span>${Math.floor(pp*100)}%</span></div>`; }).join("");
   $("cCur").textContent = p.current || "";
+  $("cEj").innerHTML = (p.ejected||[]).map(e => e.ok ? `⏏ ${esc(e.volume)} ejetado · pode colocar o próximo` : `<span style="color:var(--bad)">✕ ${esc(e.volume)}: ${esc(e.msg)}</span>`).join("<br>");
   if (p.phase==="pronto" || p.phase==="erro"){ S.copying = false; showDone(p); return; }
   setTimeout(poll, 600);
 }
@@ -675,11 +693,15 @@ function showDone(p){
   $("dStats").innerHTML = rs ? `<div><b>${rs.seconds}</b><span>gravados</span></div><div><b>${rs.clips}</b><span>clipes</span></div><div><b>${rs.photos}</b><span>fotos</span></div><div><b>${hb(p.total_bytes)}</b><span>copiados agora</span></div>` : "";
   const cards = p.report?.cards || [], tot = cards.reduce((a,c)=>a+c.novos,0), okn = cards.reduce((a,c)=>a+(c.conferido_ok?c.copiados.length:0),0);
   $("dVerify").innerHTML = cards.length ? `<span>CHECKSUM</span>${segbar(tot ? okn/tot : 1, 48, ok ? "" : "bad", 4)}<span>${okn}/${tot} ok</span>` : "";
-  $("dAlerts").innerHTML = (rs?.alerts||[]).map(([k,m]) => `<li class="${k}">${esc(m)}</li>`).join("");
+  const empt = (p.empty_folders||[]).map(f => ["warn", `A pasta ${f} continua vazia. Esqueceu algum cartão ou criou essa pasta sem precisar?`]);
+  $("dAlerts").innerHTML = [...empt, ...(rs?.alerts||[])].map(([k,m]) => `<li class="${k}">${esc(m)}</li>`).join("");
   $("dCards").innerHTML = cards.map(c => { const f = c.novos ? c.copiados.length/c.novos : 1;
     return `<div class="r"><span class="${c.conferido_ok?"okc":"badc"}">${c.conferido_ok?"✓":"✕"} ${esc(c.volume)}</span>${segbar(f, 24, c.conferido_ok?"":"bad", 4)}<span>${c.copiados.length} de ${c.novos}</span></div>`; }).join("");
   S.reportHtml = p.report_html || ""; $("openReport").hidden = !S.reportHtml;
-  $("dLog").textContent = p.report ? "log › " + p.report.log_file : ""; $("ejectMsg").textContent = "";
+  $("dLog").textContent = p.report ? "log › " + p.report.log_file : "";
+  const ej = (p.ejected||[]).filter(e => e.ok).map(e => e.volume);
+  $("ejectMsg").textContent = ej.length ? "⏏ já ejetados: " + ej.join(", ") : "";
+  S.logged = S.logged.filter(x => !ej.includes(x.split("/").pop())); $("eject").hidden = !S.logged.length;
   go("done");
 }
 $("openReport").onclick = () => api("/api/reveal", {path:S.reportHtml});
@@ -722,6 +744,7 @@ function renderPfx(){
 }
 $("rename").onchange = () => { renderPfx(); api("/api/settings", {rename:$("rename").checked}); };
 $("mhl").onchange = () => api("/api/settings", {mhl:$("mhl").checked});
+$("autoEject").onchange = () => api("/api/settings", {auto_eject:$("autoEject").checked});
 let qT; $("q").oninput = () => { clearTimeout(qT); $("qLine").classList.add("on"); qT = setTimeout(find, 200); };
 async function find(){
   $("qLine").classList.add("on");

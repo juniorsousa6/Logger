@@ -1,5 +1,5 @@
 {
-  "_ajuda": "Perfis sao testados em ordem; o primeiro que bate ganha. volume_name aceita curingas (*). has_any_path sao caminhos/curingas que precisam existir no cartao. Cada rota tem um 'label' (o que aparece no app), 'to' (subpasta padrao, pode ser trocada no app) e 'patterns'. Arquivos que nao batem em nenhuma rota sao ignorados e listados no relatorio. Drone DJI e Osmo Action usam a mesma pasta DCIM/DJI_*; o drone e reconhecido pelos arquivos .SRT de telemetria. Se errar, troque o destino no app uma vez e ele lembra para aquele cartao.",
+  "_ajuda": "Perfis sao testados em ordem; o primeiro que bate ganha. volume_name aceita curingas (*). has_any_path sao caminhos/curingas que precisam existir no cartao. Cada rota tem um 'label' (o que aparece no app), 'to' (subpasta padrao, pode ser trocada no app) e 'patterns'. Arquivos que nao batem em nenhuma rota sao ignorados e listados no relatorio. Drone DJI e Osmo Action usam a mesma pasta DCIM/DJI_*; o drone e reconhecido pelos arquivos .SRT de telemetria. Se errar, troque o destino no app uma vez e ele lembra para aquele cartao. Sony: arquivos que comecam com JRS (nome configurado na camera do Junior) vao para Ronin; a outra Sony vai para a pasta Fixa (qualquer pasta que comece com 'Fixa'). Se a pasta nao existir no trabalho, ou houver duas parecidas, o app pergunta. 'lock': true faz a rota ignorar a escolha lembrada do cartao.",
   "profiles": [
     {
       "name": "Sony",
@@ -11,8 +11,21 @@
       },
       "routes": [
         {
-          "label": "Videos",
+          "label": "Vídeos JRS",
           "to": "Ronin",
+          "lock": true,
+          "patterns": [
+            "JRS*.MP4",
+            "*/JRS*.MP4",
+            "*/JRS*.XML",
+            "*/JRS*.MOV",
+            "*/JRS*.MTS",
+            "JRS*.MOV"
+          ]
+        },
+        {
+          "label": "Vídeos",
+          "to": "Fixa",
           "patterns": [
             "PRIVATE/M4ROOT/CLIP/*.MP4",
             "PRIVATE/M4ROOT/CLIP/*.XML",
@@ -123,7 +136,7 @@
       "routes": [
         {
           "label": "Videos",
-          "to": "Fixa Wide",
+          "to": "Fixa",
           "patterns": [
             "*.MP4",
             "*.MOV",
