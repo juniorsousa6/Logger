@@ -86,6 +86,7 @@ input[type=date]:disabled{opacity:.5}
 .seg button{border:0;background:none;padding:5px 12px;border-radius:3px;font-size:13px;color:var(--mut);cursor:pointer;transition:color .15s,background .15s}
 .seg button:hover{color:var(--text)}
 .seg button.on{background:var(--acc-dim);color:var(--acc)}
+.dbdest{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
 .stepper{display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:5px}
 .stepper button{border:0;background:none;width:30px;height:30px;cursor:pointer;color:var(--mut)}
 .stepper button:hover{color:var(--acc)}
@@ -296,7 +297,8 @@ input[type=date]:disabled{opacity:.5}
       <div class="field"><span class="k">Salvar em</span><span class="v"><button class="chip" id="baseChip"></button></span></div>
       <div class="field"><span class="k">Backup</span><span class="v"><button class="x" id="backupClear" title="Sem backup" hidden>Remover</button><button class="chip" id="backupChip"></button></span></div>
       <div class="field stack"><div class="head"><span class="k">Pastas no HD</span><span class="sub mono" id="folderCount"></span></div><div class="togs" id="hdTogs"></div></div>
-      <div class="field stack" id="dbField"><div class="head"><span class="k">Espelhar no Dropbox</span><span class="v"><button class="chip" id="dbChip" hidden></button><input type="checkbox" class="sw" id="dbOn" aria-label="Criar também no Dropbox"></span></div>
+      <div class="field stack" id="dbField"><div class="head"><span class="k">Espelhar no Dropbox</span><span class="v"><input type="checkbox" class="sw" id="dbOn" aria-label="Criar também no Dropbox"></span></div>
+        <div class="dbdest" id="dbDestRow" hidden><span class="seg" id="dbDest"><button data-d="viot">VIOT</button><button data-d="pasta">Outra pasta</button></span><button class="chip" id="dbChip"></button></div>
         <div class="togs" id="dbTogs" hidden></div><div class="dbprev" id="dbPrev" hidden></div></div>
     </div>
     <div class="err" id="jobErr"></div>
@@ -473,7 +475,7 @@ function updateBar(){
   const b = $("abBtn"), info = $("abInfo"); b.hidden = false; b.disabled = false; b.classList.toggle("ghost", S.view==="done");
   if (S.view==="job"){ b.textContent = "Criar pastas"; b.disabled = !$("event").value.trim() || !S.base || !S.on.size;
     info.textContent = !S.base ? "// escolha onde salvar" : !$("event").value.trim() ? "// dê um nome ao evento" : !S.on.size ? "// ligue pelo menos uma pasta"
-      : `// ${S.on.size} pasta${S.on.size>1?"s":""} no HD` + (S.dbOn && S.dbDir ? ` + ${S.dbSel.size} no Dropbox` : ""); }
+      : `// ${S.on.size} pasta${S.on.size>1?"s":""} no HD` + (S.dbOn && dbTarget() ? ` + ${S.dbSel.size} no ${S.dbDest==="viot" ? "VIOT" : "Dropbox"}` : ""); }
   else if (S.view==="cards"){ const sel = selected(), bytes = sel.reduce((a,c)=>a+(c.bytesRaw||0),0);
     const und = undecided().length;
     b.textContent = sel.length ? `Copiar ${sel.length} ${sel.length>1?"cartões":"cartão"}` : "Copiar"; b.disabled = !sel.length || und > 0;
@@ -486,7 +488,8 @@ $("abBtn").onclick = () => ({job:createJob, cards:startCopy, done:() => { go("ca
 (async () => {
   const init = await api("/api/init"), st = init.settings;
   S.folders = st.folders; S.on = new Set((st.folders_on ?? st.folders).filter(f => st.folders.includes(f)));
-  S.dbOn = !!st.dropbox_on; S.dbDir = st.dropbox_dir || init.dropbox_guess || ""; S.dbFolders = st.dropbox_folders || [];
+  S.dbOn = !!st.dropbox_on; S.dbDir = st.dropbox_dir || init.dropbox_guess || ""; S.viotDir = st.viot_dir || init.viot_guess || "";
+  S.dbDest = st.dropbox_dest === "pasta" ? "pasta" : "viot"; S.dbFolders = st.dropbox_folders || [];
   S.dbSel = new Set((st.dropbox_folders_on ?? S.dbFolders).filter(f => S.dbFolders.includes(f)));
   S.prefixes = st.prefixes || {}; S.base = st.base_dir || ""; S.backup = st.backup_dir || "";
   $("rename").checked = !!st.rename; $("mhl").checked = !!st.mhl; $("autoEject").checked = st.auto_eject !== false; $("date").value = init.date;
@@ -555,9 +558,11 @@ function renderTogs(){
   togs($("hdTogs"), S.folders, S.on, v => { S.folders.push(v); S.on.add(v); saveFolders(); renderFlist(); },
        () => { saveSet( {folders_on:S.folders.filter(f => S.on.has(f))}); renderTogs(); });
   $("folderCount").textContent = `${S.on.size} de ${S.folders.length}`;
-  $("dbOn").checked = S.dbOn; $("dbTogs").hidden = $("dbChip").hidden = $("dbPrev").hidden = !S.dbOn;
-  $("dbChip").innerHTML = S.dbDir ? `<span class="dot"></span>${esc(S.dbDir.split("/").filter(Boolean).slice(-2).join(" › "))}` : "Escolher pasta…";
-  $("dbChip").className = "chip" + (S.dbDir ? "" : " empty"); $("dbChip").title = S.dbDir;
+  $("dbOn").checked = S.dbOn; $("dbTogs").hidden = $("dbDestRow").hidden = $("dbPrev").hidden = !S.dbOn;
+  document.querySelectorAll("#dbDest button").forEach(b => { const on = b.dataset.d === S.dbDest; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+  const dir = dbTarget();
+  $("dbChip").innerHTML = dir ? `<span class="dot"></span>${esc(dir.split("/").filter(Boolean).slice(-2).join(" › "))}` : (S.dbDest === "viot" ? "Achar a pasta do VIOT…" : "Escolher pasta…");
+  $("dbChip").className = "chip" + (dir ? "" : " empty"); $("dbChip").title = dir;
   togs($("dbTogs"), S.dbFolders, S.dbSel, v => { S.dbFolders.push(v); S.dbSel.add(v); saveDb(); renderDbList(); },
        () => { saveSet( {dropbox_folders_on:S.dbFolders.filter(f => S.dbSel.has(f))}); renderTogs(); });
   renderDbPrev(); updateBar(); formStatus();
@@ -566,14 +571,24 @@ function renderDbPrev(){
   if (!S.dbFolders) return;
   const ev = $("event").value.trim(), name = ev ? `${fd(days()[0])} - ${ev}` : "AAAA_MM_DD - evento";
   const sub = S.dbFolders.filter(f => S.dbSel.has(f));
-  $("dbPrev").innerHTML = S.dbDir ? `› Dropbox/…/<b>${esc(name)}</b>${sub.length ? " / " + sub.map(esc).join(", ") : ""}` : "› escolha a pasta de entregas do Dropbox";
+  const dir = dbTarget(), where = S.dbDest === "viot" ? "Dropbox/VIOT" : "Dropbox/…";
+  $("dbPrev").innerHTML = dir ? `› ${where}/<b>${esc(name)}</b>${sub.length ? " / " + sub.map(esc).join(", ") : ""}`
+    : S.dbDest === "viot" ? "› não achei a pasta VIOT no Dropbox: toque no botão acima e escolha" : "› escolha a pasta de entregas do Dropbox";
 }
+function dbTarget(){ return S.dbDest === "viot" ? S.viotDir : S.dbDir; }
+function dbAsk(){ return S.dbDest === "viot" ? "Onde fica a pasta do VIOT no Dropbox?" : "Onde ficam as pastas de entrega no Dropbox?"; }
+async function dbPick(){ const p = await pick(dbAsk()); if (!p) return false;
+  if (S.dbDest === "viot") { S.viotDir = p; saveSet({viot_dir:p}); } else { S.dbDir = p; saveSet({dropbox_dir:p}); } return true; }
+document.querySelectorAll("#dbDest button").forEach(b => b.onclick = async () => {
+  S.dbDest = b.dataset.d; saveSet({dropbox_dest:S.dbDest});
+  if (!dbTarget()) await dbPick();
+  renderTogs(); });
 $("dbOn").onchange = async () => {
   S.dbOn = $("dbOn").checked;
-  if (S.dbOn && !S.dbDir) { const p = await pick("Onde ficam as pastas de entrega no Dropbox?"); if (p) S.dbDir = p; else S.dbOn = false; }
-  saveSet( {dropbox_on:S.dbOn, dropbox_dir:S.dbDir}); renderTogs();
+  if (S.dbOn && !dbTarget() && !(await dbPick())) S.dbOn = false;
+  saveSet( {dropbox_on:S.dbOn, dropbox_dest:S.dbDest}); renderTogs();
 };
-$("dbChip").onclick = async () => { const p = await pick("Onde ficam as pastas de entrega no Dropbox?"); if (p){ S.dbDir = p; saveSet( {dropbox_dir:p}); renderTogs(); } };
+$("dbChip").onclick = async () => { if (await dbPick()) renderTogs(); };
 const tidy = arr => { const out = [], seen = new Set(); for (const f of arr.map(f => (f||"").trim()).filter(Boolean)) { const k = f.normalize("NFC").toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push(f); } } arr.splice(0, arr.length, ...out); return arr; };
 function saveDb(){ tidy(S.dbFolders); S.dbSel = new Set([...S.dbSel].filter(f => S.dbFolders.includes(f)));
   saveSet( {dropbox_folders:S.dbFolders, dropbox_folders_on:S.dbFolders.filter(f => S.dbSel.has(f))}); renderTogs(); }
@@ -581,7 +596,7 @@ async function createJob(){
   $("jobErr").textContent = ""; $("abBtn").classList.add("busy");
   try { await openJob(await api("/api/create", {base_dir:S.base, backup_dir:S.backup, event:$("event").value, date:$("date").value,
       days:days(), mode:S.mode, folders:S.folders.filter(f => S.on.has(f)),
-      dropbox_on:S.dbOn && !!S.dbDir, dropbox_dir:S.dbDir, dropbox_folders:S.dbFolders.filter(f => S.dbSel.has(f))})); }
+      dropbox_on:S.dbOn && !!dbTarget(), dropbox_dir:dbTarget(), dropbox_dest:S.dbDest, dropbox_folders:S.dbFolders.filter(f => S.dbSel.has(f))})); }
   catch(e){ $("jobErr").textContent = e.message; }
   finally { $("abBtn").classList.remove("busy"); }
 }
@@ -592,7 +607,7 @@ async function openJob(r){
   const today = fd(new Date().toISOString().slice(0,10));
   S.target = r.targets.find(t => t.split("/").pop().startsWith(today)) || r.targets[0];
   $("jobName").textContent = r.job_dir.split("/").pop();
-  $("jobWhere").textContent = volName(r.job_dir.split("/").slice(0,-1).join("/")) + (S.backup ? "  +  backup em " + volName(S.backup) : "") + (r.dropbox_job ? "  +  Dropbox" : "");
+  $("jobWhere").textContent = volName(r.job_dir.split("/").slice(0,-1).join("/")) + (S.backup ? "  +  backup em " + volName(S.backup) : "") + (r.dropbox_job ? (r.dropbox_job.split("/").slice(-2,-1)[0]?.normalize("NFC").toLowerCase() === "viot" ? "  +  Dropbox/VIOT" : "  +  Dropbox") : "");
   renderDayTabs(); await loadSubs(); S.cards = []; S.cardsSig = ""; renderCards(); go("cards"); scan();
 }
 function renderDayTabs(){

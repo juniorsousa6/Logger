@@ -40,6 +40,8 @@ DEFAULT_SETTINGS = {
     "dropbox_dir": "",   # onde ficam as pastas de entrega no Dropbox
     "dropbox_folders": ["Drop", "Fotos", "4x5", "9x16"],
     "dropbox_folders_on": None,
+    "dropbox_dest": "viot",  # "viot" = pasta do VIOT no Dropbox (atalho do cliente mais comum) ou "pasta" = outra pasta escolhida
+    "viot_dir": "",          # pasta do VIOT no Dropbox (vazio = procura sozinho)
 }
 
 
@@ -48,6 +50,20 @@ def dropbox_guess():
     home = Path.home()
     cands = sorted((home / "Library" / "CloudStorage").glob("Dropbox*")) + [home / "Dropbox"]
     return next((str(c) for c in cands if c.is_dir()), "")
+
+
+def viot_guess():
+    """Pasta VIOT dentro do Dropbox (Dropbox > VIOT), sem ligar para maiusculas ou acento."""
+    root = dropbox_guess()
+    if not root:
+        return ""
+    try:
+        for c in sorted(Path(root).iterdir()):
+            if c.is_dir() and unicodedata.normalize("NFC", c.name).strip().lower() == "viot":
+                return str(c)
+    except OSError:
+        pass
+    return ""
 JOB = {"thread": None, "progress": {}, "cancel": threading.Event()}
 LOCK = threading.Lock()
 SETTINGS_LOCK = threading.RLock()  # dois salvamentos ao mesmo tempo nao podem apagar um ao outro
@@ -140,7 +156,8 @@ def create_job(body):
     db_dir = (body.get("dropbox_dir") or "").strip() if body.get("dropbox_on") else ""
     db_folders = [safe_name(f) for f in body.get("dropbox_folders", []) if safe_name(f)]
     if db_dir and not Path(db_dir).is_dir():
-        raise ValueError("A pasta do Dropbox nao esta acessivel. Escolha de novo em Dropbox.")
+        raise ValueError("A pasta do VIOT nao esta acessivel. O Dropbox esta aberto? Escolha de novo em Espelhar no Dropbox." if body.get("dropbox_dest") == "viot"
+                         else "A pasta do Dropbox nao esta acessivel. Escolha de novo em Espelhar no Dropbox.")
     days = body.get("days") or [body.get("date", "")]
     for d in days:
         try:
@@ -176,7 +193,9 @@ def create_job(body):
               "mode": body.get("mode", "padrao"), "dropbox_on": bool(body.get("dropbox_on")),
               "dropbox_folders_on": db_folders})
     if db_dir:
-        s["dropbox_dir"] = db_dir
+        dest = "viot" if body.get("dropbox_dest") == "viot" else "pasta"
+        s["dropbox_dest"] = dest
+        s["viot_dir" if dest == "viot" else "dropbox_dir"] = db_dir
     save_settings(s)
     update_catalog(job)
     return {"job_dir": str(job), "targets": [str(t) for t in targets], "dropbox_job": db_job}
@@ -506,8 +525,9 @@ class H(BaseHTTPRequestHandler):
             if u.path == "/api/init":
                 s = settings()
                 return self.send(200, {"settings": {k: s[k] for k in ("base_dir", "backup_dir", "folders", "mode", "rename", "prefixes", "mhl", "auto_eject",
-                                                                       "folders_on", "dropbox_on", "dropbox_dir", "dropbox_folders", "dropbox_folders_on")},
-                                       "date": suggested_date(), "dropbox_guess": dropbox_guess(),
+                                                                       "folders_on", "dropbox_on", "dropbox_dir", "dropbox_folders", "dropbox_folders_on",
+                                                                       "dropbox_dest", "viot_dir")},
+                                       "date": suggested_date(), "dropbox_guess": dropbox_guess(), "viot_guess": viot_guess(),
                                        "warnings": list(cl.WARNINGS)})
             if u.path == "/api/cards":
                 return self.send(200, list_cards(q.get("target", ""), q.get("backup", "")))
@@ -553,9 +573,11 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, open_job(body["path"]))
             if self.path == "/api/settings":
                 s = settings()
-                for k in ("base_dir", "backup_dir", "rename", "mhl", "auto_eject", "dropbox_on", "dropbox_dir"):
+                for k in ("base_dir", "backup_dir", "rename", "mhl", "auto_eject", "dropbox_on", "dropbox_dir", "viot_dir"):
                     if k in body:
                         s[k] = body[k]
+                if body.get("dropbox_dest") in ("viot", "pasta"):
+                    s["dropbox_dest"] = body["dropbox_dest"]
                 if isinstance(body.get("prefixes"), dict):
                     s["prefixes"] = {k: safe_name(v) for k, v in body["prefixes"].items()}
                 for k in ("folders", "folders_on", "dropbox_folders", "dropbox_folders_on"):

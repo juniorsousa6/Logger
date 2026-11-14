@@ -365,5 +365,59 @@ class Servidor(unittest.TestCase):
         self.assertEqual(code, 200)
 
 
+
+class EspelhoVIOT(unittest.TestCase):
+    """1.3.4: atalho para espelhar direto em Dropbox/VIOT, sem perder a opcao de outra pasta."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="logger-viot-"))
+        self.db = self.tmp / "Dropbox"
+        (self.db / "Viot").mkdir(parents=True)
+        (self.db / "Outros").mkdir()
+        self.hd = self.tmp / "HD"
+        self.hd.mkdir()
+        self.saved = {}
+        self.p = [mock.patch.object(app, "dropbox_guess", return_value=str(self.db)),
+                  mock.patch.object(app, "save_settings", side_effect=self.saved.update),
+                  mock.patch.object(app, "update_catalog")]
+        for x in self.p:
+            x.start()
+
+    def tearDown(self):
+        for x in self.p:
+            x.stop()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def body(self, **kw):
+        b = {"base_dir": str(self.hd), "event": "Show", "date": "2026-11-14", "folders": ["Ronin"],
+             "dropbox_on": True, "dropbox_folders": ["Drop", "9x16"]}
+        b.update(kw)
+        return b
+
+    def test_acha_pasta_viot_sem_ligar_para_maiuscula(self):
+        self.assertEqual(app.viot_guess(), str(self.db / "Viot"))
+
+    def test_sem_dropbox_nao_quebra(self):
+        with mock.patch.object(app, "dropbox_guess", return_value=""):
+            self.assertEqual(app.viot_guess(), "")
+
+    def test_cria_no_viot_e_guarda_cada_pasta_no_seu_lugar(self):
+        r = app.create_job(self.body(dropbox_dir=str(self.db / "Viot"), dropbox_dest="viot"))
+        self.assertTrue((self.db / "Viot" / "2026_11_14 - Show" / "9x16").is_dir())
+        self.assertEqual(r["dropbox_job"], str(self.db / "Viot" / "2026_11_14 - Show"))
+        self.assertEqual(self.saved["dropbox_dest"], "viot")
+        self.assertEqual(self.saved["viot_dir"], str(self.db / "Viot"))
+
+    def test_outra_pasta_nao_mexe_no_viot(self):
+        app.create_job(self.body(dropbox_dir=str(self.db / "Outros"), dropbox_dest="pasta"))
+        self.assertTrue((self.db / "Outros" / "2026_11_14 - Show" / "Drop").is_dir())
+        self.assertFalse((self.db / "Viot" / "2026_11_14 - Show").exists())
+        self.assertEqual(self.saved["dropbox_dest"], "pasta")
+        self.assertEqual(self.saved["dropbox_dir"], str(self.db / "Outros"))
+
+    def test_viot_sumiu_avisa_em_portugues(self):
+        with self.assertRaisesRegex(ValueError, "VIOT"):
+            app.create_job(self.body(dropbox_dir=str(self.db / "Nao"), dropbox_dest="viot"))
+
 if __name__ == "__main__":
     unittest.main()
