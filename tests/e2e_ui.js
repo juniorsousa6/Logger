@@ -23,7 +23,7 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     console.log(`${fails === f0 ? '✓' : '✕'} ${name}`); };
 
   await api('api/settings', {base_dir: '', backup_dir: '', folders: ['Ronin','Fixa','Fotos','Áudio','Drone'], folders_on: ['Ronin','Fixa','Fotos','Áudio'],
-    dropbox_on: false, dropbox_dir: '', dropbox_folders: ['Drop','Fotos','4x5','9x16'], rename: false, mhl: false, auto_eject: true});
+    dropbox_on: false, dropbox_dir: '', viot_dir: '', dropbox_dest: 'viot', dropbox_folders: ['Drop','Fotos','4x5','9x16'], rename: false, mhl: false, auto_eject: true});
   await p.goto(U); await p.waitForTimeout(700);
 
   await step('tela inicial sem nome e sem HD: botão travado com explicação', async () => {
@@ -103,9 +103,16 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     await p.click('#hdTogs .tog.add'); await p.fill('#hdTogs .tog-in', 'Making Of'); await p.press('#hdTogs .tog-in', 'Enter');
     await p.waitForTimeout(200);
     ok(await p.$('#hdTogs .tog.on[data-f="Making Of"]'), 'pasta nova não entrou ligada');
-    await pickNext(S + '/V/Dropbox'); await p.click('#dbOn'); await p.waitForTimeout(300);
+    require('fs').mkdirSync(S + '/V/Dropbox/VIOT', {recursive: true});
+    await pickNext(S + '/V/Dropbox/VIOT'); await p.click('#dbOn'); await p.waitForTimeout(300);
     ok(await p.isVisible('#dbTogs'), 'pastas do Dropbox não apareceram');
-    ok((await p.textContent('#dbPrev')).includes('Casamento Ana'), 'prévia do Dropbox sem o nome');
+    ok(await p.$('#dbDest button.on[data-d="viot"]'), 'VIOT deveria vir marcado de saída');
+    ok((await p.textContent('#dbPrev')).includes('Dropbox/VIOT/2026_11_14 - Casamento Ana'), 'prévia do VIOT errada: ' + await p.textContent('#dbPrev'));
+    await pickNext(S + '/V/Dropbox'); await p.click('#dbDest button[data-d="pasta"]'); await p.waitForTimeout(300);
+    ok((await p.textContent('#dbChip')).includes('V › Dropbox'), 'Outra pasta não pegou a pasta escolhida: ' + await p.textContent('#dbChip'));
+    await p.click('#dbDest button[data-d="viot"]'); await p.waitForTimeout(300);
+    ok((await p.textContent('#dbChip')).includes('Dropbox › VIOT'), 'voltar ao VIOT perdeu a pasta: ' + await p.textContent('#dbChip'));
+    ok((await p.textContent('#abInfo')).includes('no VIOT'), 'barra não diz VIOT');
     ok(!(await p.isDisabled('#abBtn')), 'Criar pastas travado com tudo preenchido');
     await p.screenshot({path: SHOTS + '/e2e-1-trabalho.png'});
   });
@@ -115,7 +122,11 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     const job = S + '/V/HD/2026_11_14 - Casamento Ana';
     const fs = require('fs');
     ok(fs.existsSync(job + '/Making Of') && fs.existsSync(job + '/Ronin'), 'pastas não criadas');
-    ok(fs.existsSync(S + '/V/Dropbox/2026_11_14 - Casamento Ana/Reels'), 'espelho do Dropbox não criado');
+    ok(fs.existsSync(S + '/V/Dropbox/VIOT/2026_11_14 - Casamento Ana/Reels'), 'espelho no VIOT não criado');
+    ok(!fs.existsSync(S + '/V/Dropbox/2026_11_14 - Casamento Ana'), 'criou no Dropbox solto em vez do VIOT');
+    ok((await p.textContent('#jobWhere')).includes('Dropbox/VIOT'), 'cabeçalho não diz VIOT');
+    const st = (await api('api/init')).settings;
+    ok(st.dropbox_dest === 'viot' && st.viot_dir.endsWith('/VIOT') && st.dropbox_dir.endsWith('/V/Dropbox'), 'ajustes do espelho não guardados: ' + JSON.stringify(st));
     ok(fs.readdirSync(S + '/V/HD').length === 1, 'duplo clique criou duas pastas: ' + fs.readdirSync(S + '/V/HD'));
   });
 
