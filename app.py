@@ -4,6 +4,7 @@ Logger - cria a pasta do trabalho e descarrega os cartoes nela.
 Abre uma janela no navegador (so no seu Mac, endereco 127.0.0.1).
 Feche a janela do Terminal para encerrar.
 """
+import copy
 import datetime as dt
 import json
 import re
@@ -47,14 +48,14 @@ def dropbox_guess():
     home = Path.home()
     cands = sorted((home / "Library" / "CloudStorage").glob("Dropbox*")) + [home / "Dropbox"]
     return next((str(c) for c in cands if c.is_dir()), "")
-JOB = {"thread": None, "progress": {}}
+JOB = {"thread": None, "progress": {}, "cancel": threading.Event()}
 LOCK = threading.Lock()
 SETTINGS_LOCK = threading.RLock()  # dois salvamentos ao mesmo tempo nao podem apagar um ao outro
 SETTINGS_WRITERS = {"/api/settings", "/api/volume-kind", "/api/folders", "/api/create", "/api/log"}
 
 
 def settings():
-    s = dict(DEFAULT_SETTINGS)
+    s = copy.deepcopy(DEFAULT_SETTINGS)  # copia funda: mexer nos ajustes nunca altera o padrao
     s.update(cl.load_json(SETTINGS_PATH, {}))
     return s
 
@@ -110,9 +111,18 @@ def catalog_hd(path):
     return {"found": len(found), "jobs": [f.name for f in found]}
 
 
+def osascript(lines, *args, **kw):
+    """Roda AppleScript passando os textos como argumentos (item N of argv), nunca dentro do
+    codigo: um texto com aspas nao vira comando."""
+    cmd = ["osascript", "-e", "on run argv"]
+    for ln in lines:
+        cmd += ["-e", ln]
+    cmd += ["-e", "end run", *[str(a) for a in args]]
+    return subprocess.run(cmd, capture_output=True, text=True, **kw)
+
+
 def osascript_choose_folder(prompt):
-    script = f'POSIX path of (choose folder with prompt "{prompt}")'
-    r = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+    r = osascript(["POSIX path of (choose folder with prompt (item 1 of argv))"], prompt)
     return r.stdout.strip().rstrip("/") if r.returncode == 0 else ""
 
 
@@ -282,7 +292,10 @@ def list_cards(target, backup=""):
         out.append({"volume": vol.name, "path": str(vol), "uuid": c["uuid"], "profile": prof["name"], "kind": kind,
                     "new": len(c["items"]), "bytes": cl.human(c["bytes"]), "already": c["already"],
                     "ignored": len(c["ignored"]), "routes": routes, "ask": any(r["ask"] for r in routes),
-                    "safe_to_format": c["safe_to_format"], "missing_on_hd": c["missing_on_hd"]})
+                    "safe_to_format": c["safe_to_format"], "missing_on_hd": c["missing_on_hd"],
+                    "offline": c["offline"], "ignored_media": len(c["ignored_media"]),
+                    "ignored_media_names": [Path(x).name for x in c["ignored_media"][:5]],
+                    "recopy": sum(1 for it in c["items"] if it.get("recopy"))})
     return out
 
 
@@ -321,11 +334,11 @@ def _start_log(body):
     cards = []
     for sel in body["cards"]:
         vol = Path(sel["path"])
-        if not vol.is_dir():
-            continue
+        if not vol.is_dir():  # tirado do leitor entre a tela e o clique: nao some calado do relatorio
+            raise ValueError(f"O cartão {vol.name} não está mais conectado. Coloque de novo ou desmarque ele.")
         prof = cl.identify(vol, cfg["profiles"])
         if not prof:
-            continue
+            raise ValueError(f"Não reconheço mais o cartão {vol.name}. Atualize a tela e tente de novo.")
         c = cl.scan_card(vol, prof, ledger)  # escaneia de novo na hora de copiar
         dests = sel["dests"]
         if not isinstance(dests, list) or len(dests) != len(prof["routes"]):
@@ -358,14 +371,24 @@ def _start_log(body):
     save_settings(s)
     prog = {"phase": "comecando", "hold": True, "ejected": []}
     JOB["progress"] = prog
+    JOB["cancel"] = cancel = threading.Event()
     auto_eject = s["auto_eject"]
 
     def card_done(c, rep):
         """Cartao copiado e conferido: ejeta sozinho e avisa para colocar o proximo."""
         vol = c["volume"]
+        if rep.get("cancelado"):
+            prog["ejected"].append({"volume": vol, "ok": False, "msg": "cópia cancelada, não ejetei"})
+            return
         if not rep.get("conferido_ok"):
             notify("Cartão com problema", f"{vol}: não ejetei. Veja o que falhou no Logger.", ok=False)
-            prog["ejected"].append({"volume": vol, "ok": False, "msg": "com problema, não ejetado"})
+            prog["ejected"].append({"volume": vol, "ok": False, "msg": "com problema, não ejetei"})
+            return
+        if not rep.get("pode_formatar"):  # copiou certo, mas ainda ha gravacao so no cartao
+            n = len(rep.get("sobrou") or [])
+            msg = f"ficaram {n} arquivo(s) só no cartão, não ejetei" if n else "não consegui conferir o cartão, não ejetei"
+            notify("Não formate esse cartão", f"{vol}: {msg}.", ok=False)
+            prog["ejected"].append({"volume": vol, "ok": False, "msg": msg})
             return
         if not auto_eject or Path(c["path"]).parent != cl.VOLUMES_DIR:
             return
@@ -380,7 +403,7 @@ def _start_log(body):
         try:
             rep = cl.run_log(target, cards, ledger, per_card_subfolder=bool(body.get("per_card")),
                              progress=prog, backups=backups, prefixes=prefixes, mhl=s["mhl"],
-                             on_card_done=card_done)
+                             on_card_done=card_done, cancel=cancel)
             prog["phase"] = "relatorio"
             try:
                 path, summary = media.build_report(target, prog)
@@ -402,10 +425,17 @@ def _start_log(body):
                 prog["report_error"] = str(e)
             prog["empty_folders"] = empty_folders(target)
             prog["phase"] = "pronto"
-            msg = "Tudo conferido" if rep["tudo_ok"] else "ATENCAO: ha arquivos com problema"
+            if rep.get("cancelado"):
+                msg = "Cópia cancelada. O que foi conferido está salvo"
+            elif not rep["tudo_ok"]:
+                msg = "ATENÇÃO: há arquivos com problema"
+            elif not rep["pode_formatar_tudo"]:
+                msg = "Copiado e conferido, mas ficou gravação em algum cartão. Não formate antes de ver"
+            else:
+                msg = "Tudo conferido"
             if prog["empty_folders"]:
                 msg += ". Pastas sem arquivo: " + ", ".join(prog["empty_folders"])
-            notify("Logger terminou", msg, ok=rep["tudo_ok"] and not prog["empty_folders"])
+            notify("Logger terminou", msg, ok=rep["pode_formatar_tudo"] and not prog["empty_folders"])
         except Exception as e:  # noqa: BLE001
             prog["phase"] = "erro"
             prog["fatal"] = str(e)
@@ -419,11 +449,9 @@ def _start_log(body):
 
 def notify(title, msg, ok=True):
     """Notificacao do macOS + som (para quando voce estiver longe do Mac)."""
-    msg = msg.replace('"', "'")
-    sound = "Glass" if ok else "Basso"
     try:
-        subprocess.run(["osascript", "-e", f'display notification "{msg}" with title "{title}" sound name "{sound}"'],
-                       capture_output=True)
+        osascript(["display notification (item 2 of argv) with title (item 1 of argv) sound name (item 3 of argv)"],
+                  title, msg, "Glass" if ok else "Basso")
     except FileNotFoundError:
         pass
 
@@ -444,6 +472,21 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def allowed(self, post):
+        """So aceita pedidos da propria janela do Logger. Um site aberto no navegador nao pode
+        mandar comandos: endereco tem de ser este Mac, origem nula (iframe isolado) e recusada
+        e pedido que muda algo tem de vir como JSON (o que obriga o navegador a perguntar antes)."""
+        port = self.server.server_address[1]
+        host = self.headers.get("Host", "")
+        if host not in (f"127.0.0.1:{port}", f"localhost:{port}"):
+            return False
+        origin = self.headers.get("Origin")
+        if origin is not None and origin != f"http://{host}":
+            return False
+        if post and not self.headers.get("Content-Type", "").split(";")[0].strip().lower() == "application/json":
+            return False
+        return True
+
     def send(self, code, data, ctype="application/json"):
         body = data if isinstance(data, bytes) else json.dumps(data, ensure_ascii=False).encode()
         self.send_response(code)
@@ -453,6 +496,8 @@ class H(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        if not self.allowed(post=False):
+            return self.send(403, {"error": "origem nao permitida"})
         u = urlparse(self.path)
         q = {k: v[0] for k, v in parse_qs(u.query).items()}
         try:
@@ -462,7 +507,8 @@ class H(BaseHTTPRequestHandler):
                 s = settings()
                 return self.send(200, {"settings": {k: s[k] for k in ("base_dir", "backup_dir", "folders", "mode", "rename", "prefixes", "mhl", "auto_eject",
                                                                        "folders_on", "dropbox_on", "dropbox_dir", "dropbox_folders", "dropbox_folders_on")},
-                                       "date": suggested_date(), "dropbox_guess": dropbox_guess()})
+                                       "date": suggested_date(), "dropbox_guess": dropbox_guess(),
+                                       "warnings": list(cl.WARNINGS)})
             if u.path == "/api/cards":
                 return self.send(200, list_cards(q.get("target", ""), q.get("backup", "")))
             if u.path == "/api/subfolders":
@@ -483,9 +529,7 @@ class H(BaseHTTPRequestHandler):
             return self.send(400, {"error": str(e)})
 
     def do_POST(self):
-        origin = self.headers.get("Origin")
-        host = self.headers.get("Host", "")
-        if origin and origin not in ("null", f"http://{host}"):
+        if not self.allowed(post=True):
             return self.send(403, {"error": "origem nao permitida"})
         try:
             n = int(self.headers.get("Content-Length", 0))
@@ -542,6 +586,9 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, {"path": str(path)})
             if self.path == "/api/log":
                 return self.send(200, start_log(body))
+            if self.path == "/api/cancel":
+                JOB["cancel"].set()
+                return self.send(200, {"ok": True})
             if self.path == "/api/eject":
                 return self.send(200, eject(body["paths"]))
             if self.path == "/api/reveal":

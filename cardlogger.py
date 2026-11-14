@@ -49,12 +49,47 @@ except ImportError:
 
 
 # ---------------------------------------------------------------- json helpers
-def load_json(path, default):
+WARNINGS = []  # avisos para a tela (ex.: historico estragado e recuperado)
+
+
+def _is_state(path: Path) -> bool:
+    """Arquivos do proprio Logger (historico, ajustes, catalogo) ganham copia .bak."""
     try:
-        with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return default
+        return Path(path).resolve().parent == STATE_DIR.resolve()
+    except OSError:
+        return False
+
+
+def _warn(msg):
+    if msg not in WARNINGS:
+        WARNINGS.append(msg)
+
+
+def load_json(path, default):
+    path = Path(path)
+    cands = [path, path.with_name(path.name + ".bak")] if _is_state(path) else [path]
+    for cand in cands:
+        try:
+            with open(cand, encoding="utf-8") as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            continue
+        except (ValueError, UnicodeDecodeError):
+            if not _is_state(path):
+                return default
+            # guarda o estragado (nunca apaga) e tenta a copia de seguranca
+            keep = cand.with_name(cand.name + ".corrompido-" + dt.datetime.now().strftime("%Y%m%d-%H%M%S"))
+            try:
+                os.replace(cand, keep)
+            except OSError:
+                pass
+            _warn(f"O arquivo {path.name} do Logger estava estragado. Guardei uma cópia ({keep.name}) e "
+                  + ("recuperei a versão anterior." if cand == path else "comecei um novo."))
+            continue
+        if cand != path:
+            _warn(f"Recuperei {path.name} da cópia de segurança.")
+        return data
+    return default
 
 
 def save_json(path, data):
@@ -63,6 +98,13 @@ def save_json(path, data):
     tmp = path.with_name(path.name + f".{threading.get_ident()}.tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+    if _is_state(path) and path.exists():
+        try:  # a versao anterior vira .bak (se este arquivo estragar, o Logger volta para ela)
+            os.replace(path, path.with_name(path.name + ".bak"))
+        except OSError:
+            pass
     os.replace(tmp, path)
 
 
@@ -233,7 +275,39 @@ def hash_file(path: Path, mhl=False, nocache=False):
     return (h.hexdigest(), algo, m.hexdigest()) if mhl else h.hexdigest()
 
 
-F_NOCACHE = 48  # macOS: nao guardar o arquivo na memoria (a conferencia le do disco de verdade)
+F_NOCACHE = 48     # macOS: nao guardar o arquivo na memoria (a conferencia le do disco de verdade)
+F_FULLFSYNC = 51   # macOS: manda o proprio HD gravar o que esta no cache dele (o fsync comum nao garante)
+
+
+class Cancelado(Exception):
+    """Voce pediu para parar a copia."""
+
+
+def full_sync(fd):
+    """Garante que o dado chegou de verdade ao HD. No Mac o fsync comum so entrega ao HD,
+    que pode segurar no cache dele; a Apple manda usar F_FULLFSYNC (man fsync)."""
+    if sys.platform == "darwin":
+        try:
+            import fcntl
+            fcntl.fcntl(fd, F_FULLFSYNC)
+            return
+        except OSError:
+            pass  # disco que nao aceita (ex.: rede): cai no fsync comum
+    os.fsync(fd)
+
+
+def sync_dir(path):
+    """Grava no HD os nomes novos da pasta (o 'renomear' do .partial para o nome final)."""
+    try:
+        fd = os.open(str(path), os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        full_sync(fd)
+    except OSError:
+        pass
+    finally:
+        os.close(fd)
 
 
 def _nocache(f):
@@ -245,7 +319,7 @@ def _nocache(f):
             pass
 
 
-def copy_stream(src: Path, dsts, on_bytes=None, mhl=False):
+def copy_stream(src: Path, dsts, on_bytes=None, mhl=False, stop=None):
     """Copia em esteira: uma thread le o cartao, outras gravam em cada destino ao mesmo
     tempo e outra calcula o hash. Le o cartao UMA vez. Grava como .partial.
     Devolve (tmps, blake2b, algoritmo_mhl, hash_mhl)."""
@@ -272,7 +346,7 @@ def copy_stream(src: Path, dsts, on_bytes=None, mhl=False):
                     if not errors:
                         fo.write(chunk)
                 fo.flush()
-                os.fsync(fo.fileno())
+                full_sync(fo.fileno())
         except Exception as e:  # noqa: BLE001
             errors.append(e)
             # esvazia a fila para o leitor nao travar (so se o fim ainda nao chegou)
@@ -300,6 +374,8 @@ def copy_stream(src: Path, dsts, on_bytes=None, mhl=False):
                 chunk = fi.read(CHUNK)
                 if not chunk or errors:
                     break
+                if stop is not None and stop.is_set():
+                    raise Cancelado()
                 for q in qs:
                     q.put(chunk)
                 if on_bytes:
@@ -355,10 +431,11 @@ def free_space(path: Path) -> int:
     return shutil.disk_usage(p).free
 
 
-def free_name(dst: Path, reserved=None) -> Path:
+def free_name(dst: Path, reserved=None, mirrors=None) -> Path:
+    """Nome que nao existe em nenhum dos HDs (principal e backups) nem foi reservado agora."""
     reserved = reserved if reserved is not None else set()
     cand, i = dst, 2
-    while cand.exists() or str(cand) in reserved:
+    while cand.exists() or str(cand) in reserved or any(m.exists() for m in (mirrors(cand) if mirrors else [])):
         cand = dst.with_name(f"{dst.stem}_{i}{dst.suffix}")
         i += 1
     reserved.add(str(cand))
@@ -404,46 +481,79 @@ def job_root(p: Path):
     return None
 
 
+def hd_online(dest: Path) -> bool:
+    """O HD onde a copia foi gravada esta conectado? (fora de /Volumes: disco do Mac, sempre)"""
+    try:
+        rel = Path(dest).relative_to(VOLUMES_DIR)
+    except ValueError:
+        return True
+    return bool(rel.parts) and (VOLUMES_DIR / rel.parts[0]).is_dir()
+
+
+def copy_state(rec, moved):
+    """Onde esta a copia de um arquivo ja logado: 'ok' (no HD, mesmo que voce tenha movido
+    para outra pasta do trabalho), 'offline' (o HD dela nao esta conectado) ou 'missing' (sumiu)."""
+    if not rec.get("dest"):
+        return "missing"
+    dest = Path(rec["dest"])
+    if dest.exists():
+        return "ok"
+    if not hd_online(dest):
+        return "offline"
+    job = job_root(dest)
+    if job is not None and job.is_dir():
+        if job not in moved:
+            moved[job] = {(f.name, f.stat().st_size) for f in job.rglob("*") if f.is_file()}
+        size = rec.get("bytes")
+        if any(n == dest.name and (size is None or sz == size) for n, sz in moved[job]):
+            return "ok"
+    return "missing"
+
+
 def scan_card(vol: Path, profile, ledger):
-    """Lista arquivos novos (ainda nao logados) do cartao, ja com a rota."""
+    """Lista arquivos novos (ainda nao logados, ou cuja copia sumiu do HD) do cartao, ja com a rota."""
     uuid = volume_uuid(vol)
     seen = ledger.get("cards", {}).get(uuid, {}).get("files", {})
+    skip = [s.upper() for s in profile.get("skip", [])]   # coisas do cartao que nao sao gravacao (ex.: miniaturas)
     items, old, ignored = [], 0, []
+    missing = offline = 0
+    moved = {}
     for src in walk(vol):
         rel = src.relative_to(vol).as_posix()
+        if skip and any(fnmatch.fnmatch(rel.upper(), s) for s in skip):
+            continue
         ri = route_index(rel, profile)
         if ri is None:
             ignored.append(rel)
             continue
         st = src.stat()
         key = f"{rel}|{st.st_size}|{int(st.st_mtime)}"
-        if key in seen:
-            old += 1
-            continue
-        items.append({"src": src, "rel": rel, "size": st.st_size, "key": key, "route": ri})
-    # cartao "pode formatar": nada novo, nenhuma midia fora das rotas e todo arquivo
-    # ja logado ainda existe no HD (mesmo que voce tenha movido para outra pasta do trabalho)
-    missing = 0
-    if not items:
-        moved = {}
-        for rec in seen.values():
-            dest = Path(rec.get("dest", ""))
-            if dest.exists():
+        rec = seen.get(key)
+        if rec is not None:
+            state = copy_state(rec, moved)
+            if state != "missing":
+                old += 1
+                offline += state == "offline"
                 continue
-            job = job_root(dest)
-            if job is not None and job.is_dir():
-                if job not in moved:
-                    moved[job] = {(f.name, f.stat().st_size) for f in job.rglob("*") if f.is_file()}
-                size = rec.get("bytes")
-                if any(n == dest.name and (size is None or sz == size) for n, sz in moved[job]):
-                    continue
-            missing += 1
+            missing += 1           # a copia sumiu do HD: volta a ser copiavel
+        items.append({"src": src, "rel": rel, "size": st.st_size, "key": key, "route": ri,
+                      "recopy": rec is not None})
     ignored_media = [r for r in ignored if Path(r).suffix.upper().lstrip(".") in MEDIA_EXT]
-    return {"volume": vol.name, "path": str(vol), "uuid": uuid, "profile": profile["name"],
+    # "pode formatar": nada a copiar, nenhuma midia fora das regras e toda copia conferida no HD
+    return {"volume": vol.name, "path": str(vol), "uuid": uuid, "profile": profile["name"], "profile_def": profile,
             "items": items, "already": old, "ignored": ignored, "ignored_media": ignored_media,
-            "missing_on_hd": missing,
-            "safe_to_format": not items and old > 0 and missing == 0 and not ignored_media,
+            "missing_on_hd": missing, "offline": offline,
+            "safe_to_format": not items and old > 0 and offline == 0 and not ignored_media,
             "bytes": sum(i["size"] for i in items)}
+
+
+def left_on_card(c, ledger):
+    """O que continua so no cartao depois da copia: arquivos nao copiados + midia fora das regras."""
+    vol = Path(c["path"])
+    if not vol.is_dir():
+        return None  # cartao saiu: nao da para saber
+    again = scan_card(vol, c["profile_def"], ledger)
+    return [it["rel"] for it in again["items"]] + again["ignored_media"]
 
 
 # ---------------------------------------------------------------- ASC MHL
@@ -504,43 +614,21 @@ def write_ascmhl(root: Path, entries, process="transfer"):
 
 
 # ---------------------------------------------------------------- copia
-def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None, backups=None,
-            prefixes=None, mhl=False, on_card_done=None):
-    """
-    cards: lista de dicts vindos de scan_card, cada um com "dests": lista de
-    subpastas (uma por rota do perfil), relativa a job_dir.
-    progress: dict opcional atualizado ao vivo (para a interface).
-    backups: lista de (pasta_raiz_principal, pasta_raiz_backup); o mesmo caminho
-    relativo e recriado no backup (ex.: segundo HD).
-    prefixes: {pasta_destino: prefixo} para renomear a COPIA (ex.: Fixa Wide -> WIDE_C0001.MP4).
-    mhl: tambem gera manifesto ASC MHL (padrao de cinema) em <job_dir>/ascmhl.
-    on_card_done(card, rep): chamado assim que cada cartao termina de copiar e conferir
-    (o app usa para ejetar o cartao e avisar).
-    Devolve o relatorio (dict) e grava _logs/ dentro de job_dir.
-    """
-    job_dir = Path(job_dir)
-    backups = [(Path(a), Path(b)) for a, b in (backups or [])]
-    prefixes = prefixes or {}
-    lock = threading.Lock()
-
+def _mirrors_fn(backups):
     def mirrors(p: Path):
         out = []
         for root, broot in backups:
             try:
-                out.append(broot / p.relative_to(root))
+                out.append(broot / Path(p).relative_to(root))
             except ValueError:
                 pass
         return out
+    return mirrors
 
-    ledger = ledger if ledger is not None else load_ledger()
-    prog = progress if progress is not None else {}
-    total_bytes = sum(c["bytes"] for c in cards)
-    prog.update({"total_bytes": total_bytes, "done_bytes": 0, "total_files": sum(len(c["items"]) for c in cards),
-                 "done_files": 0, "current": "", "phase": "copiando", "errors": [], "per_card": {}})
-    report = {"job": str(job_dir), "started": dt.datetime.now().isoformat(timespec="seconds"), "cards": []}
 
-    # espaco livre: precisa caber em todos os destinos (com 2% de folga)
-    need = int(total_bytes * 1.02)
+def _check_space(job_dir, cards, mirrors, prog):
+    """Precisa caber em todos os destinos (com 2% de folga). Senao, nem comeca."""
+    need = int(sum(c["bytes"] for c in cards) * 1.02)
     for root in [job_dir] + mirrors(job_dir):
         free = free_space(root)
         if free < need:
@@ -548,8 +636,10 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
             prog["fatal"] = f"Sem espaco em {root}: precisa {human(need)}, livre {human(free)}"
             raise IOError(prog["fatal"])
 
-    # pastas de destino de cada cartao (decididas antes de comecar, sem corrida)
-    taken, reserved = set(), set()
+
+def _plan_bases(job_dir, cards, per_card_subfolder):
+    """Pastas de destino de cada cartao, decididas antes de comecar (sem corrida entre cartoes)."""
+    taken = set()
     for c in cards:
         bases = []
         for d in c["dests"]:
@@ -559,6 +649,104 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
                 taken.add(str(b))
             bases.append(b)
         c["_bases"] = bases
+
+
+def _same_file(src: Path, copies, size, mhl):
+    """Ja existe no HD uma copia identica (ex.: o Logger caiu depois de copiar e antes de anotar)?
+    Compara o conteudo de verdade; so o nome e o tamanho nao bastam."""
+    if not copies or any(not p.is_file() or p.stat().st_size != size for p in copies):
+        return None
+    h = hash_file(src, mhl=mhl)
+    digest = h[0] if mhl else h
+    if all(hash_file(p, nocache=True) == digest for p in copies):
+        return h if mhl else (h, None, None)
+    return None
+
+
+def _write_logs(job_dir, report, mirrors, mhl):
+    """_logs/logger-<hora>.json/.txt/.b2sum (+ ASC MHL), espelhados no backup."""
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    json_path = free_name(job_dir / "_logs" / f"logger-{stamp}.json")
+    save_json(json_path, report)
+    lines = [f"Logger {report['started']}  ->  {job_dir}", ""]
+    for r in report["cards"]:
+        ok = "OK" if r["conferido_ok"] else "COM PROBLEMA"
+        lines.append(f"{ok:13} {r['volume']} ({r['perfil']}): {len(r['copiados'])}/{r['novos']} copiados, "
+                     f"{human(r['bytes'])}, {r['ja_logados']} ja logados antes, {len(r['erros'])} erro(s)")
+        for e in r["erros"]:
+            lines.append(f"              ! {e['arquivo']}: {e['erro']}")
+        if r.get("sobrou"):
+            lines.append(f"              NAO FORMATE: {len(r['sobrou'])} arquivo(s) continuam so no cartao:")
+            lines += [f"                - {x}" for x in r["sobrou"][:50]]
+        elif r.get("pode_formatar"):
+            lines.append("              pode formatar")
+    if report.get("cancelado"):
+        lines += ["", "COPIA CANCELADA: o que foi conferido esta salvo; rode de novo para copiar o resto"]
+    lines += ["", "TUDO CONFERIDO" if report["tudo_ok"] else "ATENCAO: ha arquivos com problema, veja acima"]
+    json_path.with_suffix(".txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # manifesto simples (hash  caminho relativo); confere com: b2sum -l 160 -c arquivo.b2sum
+    man = [f"{f['blake2b']}  {Path(f['destino']).relative_to(job_dir).as_posix()}"
+           for r in report["cards"] for f in r["copiados"] if Path(f["destino"]).is_relative_to(job_dir)]
+    if man:
+        json_path.with_suffix(".b2sum").write_text("\n".join(man) + "\n", encoding="utf-8")
+    if mhl:  # manifesto padrao cinema (opcional)
+        entries = [{"path": f["destino"], "size": f["bytes"], "mtime": f["mhl"]["mtime"],
+                    "algo": f["mhl"]["algo"], "hash": f["mhl"]["hash"]}
+                   for r in report["cards"] for f in r["copiados"] if "mhl" in f]
+        if entries:
+            gen = write_ascmhl(job_dir, entries)
+            report["ascmhl"] = str(gen)
+            for m in mirrors(gen.parent):
+                shutil.copytree(gen.parent, m, dirs_exist_ok=True)
+    for m in mirrors(json_path.parent):
+        m.mkdir(parents=True, exist_ok=True)
+        for ext in (".json", ".txt", ".b2sum"):
+            src = json_path.with_suffix(ext)
+            if src.exists():
+                shutil.copy2(src, m / src.name)
+    return lines, json_path
+
+
+def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None, backups=None,
+            prefixes=None, mhl=False, on_card_done=None, cancel=None):
+    """
+    cards: lista de dicts vindos de scan_card, cada um com "dests": lista de
+    subpastas (uma por rota do perfil), relativa a job_dir.
+    progress: dict opcional atualizado ao vivo (para a interface).
+    backups: lista de (pasta_raiz_principal, pasta_raiz_backup); o mesmo caminho
+    relativo e recriado no backup (ex.: segundo HD).
+    prefixes: {pasta_destino: prefixo} para renomear a COPIA (ex.: Fixa Wide -> WIDE_C0001.MP4).
+    mhl: tambem gera manifesto ASC MHL (padrao de cinema) em <job_dir>/ascmhl.
+    on_card_done(card, rep): chamado assim que cada cartao termina de copiar e conferir
+    (o app usa para ejetar o cartao e avisar). rep["pode_formatar"] so e verdadeiro
+    quando tudo conferiu E nao sobrou nenhuma midia so no cartao.
+    cancel: threading.Event; quando ligado, para depois do arquivo atual (nada fica pela metade).
+    Devolve o relatorio (dict) e grava _logs/ dentro de job_dir.
+    """
+    job_dir = Path(job_dir)
+    backups = [(Path(a), Path(b)) for a, b in (backups or [])]
+    mirrors = _mirrors_fn(backups)
+    prefixes = prefixes or {}
+    cancel = cancel or threading.Event()
+    lock = threading.Lock()
+    ledger = ledger if ledger is not None else load_ledger()
+    prog = progress if progress is not None else {}
+    prog.update({"total_bytes": sum(c["bytes"] for c in cards), "done_bytes": 0,
+                 "total_files": sum(len(c["items"]) for c in cards),
+                 "done_files": 0, "current": "", "phase": "copiando", "errors": [], "per_card": {}})
+    report = {"job": str(job_dir), "started": dt.datetime.now().isoformat(timespec="seconds"), "cards": []}
+    _check_space(job_dir, cards, mirrors, prog)
+    _plan_bases(job_dir, cards, per_card_subfolder)
+    reserved = set()
+    last_save = [0.0]
+
+    def save_ledger(force=False):
+        # o historico vai para o disco a cada 2 s (e no fim de cada cartao); se o Logger cair
+        # no meio, a proxima rodada reconhece pelo conteudo o que ja estava copiado (_same_file)
+        now = dt.datetime.now().timestamp()
+        if force or now - last_save[0] >= 2:
+            save_json(LEDGER_PATH, ledger)
+            last_save[0] = now
 
     def verify_card(rep):
         for f in rep["copiados"]:
@@ -577,7 +765,8 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
         bases = c["_bases"]
         rep = {"volume": c["volume"], "uuid": c["uuid"], "perfil": c["profile"],
                "destinos": [str(b) for b in bases], "novos": len(c["items"]), "bytes": c["bytes"],
-               "ja_logados": c["already"], "ignorados": c["ignored"], "copiados": [], "erros": []}
+               "ja_logados": c["already"], "ignorados": c["ignored"], "copiados": [], "erros": [],
+               "cancelado": False}
         pc = prog["per_card"].setdefault(c["volume"], {"done": 0, "total": c["bytes"], "file": ""})
 
         def add_bytes(n):
@@ -585,15 +774,16 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
                 prog["done_bytes"] += n
                 pc["done"] += n
 
-        def record(n, it, src, dst, extra, digest, algo, mh):
+        def record(it, src, dst, extra, digest, algo, mh, adopted=False):
             with lock:
                 prog["done_files"] += 1
                 seen[it["key"]] = {"hash": digest, "dest": str(dst), "bytes": it["size"],
                                    "quando": dt.datetime.now().isoformat(timespec="seconds")}
-                if n % 20 == 0:
-                    save_json(LEDGER_PATH, ledger)
+                save_ledger()
             f = {"origem": it["rel"], "destino": str(dst), "backups": [str(x) for x in extra],
                  "bytes": it["size"], "blake2b": digest}
+            if adopted:
+                f["ja_estava_no_hd"] = True
             if mhl:
                 f["mhl"] = {"algo": algo, "hash": mh, "mtime": src.stat().st_mtime}
             rep["copiados"].append(f)
@@ -613,32 +803,59 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
                     fut.result()
                     record(*args)
                 except Exception as e:  # noqa: BLE001
-                    fail(args[1], e)
+                    fail(args[0], e)
 
+        touched = set()
         with ThreadPoolExecutor(max_workers=1) as vex:
-            for n, it in enumerate(c["items"], 1):
+            for it in c["items"]:
+                if cancel.is_set():
+                    rep["cancelado"] = True
+                    break
                 src = Path(it["src"])
                 folder = c["dests"][it["route"]]
                 pc["file"] = it["rel"]
                 prog["current"] = f"{c['volume']}: {it['rel']}"
+                want = bases[it["route"]] / with_prefix(src.name, prefixes.get(folder, ""))
                 with lock:
-                    dst = free_name(bases[it["route"]] / with_prefix(src.name, prefixes.get(folder, "")), reserved)
-                    reserved.add(str(dst))
+                    adopt = str(want) not in reserved and want.exists()
+                    if adopt:
+                        reserved.add(str(want))
+                if adopt:  # mesmo nome ja no HD: se for o mesmo arquivo, so anota (nao duplica)
+                    try:
+                        same = _same_file(src, [want] + mirrors(want), it["size"], mhl)
+                    except OSError:
+                        same = None
+                    if same:
+                        add_bytes(it["size"])
+                        record(it, src, want, mirrors(want), *same, adopted=True)
+                        continue
+                with lock:
+                    dst = free_name(want, reserved, mirrors)
                 extra = mirrors(dst)
+                touched.update([dst.parent] + [x.parent for x in extra])
                 try:
-                    tmps, digest, algo, mh = copy_stream(src, [dst] + extra, add_bytes, mhl=mhl)
+                    tmps, digest, algo, mh = copy_stream(src, [dst] + extra, add_bytes, mhl=mhl, stop=cancel)
+                except Cancelado:
+                    rep["cancelado"] = True
+                    break
                 except Exception as e:  # noqa: BLE001
                     fail(it, e)
                     continue
                 pending.append((vex.submit(verify_commit, src, tmps, [dst] + extra, digest),
-                                (n, it, src, dst, extra, digest, algo, mh)))
+                                (it, src, dst, extra, digest, algo, mh)))
                 settle(block=len(pending) > 2)
             settle(block=True)
         pc["file"] = "conferindo"
+        for d in touched:  # nomes finais gravados de verdade no HD antes de liberar o cartao
+            sync_dir(d)
         with lock:
-            save_json(LEDGER_PATH, ledger)
+            save_ledger(force=True)
         verify_card(rep)
-        pc["file"] = "pronto" if rep["conferido_ok"] else "com problema"
+        left = None if rep["cancelado"] else left_on_card(c, ledger)
+        rep["sobrou"] = left or []
+        rep["pode_formatar"] = rep["conferido_ok"] and not rep["cancelado"] and left == []
+        pc["file"] = ("pronto" if rep["pode_formatar"] else "cancelado" if rep["cancelado"]
+                      else "com problema" if not rep["conferido_ok"] else "ficou midia no cartao")
         if on_card_done:
             try:
                 on_card_done(c, rep)
@@ -651,41 +868,10 @@ def run_log(job_dir, cards, ledger=None, per_card_subfolder=False, progress=None
 
     prog["phase"] = "conferindo"
     report["finished"] = dt.datetime.now().isoformat(timespec="seconds")
+    report["cancelado"] = any(r["cancelado"] for r in report["cards"])
     report["tudo_ok"] = all(r["conferido_ok"] for r in report["cards"])
-
-    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    json_path = free_name(job_dir / "_logs" / f"logger-{stamp}.json")
-    save_json(json_path, report)
-    lines = [f"Logger {report['started']}  ->  {job_dir}", ""]
-    for r in report["cards"]:
-        ok = "OK" if r["conferido_ok"] else "COM PROBLEMA"
-        lines.append(f"{ok:13} {r['volume']} ({r['perfil']}): {len(r['copiados'])}/{r['novos']} copiados, "
-                     f"{human(r['bytes'])}, {r['ja_logados']} ja logados antes, {len(r['erros'])} erro(s)")
-        for e in r["erros"]:
-            lines.append(f"              ! {e['arquivo']}: {e['erro']}")
-    lines += ["", "TUDO CONFERIDO" if report["tudo_ok"] else "ATENCAO: ha arquivos com problema, veja acima"]
-    json_path.with_suffix(".txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    # manifesto simples (hash  caminho relativo); confere com: b2sum -l 160 -c arquivo.b2sum
-    man = [f"{f['blake2b']}  {Path(f['destino']).relative_to(job_dir).as_posix()}"
-           for r in report["cards"] for f in r["copiados"] if Path(f["destino"]).is_relative_to(job_dir)]
-    if man:
-        json_path.with_suffix(".b2sum").write_text("\n".join(man) + "\n", encoding="utf-8")
-    # manifesto padrao cinema (opcional)
-    if mhl:
-        entries = [{"path": f["destino"], "size": f["bytes"], "mtime": f["mhl"]["mtime"],
-                    "algo": f["mhl"]["algo"], "hash": f["mhl"]["hash"]}
-                   for r in report["cards"] for f in r["copiados"] if "mhl" in f]
-        if entries:
-            gen = write_ascmhl(job_dir, entries)
-            report["ascmhl"] = str(gen)
-            for m in mirrors(gen.parent):
-                shutil.copytree(gen.parent, m, dirs_exist_ok=True)
-    for m in mirrors(json_path.parent):
-        m.mkdir(parents=True, exist_ok=True)
-        for ext in (".json", ".txt", ".b2sum"):
-            src = json_path.with_suffix(ext)
-            if src.exists():
-                shutil.copy2(src, m / src.name)
+    report["pode_formatar_tudo"] = bool(report["cards"]) and all(r["pode_formatar"] for r in report["cards"])
+    lines, json_path = _write_logs(job_dir, report, mirrors, mhl)
     report["summary"] = lines
     report["log_file"] = str(json_path.with_suffix(".txt"))
     prog["report"] = report
@@ -716,7 +902,10 @@ def main():
             print(f"? {vol.name}: nao reconheci esse cartao, pulei")
             continue
         c = scan_card(vol, prof, ledger)
-        c["dests"] = [r["to"] for r in prof["routes"]]
+        dests = [r["to"] for r in prof["routes"]]
+        c["items"] = [it for it in c["items"] if dests[it["route"]]]   # rota sem pasta: nao copia
+        c["bytes"] = sum(it["size"] for it in c["items"])
+        c["dests"] = [d or "_ignorado" for d in dests]
         print(f"■ {vol.name} -> {prof['name']}: {len(c['items'])} novo(s), {human(c['bytes'])}"
               f" (ja logados: {c['already']}, ignorados: {len(c['ignored'])})")
         cards.append(c)

@@ -10,10 +10,12 @@
 :root{
   color-scheme:dark;
   --bg:#07080a; --surface:rgba(16,18,21,.72); --sunken:#111316; --line:#1f2328; --line2:#2d333a;
-  --text:#e8eae6; --mut:#8a9089; --faint:#596059;
-  --acc:#c6ff3d; --acc-ink:#0a0b0c; --acc-dim:rgba(198,255,61,.14); --acc-line:rgba(198,255,61,.38);
-  --ok:#c6ff3d; --warn:#ffb547; --bad:#ff5d5d;
-  --ok-bg:rgba(198,255,61,.1); --warn-bg:rgba(255,181,71,.1); --bad-bg:rgba(255,93,93,.1);
+  --text:#e8eae6; --mut:#8a9089; --faint:#7c837c;   /* faint: 5,1:1 no fundo (WCAG pede 4,5:1) */
+  /* cor de acao: osso, o papel do boletim de camera. Sem neon (regra de 14/11/2026) */
+  --acc:#ece6d6; --acc-ink:#0a0b0c; --acc-dim:rgba(236,230,214,.10); --acc-line:rgba(236,230,214,.32);
+  --acc-rgb:236,230,214;
+  --ok:#7dd69a; --warn:#ffb547; --bad:#ff6b6b;
+  --ok-bg:rgba(125,214,154,.1); --warn-bg:rgba(255,181,71,.1); --bad-bg:rgba(255,107,107,.1);
   --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
   --ease:cubic-bezier(.2,.8,.2,1);
 }
@@ -29,10 +31,6 @@ button,input,select{font:inherit;color:inherit}
   background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
   background-size:48px 48px;opacity:.35;
   -webkit-mask-image:radial-gradient(ellipse at 70% 40%,#000 0,transparent 70%);mask-image:radial-gradient(ellipse at 70% 40%,#000 0,transparent 70%)}
-.noise{position:fixed;inset:-50%;z-index:30;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation:grain 1s steps(6) infinite}
-@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
 .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.55) 100%)}
 
 .wrap{position:relative;z-index:2;max-width:720px;margin:0 auto;padding:0 24px 150px}
@@ -41,7 +39,7 @@ button,input,select{font:inherit;color:inherit}
 
 header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 28px}
 .brand{font:600 13px var(--mono);letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
-.brand i{width:9px;height:9px;background:var(--acc);display:inline-block;transform:rotate(45deg);box-shadow:0 0 12px var(--acc)}
+.brand i{width:9px;height:9px;background:var(--acc);display:inline-block;transform:rotate(45deg)}
 .brand small{color:var(--faint);letter-spacing:.08em;font-weight:400}
 .icons{display:flex;gap:4px}
 .ib{background:none;border:1px solid transparent;padding:7px 10px;border-radius:6px;color:var(--mut);cursor:pointer;display:flex;align-items:center;gap:7px;font:12px var(--mono);letter-spacing:.04em;transition:color .15s,border-color .15s}
@@ -100,7 +98,7 @@ input[type=date]:disabled{opacity:.5}
 .x:hover{color:var(--text);background:var(--sunken)}
 .days{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 .days label{display:flex;align-items:center;gap:10px;font:12px var(--mono);color:var(--mut)}
-.link{border:0;background:none;color:var(--acc);cursor:pointer;padding:0;font-size:13px}
+.link{border:0;background:none;color:var(--acc);cursor:pointer;padding:0;font-size:13px;text-decoration:underline;text-decoration-color:var(--acc-line);text-underline-offset:3px}
 .link:hover{text-decoration:underline;text-underline-offset:3px}
 .link.mut{color:var(--mut)}.link.mut:hover{color:var(--text)}
 .err{color:var(--bad);font-size:14px;margin-top:12px}
@@ -111,7 +109,7 @@ input[type=date]:disabled{opacity:.5}
 .actionbar .in{max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;pointer-events:auto}
 .actionbar .info{color:var(--mut);font:12px var(--mono)}
 .btn{position:relative;overflow:hidden;border:0;border-radius:4px;padding:12px 22px;font-weight:600;cursor:pointer;background:var(--acc);color:var(--acc-ink);font-size:14px;letter-spacing:.01em;transition:transform .1s,box-shadow .2s,opacity .2s}
-.btn:hover:not(:disabled){box-shadow:0 0 0 1px var(--acc),0 0 24px rgba(198,255,61,.35)}
+.btn:hover:not(:disabled){box-shadow:0 0 0 1px var(--acc)}
 .btn:active{transform:scale(.98)}.btn:disabled{opacity:.3;cursor:default}
 .btn.ghost{background:none;color:var(--text);font-weight:500;box-shadow:inset 0 0 0 1px var(--line2)}
 .btn.ghost:hover:not(:disabled){box-shadow:inset 0 0 0 1px var(--acc-line);color:var(--acc)}
@@ -122,7 +120,7 @@ input[type=date]:disabled{opacity:.5}
 /* barras segmentadas */
 .segbar{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:2px;height:var(--h,6px)}
 .segbar i{background:var(--line2);transition:background .3s}
-.segbar i.f{background:var(--acc);box-shadow:0 0 6px rgba(198,255,61,.5)}
+.segbar i.f{background:var(--acc)}
 .segbar i.h{background:linear-gradient(90deg,var(--acc) 50%,var(--line2) 50%)}
 .segbar.warn i.f{background:var(--warn);box-shadow:none}
 .segbar.bad i.f{background:var(--bad);box-shadow:none}
@@ -161,6 +159,7 @@ input[type=date]:disabled{opacity:.5}
 .routes select{border:1px solid var(--line2);background:var(--sunken);border-radius:4px;padding:5px 8px;font:12px var(--mono)}
 .routes .n{color:var(--mut);font:12px var(--mono)}
 .ask{margin:14px 0 2px 34px;padding:12px 14px;border:1px dashed var(--warn);border-radius:4px;background:var(--warn-bg)}
+.cnote{margin:10px 0 0 34px;font-size:13px;color:var(--warn)}
 .ask p{margin:0 0 10px;font-size:13px;color:var(--warn)}.ask p b{color:var(--text);font-family:var(--mono);font-weight:500}
 .ask .row{display:flex;flex-wrap:wrap;gap:6px}.ask + .ask{margin-top:8px}
 .ejl{font:12px var(--mono);color:var(--acc);margin-top:10px;min-height:1em}
@@ -193,7 +192,7 @@ input[type=date]:disabled{opacity:.5}
 
 /* etapa 4 */
 .done-ico{width:54px;height:54px;display:flex;align-items:center;justify-content:center;color:var(--acc);margin:4px 0 22px;position:relative}
-.done-ico::before{content:"";position:absolute;inset:6px;border:1px solid var(--acc);transform:rotate(45deg);box-shadow:0 0 18px rgba(198,255,61,.35)}
+.done-ico::before{content:"";position:absolute;inset:6px;border:1px solid var(--acc);transform:rotate(45deg)}
 .done-ico.bad{color:var(--bad)}.done-ico.bad::before{border-color:var(--bad);box-shadow:0 0 18px rgba(255,93,93,.3)}
 .done-ico svg{width:22px;height:22px;position:relative}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);margin:26px 0 18px;padding:0}
@@ -205,9 +204,9 @@ input[type=date]:disabled{opacity:.5}
 .alerts li.bad{background:var(--bad-bg);color:var(--bad)}.alerts li.warn{background:var(--warn-bg);color:var(--warn)}
 .alerts li.bad::before{content:"✕  "}.alerts li.warn::before{content:"!  "}
 .rcards{margin-bottom:26px}
-.rcards .r{display:grid;grid-template-columns:150px 1fr 110px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font:12px var(--mono)}
+.rcards .r{display:grid;grid-template-columns:150px 1fr 190px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font:12px var(--mono)}
 .rcards .r span:last-child{color:var(--mut);text-align:right}
-.rcards .r .okc{color:var(--acc)}.rcards .r .badc{color:var(--bad)}
+.rcards .r .okc{color:var(--ok)}.rcards .r .badc{color:var(--bad)}
 .row-btns{display:flex;gap:8px;flex-wrap:wrap}
 .tiny{font:11px var(--mono);color:var(--faint);margin-top:18px;word-break:break-all}
 
@@ -263,7 +262,7 @@ input[type=date]:disabled{opacity:.5}
 </head>
 <body>
 <canvas id="fx" aria-hidden="true"></canvas>
-<div class="grid-bg"></div><div class="vignette"></div><div class="noise"></div>
+<div class="grid-bg"></div><div class="vignette"></div>
 
 <div class="wrap">
   <header>
@@ -324,6 +323,7 @@ input[type=date]:disabled{opacity:.5}
     <div class="pcs" id="cPer"></div>
     <div class="phase" id="cCur"></div>
     <div class="ejl" id="cEj"></div>
+    <p style="margin-top:20px"><button class="btn ghost" id="cCancel">Parar a cópia</button></p>
   </section>
 
   <section class="view" id="vDone">
@@ -377,6 +377,8 @@ input[type=date]:disabled{opacity:.5}
 const FX = (() => {
   const cv = document.getElementById("fx"), cx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ACC = getComputedStyle(document.documentElement).getPropertyValue("--acc-rgb").trim() || "236,230,214";
+  let last = 0;
   const N = 900, pts = [], dust = [];
   for (let i = 0; i < N; i++) {             // esfera de Fibonacci
     const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y*y), t = i * 2.39996323;
@@ -389,7 +391,12 @@ const FX = (() => {
   const MODES = {ambient:{x:.80,y:.40,s:.30}, progress:{x:.72,y:.46,s:.36}, done:{x:.78,y:.42,s:.32}};
   function size(){ dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = innerWidth*dpr; H = cv.height = innerHeight*dpr; }
   addEventListener("resize", size); size();
-  function frame(){
+  function frame(t){
+    if (!reduce && t !== undefined){
+      // ~24 quadros/s e parado com a janela escondida: economiza bateria em copias longas
+      if (document.hidden || t - last < 41){ requestAnimationFrame(frame); return; }
+      last = t;
+    }
     cx.clearRect(0, 0, W, H);
     for (const k of ["x","y","s"]) pos[k] += (goal[k]-pos[k]) * .04;
     shown += (prog - shown) * .06;
@@ -400,7 +407,7 @@ const FX = (() => {
       const lat = -1 + r*(2/8), rr = Math.sqrt(1 - lat*lat);
       cx.beginPath();
       for (let a = 0; a <= 64; a++) { const t = a/64*Math.PI*2, [X, Y] = proj(Math.cos(t)*rr, lat, Math.sin(t)*rr); a ? cx.lineTo(X, Y) : cx.moveTo(X, Y); }
-      cx.strokeStyle = "rgba(198,255,61,.06)"; cx.stroke();
+      cx.strokeStyle = `rgba(${ACC},.06)`; cx.stroke();
     }
     for (let m = 0; m < 6; m++) {
       const t0 = m/6*Math.PI; cx.beginPath();
@@ -410,7 +417,7 @@ const FX = (() => {
     for (const p of pts) {
       const [X, Y, Z] = proj(p.x, p.y, p.z), depth = (Z + 1)/2, lit = p.k < shown;
       const a = (.12 + depth*.55) * (lit ? 1 : .55), sz = (lit ? 1.5 : 1) * dpr * (.6 + depth*.8);
-      cx.fillStyle = lit ? `rgba(198,255,61,${a})` : `rgba(200,206,198,${a*.6})`;
+      cx.fillStyle = lit ? `rgba(${ACC},${a})` : `rgba(200,206,198,${a*.6})`;
       cx.fillRect(X - sz/2, Y - sz/2, sz, sz);
     }
     for (const d of dust) {                    // poeira
@@ -485,6 +492,7 @@ $("abBtn").onclick = () => ({job:createJob, cards:startCopy, done:() => { go("ca
   $("rename").checked = !!st.rename; $("mhl").checked = !!st.mhl; $("autoEject").checked = st.auto_eject !== false; $("date").value = init.date;
   if (st.mode === "multi") setMode("multi");
   renderChips(); renderTogs(); renderDays(); preview(); renderFlist(); renderDbList(); renderPfx(); updateBar();
+  if (init.warnings?.length) $("jobErr").textContent = init.warnings.join(" ");
 })();
 
 /* etapa 1 */
@@ -619,9 +627,15 @@ function renderCards(){
     const ch = S.choices[c.path] ||= {use: c.new > 0, dests: c.routes.map(r => r.ask ? null : r.dest)};
     const asks = c.routes.map((r,i) => r.files && ch.dests[i] === null ? i : -1).filter(i => i >= 0);
     if (!c.new) ch.use = false;
+    const left = c.ignored_media ? `${c.ignored_media} arquivo${c.ignored_media>1?"s":""} que não reconheço` : "";
     const status = c.new && asks.length && ch.use ? `<span class="pill warn">? escolha a pasta</span>` : c.new ? `<span class="pill warn">● ${c.new} novo${c.new>1?"s":""} · ${c.bytes}</span>`
       : c.safe_to_format ? `<span class="pill ok">✓ pode formatar</span>`
-      : c.missing_on_hd ? `<span class="pill bad">✕ ${c.missing_on_hd} sumiram do HD</span>` : `<span class="pill mut">vazio</span>`;
+      : left ? `<span class="pill bad">✕ não formate · ${left}</span>`
+      : c.offline ? `<span class="pill mut">HD da cópia desligado</span>`
+      : (c.already||0) ? `<span class="pill mut">já copiado</span>` : `<span class="pill mut">vazio</span>`;
+    const notes = [c.recopy ? `${c.recopy} sumi${c.recopy>1?"ram":"u"} do HD e ${c.recopy>1?"vão":"vai"} ser copiado${c.recopy>1?"s":""} de novo` : "",
+      left ? `${left} (${(c.ignored_media_names||[]).map(esc).join(", ")}${c.ignored_media>5?"…":""}): ${c.ignored_media>1?"ficam":"fica"} no cartão. Copie à mão antes de formatar.` : "",
+      c.offline ? `${c.offline} cópia${c.offline>1?"s estão":" está"} num HD que não está conectado; não dá para conferir.` : ""].filter(Boolean);
     const total = (c.already||0) + (c.new||0), frac = total ? (c.already||0)/total : 0;
     const d = document.createElement("div"); d.className = "hud card" + (ch.use ? " sel" : "") + (c.new ? "" : " dim");
     const destTxt = c.routes.map((r,i) => { if (!r.files || ch.dests[i] === null) return ""; const dest = ch.dests[i], miss = dest && !S.subs.includes(dest);
@@ -629,6 +643,7 @@ function renderCards(){
     d.innerHTML = `<div class="crow"><button class="tick" ${c.new?"":"disabled"} aria-label="Selecionar ${esc(c.volume)}">${ICON.check}</button>
         <div><div class="cname">${esc(c.volume)}</div><div class="ctype">${esc(c.profile)}${c.kind==="drive_card"?` · HD usado como cartão <button class="link" data-drive="1">não é cartão</button>`:""}${c.already?` · ${c.already} já copiados antes`:""}</div></div>
         <div class="cstat">${status}</div></div>
+      ${notes.length ? `<div class="cnote">${notes.join("<br>")}</div>` : ""}
       ${total ? `<div class="cprog">${segbar(frac, 32, c.missing_on_hd ? "bad" : "", 4)}<span class="lbl">${Math.round(frac*100)}% já logado</span></div>` : ""}
       ${c.new && ch.use ? asks.map(i => `<div class="ask" data-i="${i}"><p>Não tenho certeza de onde vão os <b>${esc(c.routes[i].label.toLowerCase())}</b> (${c.routes[i].files} arquivo${c.routes[i].files>1?"s":""}, ${c.routes[i].bytes}). Para qual pasta?</p><div class="row">${S.subs.map(f => `<button class="tog" data-f="${esc(f)}">${esc(f)}</button>`).join("")}<button class="tog add">+ pasta</button><button class="tog" data-f="">não copiar</button></div></div>`).join("") : ""}
       ${c.new && destTxt ? `<div class="dest">${destTxt}<button class="link">${S.open[c.path]?"Pronto":"Trocar destino"}</button></div>` : ""}
@@ -668,6 +683,7 @@ async function startCopy(){
   catch(e){ $("cardsErr").textContent = e.message; $("abBtn").classList.remove("busy"); return; }
   $("abBtn").classList.remove("busy");
   S.copying = true; S.logged = sel.map(c=>c.path); S.choices = {}; S.open = {}; S.cardsSig = ""; t0 = 0;
+  $("cCancel").disabled = false; $("cCancel").textContent = "Parar a cópia";
   go("copy"); poll();
 }
 let t0 = 0, b0 = 0;
@@ -705,19 +721,30 @@ async function poll(){
 
 /* etapa 4 */
 function showDone(p){
-  const ok = p.phase!=="erro" && p.report?.tudo_ok;
-  $("dIco").className = "done-ico" + (ok ? "" : " bad"); $("dIco").innerHTML = ok ? ICON.check : ICON.warn;
-  $("dTitle").textContent = p.phase==="erro" ? "A cópia parou" : ok ? "Tudo copiado e conferido" : "Alguns arquivos falharam";
-  $("dLead").textContent = p.phase==="erro" ? p.fatal : ok ? "Cada arquivo foi relido do HD e comparado com o original. Pode formatar os cartões." : "Não formate esses cartões. Veja abaixo o que falhou.";
-  const rs = p.report_summary;
+  const R = p.report || {}, rs = p.report_summary, cards = R.cards || [];
+  const badAlerts = (rs?.alerts||[]).filter(([k]) => k === "bad").length;
+  const free = cards.filter(c => c.pode_formatar).map(c => c.volume), keep = cards.filter(c => !c.pode_formatar);
+  const keepTxt = keep.map(c => c.sobrou?.length ? `${c.volume} (${c.sobrou.length} arquivo${c.sobrou.length>1?"s":""} só no cartão)` : c.volume).join(", ");
+  let st;
+  if (p.phase==="erro") st = ["bad", "A cópia parou", p.fatal];
+  else if (R.cancelado) st = ["bad", "Cópia parada", "O que já foi conferido está salvo; copiando de novo, o Logger continua de onde parou. Não formate os cartões."];
+  else if (!R.tudo_ok) st = ["bad", "Alguns arquivos falharam", "Não formate esses cartões. Veja abaixo o que falhou."];
+  else if (!R.pode_formatar_tudo) st = ["bad", "Copiado e conferido, mas não formate tudo",
+      (free.length ? `Pode formatar: ${free.join(", ")}. ` : "") + `Não formate: ${keepTxt}.`];
+  else if (badAlerts) st = ["warn", "Copiado e conferido, com alertas", `A cópia é igual ao cartão, mas veja os alertas antes de formatar: ${free.join(", ")}.`];
+  else st = ["ok", "Tudo copiado e conferido", `Cada arquivo foi relido do HD e comparado com o original. Pode formatar: ${free.join(", ")}.`];
+  $("dIco").className = "done-ico" + (st[0]==="ok" ? "" : " bad"); $("dIco").innerHTML = st[0]==="ok" ? ICON.check : ICON.warn;
+  $("dTitle").textContent = st[1]; $("dLead").textContent = st[2];
+  const ok = st[0] !== "bad";
   $("dStats").hidden = !rs;
   $("dStats").innerHTML = rs ? `<div><b>${rs.seconds}</b><span>gravados</span></div><div><b>${rs.clips}</b><span>clipes</span></div><div><b>${rs.photos}</b><span>fotos</span></div><div><b>${hb(p.total_bytes)}</b><span>copiados agora</span></div>` : "";
-  const cards = p.report?.cards || [], tot = cards.reduce((a,c)=>a+c.novos,0), okn = cards.reduce((a,c)=>a+(c.conferido_ok?c.copiados.length:0),0);
+  const tot = cards.reduce((a,c)=>a+c.novos,0), okn = cards.reduce((a,c)=>a+(c.conferido_ok?c.copiados.length:0),0);
   $("dVerify").innerHTML = cards.length ? `<span>CHECKSUM</span>${segbar(tot ? okn/tot : 1, 48, ok ? "" : "bad", 4)}<span>${okn}/${tot} ok</span>` : "";
   const empt = (p.empty_folders||[]).map(f => ["warn", `A pasta ${f} continua vazia. Esqueceu algum cartão ou criou essa pasta sem precisar?`]);
-  $("dAlerts").innerHTML = [...empt, ...(rs?.alerts||[])].map(([k,m]) => `<li class="${k}">${esc(m)}</li>`).join("");
+  const sobra = keep.filter(c => c.sobrou?.length).map(c => ["bad", `${c.volume}: ficou só no cartão → ${c.sobrou.slice(0,6).join(", ")}${c.sobrou.length>6?` e mais ${c.sobrou.length-6}`:""}`]);
+  $("dAlerts").innerHTML = [...sobra, ...empt, ...(rs?.alerts||[])].map(([k,m]) => `<li class="${k}">${esc(m)}</li>`).join("");
   $("dCards").innerHTML = cards.map(c => { const f = c.novos ? c.copiados.length/c.novos : 1;
-    return `<div class="r"><span class="${c.conferido_ok?"okc":"badc"}">${c.conferido_ok?"✓":"✕"} ${esc(c.volume)}</span>${segbar(f, 24, c.conferido_ok?"":"bad", 4)}<span>${c.copiados.length} de ${c.novos}</span></div>`; }).join("");
+    return `<div class="r"><span class="${c.pode_formatar?"okc":"badc"}">${c.pode_formatar?"✓":"✕"} ${esc(c.volume)}</span>${segbar(f, 24, c.conferido_ok?"":"bad", 4)}<span>${c.copiados.length} de ${c.novos}${c.pode_formatar?" · pode formatar":" · não formate"}</span></div>`; }).join("");
   S.reportHtml = p.report_html || ""; $("openReport").hidden = !S.reportHtml;
   $("dLog").textContent = p.report ? "log › " + p.report.log_file : "";
   const ej = (p.ejected||[]).filter(e => e.ok).map(e => e.volume);
@@ -725,6 +752,8 @@ function showDone(p){
   S.logged = S.logged.filter(x => !ej.includes(x.split("/").pop())); $("eject").hidden = !S.logged.length;
   go("done");
 }
+$("cCancel").onclick = async () => { const b = $("cCancel"); b.disabled = true; b.textContent = "Parando depois do arquivo atual…";
+  try { await api("/api/cancel", {}); } catch(e){ b.disabled = false; b.textContent = "Parar a cópia"; } };
 $("openReport").onclick = () => api("/api/reveal", {path:S.reportHtml});
 $("reveal").onclick = () => api("/api/reveal", {path:S.target});
 $("eject").onclick = async () => { const b = $("eject"); b.classList.add("busy");

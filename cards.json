@@ -44,6 +44,9 @@
             "DCIM/*.HEIF"
           ]
         }
+      ],
+      "skip": [
+        "PRIVATE/M4ROOT/THMBNL/*"
       ]
     },
     {
@@ -94,7 +97,8 @@
             "DCIM/*.THM",
             "DCIM/*.JPG",
             "DCIM/*.DNG",
-            "DCIM/*.GPR"
+            "DCIM/*.GPR",
+            "DCIM/*.INSP"
           ]
         }
       ]
