@@ -32,7 +32,12 @@ O instalador monta o app no próprio Mac, então ele sai certo para a versão do
 - Antes de começar ele confere se tem espaço livre suficiente.
 - No fim reconfere tudo e grava em `_logs/` o relatório (`.txt`), os detalhes (`.json`) e o manifesto de checksums (`.b2sum`, confere com `b2sum -l 160 -c arquivo.b2sum`).
 - Ele lembra tudo que já foi logado de cada cartão (`~/.cardlogger/`). Cartão não formatado: só os arquivos novos são copiados.
-- Selo **"tudo logado, pode formatar"** aparece quando o cartão não tem nada novo e todos os arquivos dele continuam no HD.
+- Selo **"pode formatar"** só aparece quando nenhuma gravação ficou só no cartão: nada novo, nenhum arquivo que o Logger não reconhece e todas as cópias conferidas no HD. Se sobrou algo (formato desconhecido, pasta marcada "não copiar", cópia que falhou), o cartão **não é ejetado** e a tela diz o que ficou.
+- Se você apagar uma cópia do HD, o cartão volta a oferecer aquele arquivo para copiar de novo. Se o HD da cópia anterior estiver desligado, ele não copia de novo (para não misturar trabalhos) e avisa que não dá para conferir.
+- **Parar a cópia:** o botão para depois do arquivo atual; nada fica pela metade. Copiando de novo, ele reconhece o que já estava no HD e não cria duplicados.
+- Cada cópia é gravada de verdade no HD (F_FULLFSYNC do macOS) antes de ser conferida e de o cartão ser ejetado. O backup nunca sobrescreve um arquivo que já estava lá.
+- O histórico e os ajustes guardam uma cópia de segurança (`.bak`); se um estragar, o Logger volta para ela e avisa.
+- O motor só aceita comandos da própria janela do Logger (um site aberto no navegador não consegue mandar nada). Atualizações só instalam se o pacote baixado bater com a impressão digital (SHA-256) publicada.
 - Notificação com som quando termina. Botão para ejetar os cartões logados.
 
 ## Recursos profissionais

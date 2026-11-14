@@ -5,6 +5,7 @@
 // Compilado no próprio Mac pelo instalador (swiftc das Ferramentas de Linha de Comando).
 
 import Cocoa
+import CryptoKit
 import WebKit
 
 let info = Bundle.main.infoDictionary ?? [:]
@@ -220,13 +221,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         URLSession.shared.dataTask(with: req) { d, _, _ in
             let j = d.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
             DispatchQueue.main.async {
-                guard let j = j, let v = j["version"] as? String, let zip = j["url"] as? String else {
+                guard let j = j, let v = j["version"] as? String, let zip = j["url"] as? String,
+                      let sha = j["sha256"] as? String, !sha.isEmpty else {
                     if manual { self.say("Não consegui verificar agora", "Confira a internet e tente de novo.") }
                     return
                 }
                 if self.newer(v, than: APP_VERSION) {
                     if !manual && self.copyRunning() { return }  // não interrompe cópia; avisa na próxima abertura
-                    self.offerUpdate(v, zip: zip, notes: j["notes"] as? String ?? "")
+                    self.offerUpdate(v, zip: zip, sha: sha, notes: j["notes"] as? String ?? "")
                 } else if manual {
                     self.say("Você já está na versão mais nova", "Logger \(APP_VERSION).")
                 }
@@ -234,7 +236,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         }.resume()
     }
 
-    func offerUpdate(_ v: String, zip: String, notes: String) {
+    func offerUpdate(_ v: String, zip: String, sha: String, notes: String) {
         let a = NSAlert()
         a.messageText = "Logger \(v) disponível"
         a.informativeText = (notes.isEmpty ? "" : notes + "\n\n") + "Você está na \(APP_VERSION). A atualização leva menos de um minuto e mantém suas pastas, cartões lembrados e histórico."
@@ -251,6 +253,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             let z = dir.appendingPathComponent("pacote.zip")
             try? FileManager.default.moveItem(at: tmp, to: z)
+            // so instala se o pacote baixado for exatamente o publicado (impressao digital SHA-256)
+            let got = (try? Data(contentsOf: z)).map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() } ?? ""
+            guard got == sha.lowercased() else {
+                DispatchQueue.main.async { self.say("O pacote baixado não confere", "A atualização foi cancelada por segurança. Tente de novo mais tarde.") }
+                return
+            }
             let unzip = Process()
             unzip.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
             unzip.arguments = ["-x", "-k", z.path, dir.path]
@@ -279,6 +287,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     }
 
     func runInstaller(_ installer: URL) {
+        if copyRunning() {  // nunca fecha o app no meio de uma copia
+            say("Tem uma cópia em andamento", "Espere a cópia terminar e atualize depois (menu Logger › Procurar Atualizações…).")
+            return
+        }
         guard FileManager.default.fileExists(atPath: installer.path) else {
             say("Pacote de atualização incompleto", "Tente de novo mais tarde."); return
         }

@@ -9,6 +9,8 @@ echo "== motor e regras =="
 "$PY" -m unittest tests.test_engine || FAIL=1
 echo "== servidor (endpoints) =="
 "$PY" -m unittest tests.test_api || FAIL=1
+echo "== revisao 1.3.3 (achados do relatorio) =="
+"$PY" -m unittest tests.test_revisao || FAIL=1
 
 if command -v node >/dev/null && node -e "require('playwright')" 2>/dev/null; then
   echo "== interface (todos os botoes) =="

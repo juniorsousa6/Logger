@@ -13,9 +13,17 @@ ROOT = Path(__file__).resolve().parent.parent
 MUTANTS = [
     ("cardlogger.py", "hash_file(t, nocache=True) != src_hash", "hash_file(t, nocache=True) != src_hash and False",
      "conferencia de checksum desligada"),
-    ("cardlogger.py", "        if key in seen:\n", "        if False and key in seen:\n", "ledger ignorado (copia de novo)"),
-    ("cardlogger.py", "old > 0 and missing == 0 and not ignored_media", "old > 0 and not ignored_media",
-     "pode formatar mesmo com arquivo sumido"),
+    ("cardlogger.py", "        rec = seen.get(key)\n", "        rec = None\n", "ledger ignorado (copia de novo)"),
+    ("cardlogger.py", "old > 0 and offline == 0 and not ignored_media", "old > 0 and not ignored_media",
+     "pode formatar sem conseguir conferir (HD desligado)"),
+    ("cardlogger.py", 'rep["conferido_ok"] and not rep["cancelado"] and left == []', 'rep["conferido_ok"]',
+     "pode formatar com gravacao que ficou no cartao"),
+    ("cardlogger.py", " or any(m.exists() for m in (mirrors(cand) if mirrors else []))", "",
+     "backup sobrescreve arquivo que ja estava la"),
+    ("cardlogger.py", "                    if same:\n", "                    if False:\n", "duplica depois de uma queda"),
+    ("cardlogger.py", 'profile.get("skip", [])', "[]", "miniatura da Sony trava o pode formatar"),
+    ("app.py", 'if origin is not None and origin != f"http://{host}":', "if False:", "aceita comando de outro site"),
+    ("app.py", 'if not rep.get("pode_formatar"):  # copiou certo', 'if False:  # copiou certo', "ejeta cartao com gravacao que sobrou"),
     ("cardlogger.py", "while cand.exists() or str(cand) in reserved", "while str(cand) in reserved",
      "sobrescreve arquivo existente"),
     ("cardlogger.py", "while not ended and q.get() is not None", "while q.get() is not None", "volta o travamento"),
@@ -37,7 +45,7 @@ def main():
         src = (d / "L" / f).read_text(encoding="utf-8")
         assert src.count(old) == 1, f"mutante {i} nao achou o trecho: {old!r}"
         (d / "L" / f).write_text(src.replace(old, new), encoding="utf-8")
-        r = subprocess.run([sys.executable, "-m", "unittest", "tests.test_engine", "tests.test_api"], cwd=d / "L",
+        r = subprocess.run([sys.executable, "-m", "unittest", "tests.test_engine", "tests.test_api", "tests.test_revisao"], cwd=d / "L",
                            capture_output=True, text=True, timeout=300)
         killed = r.returncode != 0
         print(f"{'morto ' if killed else 'VIVO  '} {i:2}. {desc}")

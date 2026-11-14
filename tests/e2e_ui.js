@@ -164,7 +164,9 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     await p.click('#openSet'); await p.keyboard.press('Escape');   // mexer na tela durante a cópia
     await p.waitForSelector('#vDone.on', {timeout: 120000}); await p.waitForTimeout(800);
     const t = await p.innerText('#vDone');
-    ok(t.includes('Tudo copiado e conferido'), 'não terminou tudo ok: ' + t.slice(0, 200));
+    // os clipes de teste sao bytes aleatorios: o relatorio acusa "corrompido", entao o titulo certo e "com alertas"
+    ok(/copiado e conferido/i.test(t) && !/não formate/i.test(t), 'não terminou tudo ok: ' + t.slice(0, 200));
+    ok(t.includes('com alertas'), 'alerta vermelho com selo verde de sucesso');
     ok(t.includes('já ejetados'), 'não mostrou ejetados');
     ok(t.includes('Áudio continua vazia'), 'não avisou pasta vazia');
     await p.screenshot({path: SHOTS + '/e2e-3-pronto.png', fullPage: true});
