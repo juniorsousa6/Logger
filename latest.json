@@ -1,5 +1,6 @@
 {
-  "version": "1.3.2",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.3.2.zip",
-  "notes": "A barra do nome não mostra mais porcentagem: agora diz o que falta preencher (ex.: 'falta: nome do evento') e 'pronto para criar' quando está tudo certo."
+  "version": "1.3.3",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.3.3.zip",
+  "sha256": "5a5a16ee0b5639f14d0c5857a694783eebe1d4899651c3be8c174eadbd219b85",
+  "notes": "Segurança: o Logger só ejeta e só diz 'pode formatar' quando nenhuma gravação ficou no cartão; se sobrou algo, mostra o quê. Botão Parar a cópia, backup que nunca sobrescreve, cópia gravada de verdade no HD, sem duplicados depois de uma queda, e visual sem neon."
 }
