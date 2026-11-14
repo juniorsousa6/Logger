@@ -1,6 +1,6 @@
 {
-  "version": "1.3.3",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.3.3.zip",
-  "sha256": "5a5a16ee0b5639f14d0c5857a694783eebe1d4899651c3be8c174eadbd219b85",
-  "notes": "Segurança: o Logger só ejeta e só diz 'pode formatar' quando nenhuma gravação ficou no cartão; se sobrou algo, mostra o quê. Botão Parar a cópia, backup que nunca sobrescreve, cópia gravada de verdade no HD, sem duplicados depois de uma queda, e visual sem neon."
+  "version": "1.3.4",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.3.4.zip",
+  "sha256": "195b3d2b06130951592f3b5637cc82a86c5b10b27278d8a9b376fefe80cf0654",
+  "notes": "Volta o verde-limão. Espelho do Dropbox com atalho direto para a pasta do VIOT (ou outra pasta)."
 }
