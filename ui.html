@@ -11,11 +11,11 @@
   color-scheme:dark;
   --bg:#07080a; --surface:rgba(16,18,21,.72); --sunken:#111316; --line:#1f2328; --line2:#2d333a;
   --text:#e8eae6; --mut:#8a9089; --faint:#7c837c;   /* faint: 5,1:1 no fundo (WCAG pede 4,5:1) */
-  /* cor de acao: osso, o papel do boletim de camera. Sem neon (regra de 14/11/2026) */
-  --acc:#ece6d6; --acc-ink:#0a0b0c; --acc-dim:rgba(236,230,214,.10); --acc-line:rgba(236,230,214,.32);
-  --acc-rgb:236,230,214;
-  --ok:#7dd69a; --warn:#ffb547; --bad:#ff6b6b;
-  --ok-bg:rgba(125,214,154,.1); --warn-bg:rgba(255,181,71,.1); --bad-bg:rgba(255,107,107,.1);
+  /* verde-limao: escolha do Junior para o Logger (excecao a regra "sem neon", 14/11/2026) */
+  --acc:#c6ff3d; --acc-ink:#0a0b0c; --acc-dim:rgba(198,255,61,.14); --acc-line:rgba(198,255,61,.38);
+  --acc-rgb:198,255,61;
+  --ok:#c6ff3d; --warn:#ffb547; --bad:#ff5d5d;
+  --ok-bg:rgba(198,255,61,.1); --warn-bg:rgba(255,181,71,.1); --bad-bg:rgba(255,93,93,.1);
   --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
   --ease:cubic-bezier(.2,.8,.2,1);
 }
@@ -39,7 +39,7 @@ button,input,select{font:inherit;color:inherit}
 
 header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 28px}
 .brand{font:600 13px var(--mono);letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
-.brand i{width:9px;height:9px;background:var(--acc);display:inline-block;transform:rotate(45deg)}
+.brand i{width:9px;height:9px;background:var(--acc);display:inline-block;transform:rotate(45deg);box-shadow:0 0 12px var(--acc)}
 .brand small{color:var(--faint);letter-spacing:.08em;font-weight:400}
 .icons{display:flex;gap:4px}
 .ib{background:none;border:1px solid transparent;padding:7px 10px;border-radius:6px;color:var(--mut);cursor:pointer;display:flex;align-items:center;gap:7px;font:12px var(--mono);letter-spacing:.04em;transition:color .15s,border-color .15s}
@@ -98,7 +98,7 @@ input[type=date]:disabled{opacity:.5}
 .x:hover{color:var(--text);background:var(--sunken)}
 .days{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 .days label{display:flex;align-items:center;gap:10px;font:12px var(--mono);color:var(--mut)}
-.link{border:0;background:none;color:var(--acc);cursor:pointer;padding:0;font-size:13px;text-decoration:underline;text-decoration-color:var(--acc-line);text-underline-offset:3px}
+.link{border:0;background:none;color:var(--acc);cursor:pointer;padding:0;font-size:13px;}
 .link:hover{text-decoration:underline;text-underline-offset:3px}
 .link.mut{color:var(--mut)}.link.mut:hover{color:var(--text)}
 .err{color:var(--bad);font-size:14px;margin-top:12px}
@@ -109,7 +109,7 @@ input[type=date]:disabled{opacity:.5}
 .actionbar .in{max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;pointer-events:auto}
 .actionbar .info{color:var(--mut);font:12px var(--mono)}
 .btn{position:relative;overflow:hidden;border:0;border-radius:4px;padding:12px 22px;font-weight:600;cursor:pointer;background:var(--acc);color:var(--acc-ink);font-size:14px;letter-spacing:.01em;transition:transform .1s,box-shadow .2s,opacity .2s}
-.btn:hover:not(:disabled){box-shadow:0 0 0 1px var(--acc)}
+.btn:hover:not(:disabled){box-shadow:0 0 0 1px var(--acc),0 0 24px rgba(198,255,61,.35)}
 .btn:active{transform:scale(.98)}.btn:disabled{opacity:.3;cursor:default}
 .btn.ghost{background:none;color:var(--text);font-weight:500;box-shadow:inset 0 0 0 1px var(--line2)}
 .btn.ghost:hover:not(:disabled){box-shadow:inset 0 0 0 1px var(--acc-line);color:var(--acc)}
@@ -120,7 +120,7 @@ input[type=date]:disabled{opacity:.5}
 /* barras segmentadas */
 .segbar{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:2px;height:var(--h,6px)}
 .segbar i{background:var(--line2);transition:background .3s}
-.segbar i.f{background:var(--acc)}
+.segbar i.f{background:var(--acc);box-shadow:0 0 6px rgba(198,255,61,.5)}
 .segbar i.h{background:linear-gradient(90deg,var(--acc) 50%,var(--line2) 50%)}
 .segbar.warn i.f{background:var(--warn);box-shadow:none}
 .segbar.bad i.f{background:var(--bad);box-shadow:none}
@@ -192,7 +192,7 @@ input[type=date]:disabled{opacity:.5}
 
 /* etapa 4 */
 .done-ico{width:54px;height:54px;display:flex;align-items:center;justify-content:center;color:var(--acc);margin:4px 0 22px;position:relative}
-.done-ico::before{content:"";position:absolute;inset:6px;border:1px solid var(--acc);transform:rotate(45deg)}
+.done-ico::before{content:"";position:absolute;inset:6px;border:1px solid var(--acc);transform:rotate(45deg);box-shadow:0 0 18px rgba(198,255,61,.35)}
 .done-ico.bad{color:var(--bad)}.done-ico.bad::before{border-color:var(--bad);box-shadow:0 0 18px rgba(255,93,93,.3)}
 .done-ico svg{width:22px;height:22px;position:relative}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);margin:26px 0 18px;padding:0}
@@ -377,7 +377,7 @@ input[type=date]:disabled{opacity:.5}
 const FX = (() => {
   const cv = document.getElementById("fx"), cx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const ACC = getComputedStyle(document.documentElement).getPropertyValue("--acc-rgb").trim() || "236,230,214";
+  const ACC = getComputedStyle(document.documentElement).getPropertyValue("--acc-rgb").trim() || "198,255,61";
   let last = 0;
   const N = 900, pts = [], dust = [];
   for (let i = 0; i < N; i++) {             // esfera de Fibonacci
