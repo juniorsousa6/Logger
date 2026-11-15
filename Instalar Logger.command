@@ -46,7 +46,7 @@ say "Preparando o Logger $VER para macOS $OS ($(uname -m))…"
 swiftc -O -swift-version 5 -target "$(uname -m)-apple-macos11.0" -o "$APP/Contents/MacOS/Logger" mac/LoggerApp.swift \
   -framework Cocoa -framework WebKit 2>"$WORK/build.log" || { cat "$WORK/build.log"; fail "Não consegui compilar o app. Me mande o texto que apareceu no Terminal."; }
 
-cp app.py cardlogger.py media.py cards.json ui.html VERSION "$APP/Contents/Resources/app/"
+cp app.py cardlogger.py media.py posrender.py fotos.py cards.json ui.html VERSION "$APP/Contents/Resources/app/"
 sed -e "s|__VERSION__|$VER|g" -e "s|__UPDATE_URL__|$UPD|g" -e "s|__BUILT_ON__|$OS|g" \
   mac/Info.plist > "$APP/Contents/Info.plist"
 

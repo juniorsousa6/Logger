@@ -154,5 +154,16 @@ class Aplicar(unittest.TestCase):
         self.assertEqual(r["errors"][0]["error"], "arquivo não está mais na pasta")
 
 
+
+class Pacote(unittest.TestCase):
+    def test_modulos_vao_no_instalador_e_no_pacote(self):
+        root = Path(__file__).parent.parent
+        inst = (root / "Instalar Logger.command").read_text(encoding="utf-8")
+        rel = (root / "tools" / "release.py").read_text(encoding="utf-8")
+        for py in sorted(x.name for x in root.glob("*.py")):
+            self.assertIn(py, inst, f"{py} falta no Instalar Logger.command")
+            self.assertIn(f'"{py}"', rel, f"{py} falta no tools/release.py")
+
+
 if __name__ == "__main__":
     unittest.main()
