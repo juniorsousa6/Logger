@@ -166,6 +166,20 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     ok(sels.length >= 1, 'painel de destino não abriu');
     await p.waitForTimeout(3500);  // a lista atualiza sozinha a cada 3s: a escolha nao pode sumir
     ok((await p.$$('.routes:not([hidden]) select')).length >= 1, 'painel fechou sozinho na atualização');
+    // pasta criada no Finder com o Logger aberto entra sozinha na lista
+    const fs2 = require('fs'), nova = S + '/V/HD/2026_11_14 - Casamento Ana/Dj Booth';
+    fs2.mkdirSync(nova); await p.waitForTimeout(3500);
+    const opts = await p.$$eval('.routes:not([hidden]) select option', os => os.map(o => o.textContent));
+    ok(opts.includes('Dj Booth'), 'pasta criada no Finder não apareceu no menu: ' + opts);
+    ok((await p.textContent('#fStat')).includes('Dj Booth'), 'faixa de pastas não atualizou');
+    fs2.renameSync(nova, S + '/fora-dj-booth'); await p.waitForTimeout(3500);
+    // "+ nova pasta…" direto no menu
+    const last = (await p.$$('.routes:not([hidden]) select')).pop();
+    await last.selectOption('__nova'); await p.waitForTimeout(150);
+    await p.fill('.routes:not([hidden]) .tog-in', 'Fotos Extra'); await p.press('.routes:not([hidden]) .tog-in', 'Enter');
+    await p.waitForTimeout(250);
+    ok((await p.textContent('#cards')).includes('Fotos Extra'), 'nova pasta pelo menu não virou destino');
+    await (await p.$$('.routes:not([hidden]) select')).pop().selectOption('Fotos'); await p.waitForTimeout(250);
     for (const c of await p.$$('.card')) if ((await c.innerText()).includes('SONY_JRS')) {
       await (await c.$('.dest .link')).click(); break; }
     await p.screenshot({path: SHOTS + '/e2e-2-cartoes.png', fullPage: true});
