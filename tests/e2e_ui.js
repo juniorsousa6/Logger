@@ -97,7 +97,14 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     ok(await p.isVisible('#backupClear'), 'X do backup não apareceu');
     await p.click('#backupClear'); await p.waitForTimeout(200); ok(!(await p.isVisible('#backupClear')), 'backup não foi tirado');
     // desligar todas as pastas trava o botao
-    for (let t; (t = await p.$('#hdTogs .tog.on')); ) await t.click();
+    ok((await p.textContent('#hdTogs .tog.all')).includes('Desmarcar todas'), 'botão Desmarcar todas não apareceu');
+    await p.click('#hdTogs .tog.all'); await p.waitForTimeout(150);
+    ok(!(await p.$('#hdTogs .tog.on')), 'Desmarcar todas deixou pasta marcada');
+    ok((await p.textContent('#folderCount')).startsWith('0 de'), 'contador não zerou: ' + await p.textContent('#folderCount'));
+    ok((await p.textContent('#hdTogs .tog.all')).includes('Marcar todas'), 'botão não virou Marcar todas');
+    await p.click('#hdTogs .tog.all'); await p.waitForTimeout(150);
+    ok(!(await p.$('#hdTogs .tog[data-f]:not(.on)')), 'Marcar todas deixou pasta desmarcada');
+    await p.click('#hdTogs .tog.all'); await p.waitForTimeout(150);
     ok(await p.isDisabled('#abBtn'), 'sem pastas o botão deveria travar');
     for (const f of ['Ronin', 'Fixa', 'Fotos', 'Áudio']) await p.click(`#hdTogs .tog[data-f="${f}"]`);
     await p.click('#hdTogs .tog.add'); await p.fill('#hdTogs .tog-in', 'Making Of'); await p.press('#hdTogs .tog-in', 'Enter');

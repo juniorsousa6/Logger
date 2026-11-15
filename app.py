@@ -611,19 +611,68 @@ def fotos_plan(festa_dir):
 
 
 def fotos_trash(body):
-    """So manda para a Lixeira o que o plano de agora (refeito aqui) diz, e so se estiver tudo salvo."""
+    """1) copia as fotos com estrela que faltam para o Select Fotos (conferindo cada uma);
+    2) refaz o plano: so segue se TODA foto com estrela esta salva;
+    3) manda para a Lixeira so as pastas que a previa mostrou."""
     p = fotos_plan(body["festa_dir"])
     if not p["ready"]:
         raise ValueError("Ainda não dá para limpar: " + " ".join(p["reasons"]))
     want = sorted(body.get("dirs") or [])
     have = sorted(t["dir"] for t in p["trash"])
-    if want != have or body.get("files") != p["trash_files"]:
+    if want != have or body.get("files") != p["trash_files"] or body.get("copy", 0) != len(p["to_copy"]):
         raise ValueError("As pastas mudaram desde a prévia. Confira de novo antes de apagar.")
+    prog = body.get("_progress")
+    copied = fotos.copy_to_select(p["festa"], p["to_copy"], prog) if p["to_copy"] else []
+    if prog:
+        prog(len(p["to_copy"]), len(p["to_copy"]), "Lixeira")
+    bad = [c for c in copied if not c["ok"]]
+    if bad:
+        return {"copied": copied, "results": [], "select_files": fotos_plan(body["festa_dir"])["select_files"],
+                "error": "Não consegui copiar %d foto(s); nada foi para a Lixeira." % len(bad)}
+    p = fotos_plan(body["festa_dir"])
+    if not p["ready"] or p["to_copy"]:
+        raise ValueError("Copiei, mas a conferência não fechou; nada foi para a Lixeira. " + " ".join(p["reasons"]))
+    if sorted(t["dir"] for t in p["trash"]) != have:
+        raise ValueError("As pastas mudaram durante a cópia; nada foi para a Lixeira.")
     targets = [fotos.check_trash_target(p["festa"], d) for d in have]
     res = fotos.to_trash(targets)
     if all(r["ok"] for r in res):
-        notify("Fotos limpas", f"{p['trash_files']} arquivos foram para a Lixeira. O Select Fotos ficou.")
-    return {"results": res, "select_files": p["select_files"]}
+        notify("Fotos limpas", f"{len(copied)} fotos salvas no Select Fotos e {p['trash_files']} arquivos foram para a Lixeira.")
+    return {"copied": copied, "results": res, "select_files": p["select_files"]}
+
+
+FJOB = {"running": False}
+FJOB_LOCK = threading.Lock()
+
+
+def fotos_start(body):
+    """Copiar dezenas de RAW leva minutos: roda numa linha separada e a tela acompanha por /api/fotos/status."""
+    with FJOB_LOCK:
+        if FJOB.get("running"):
+            raise ValueError("Já estou limpando uma festa. Espere terminar.")
+        p = fotos_plan(body["festa_dir"])  # confere ja (erro volta na hora)
+        if not p["ready"]:
+            raise ValueError("Ainda não dá para limpar: " + " ".join(p["reasons"]))
+        FJOB.clear()
+        FJOB.update({"running": True, "festa": p["festa"], "done": 0, "total": len(p["to_copy"]), "now": ""})
+
+    def prog(i, n, name):
+        FJOB.update({"done": i, "total": n, "now": name})
+
+    def run():
+        try:
+            res = fotos_trash(dict(body, _progress=prog))
+            FJOB.update({"result": res})
+        except Exception as e:  # noqa: BLE001 - vai para a tela
+            FJOB.update({"error": str(e)})
+        finally:
+            FJOB["running"] = False
+    threading.Thread(target=run, daemon=True).start()
+    return {"started": True}
+
+
+def fotos_status():
+    return dict(FJOB)
 
 
 # ---------------------------------------------------------------- http
@@ -677,6 +726,8 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, subfolders(q["path"]))
             if u.path == "/api/search":
                 return self.send(200, media.search(load_catalog(), q.get("q", "")))
+            if u.path == "/api/fotos/status":
+                return self.send(200, fotos_status())
             if u.path == "/api/fotos/festas":
                 return self.send(200, fotos_festas())
             if u.path == "/api/drops/plan":
@@ -760,7 +811,7 @@ class H(BaseHTTPRequestHandler):
             if self.path == "/api/fotos/plan":
                 return self.send(200, fotos_plan(body["festa_dir"]))
             if self.path == "/api/fotos/trash":
-                return self.send(200, fotos_trash(body))
+                return self.send(200, fotos_start(body))
             if self.path == "/api/drops/apply":
                 return self.send(200, drops_apply(body))
             if self.path == "/api/drops/undo":

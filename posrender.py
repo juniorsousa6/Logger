@@ -109,7 +109,9 @@ FILE_RE = re.compile(r"^V(\d+)-\d+_(.+)$")  # "V1-0001_Drop 1" (Individual clips
 
 
 def song_at(markers, frame):
-    """Ultima musica (marcador ♪) que comecou ate `frame`. Dois marcadores colados (ate 2 quadros,
+    """Musica (marcador ♪) tocando em `frame`. O Ghost marca cada musica do comeco ao fim (duracao do
+    marcador): fora desse trecho nao e mais ela, mesmo sem outro marcador depois (musica que o Ghost
+    nao reconheceu). Marcador sem duracao vale ate o proximo. Dois marcadores colados (ate 2 quadros,
     ex.: Blitz Original + Intro Mix): fica o roxo, que e o que o Ghost poe."""
     songs = sorted((m for m in markers if (m.get("name") or "").lstrip().startswith(("♪", "♫"))
                     and m["frame"] <= frame), key=lambda m: m["frame"])
@@ -117,14 +119,17 @@ def song_at(markers, frame):
         return None
     last = songs[-1]
     near = [m for m in songs if last["frame"] - m["frame"] <= 2]
-    return next((m for m in near if m.get("color") == "Purple"), last)
+    playing = [m for m in near if not m.get("duration") or frame < m["frame"] + int(m["duration"])]
+    if not playing:
+        return None
+    return next((m for m in playing if m.get("color") == "Purple"), playing[-1])
 
 
 def plan_job(job, files, titles_fix=None):
     """Um render (um TargetDir) -> lista de renomeacoes.
 
     job: {"target_dir", "timeline", "mark_in", "mark_out", "clips": [{"track","name","start","end"}],
-          "markers": [{"frame" (absoluto, como os clipes), "name", "color"}]}
+          "markers": [{"frame" (absoluto, como os clipes), "name", "color", "duration"}]}
     files: nomes de arquivo que existem no TargetDir.
     titles_fix: correcoes que o Junior ja fez {titulo limpo: titulo certo}.
     """
@@ -327,7 +332,8 @@ def read_resolve():
                 for it in t.GetItemListInTrack("video", tr) or []:
                     job["clips"].append({"track": tr, "name": it.GetName(), "start": it.GetStart(), "end": it.GetEnd()})
             for f, m in (t.GetMarkers() or {}).items():
-                job["markers"].append({"frame": int(base + f), "name": m.get("name", ""), "color": m.get("color", "")})
+                job["markers"].append({"frame": int(base + f), "name": m.get("name", ""), "color": m.get("color", ""),
+                                       "duration": int(m.get("duration") or 0)})
         if "individual" not in (job["mode"] or "").lower():
             job["status"] = job["status"] or "?"
             job["note"] = "render em arquivo único: não dá para separar os drops"

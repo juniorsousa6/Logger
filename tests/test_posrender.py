@@ -63,6 +63,25 @@ class Plano(unittest.TestCase):
         self.assertTrue(all(r["status"] == "ok" for r in rows.values()))
         self.assertEqual(sorted(int(r["new"].split("_")[0]) for r in rows.values()), list(range(1, 53)))
 
+    def test_musica_so_vale_no_trecho_dela(self):
+        # Eco Club 15/11: a Cardio tem 3 drops (10-12); 13-16 sao de uma musica que o Ghost nao reconheceu
+        rows = {r["old"]: r for r in self.plan()["rows"]}
+        for n in (10, 11, 12):
+            self.assertEqual(rows[f"V1-{n:04d}_Drop {n}.mp4"]["new"], f"{n}_Eco Club Cardio.mp4")
+        for n in (13, 14, 15, 16):
+            self.assertEqual(rows[f"V1-{n:04d}_Drop {n}.mp4"]["new"], f"{n}_Eco Club.mp4")
+        for n in (17, 18, 19):
+            self.assertEqual(rows[f"V1-{n:04d}_Drop {n}.mp4"]["new"], f"{n}_Eco Club Flex.mp4")
+        self.assertEqual(rows["V1-0020_Drop 20.mp4"]["new"], "20_Eco Club.mp4")
+        self.assertEqual(rows["V1-0009_Drop 9.mp4"]["song"], "")   # Mousy ja tinha acabado
+
+    def test_marcador_sem_duracao_vale_ate_o_proximo(self):
+        ms = [{"frame": 100, "name": "♪ Viot - Cardio (Extended Mix)", "color": "Purple"}]
+        self.assertIsNotNone(p.song_at(ms, 99999))
+        ms[0]["duration"] = 50
+        self.assertIsNotNone(p.song_at(ms, 149))
+        self.assertIsNone(p.song_at(ms, 150))
+
     def test_numero_sem_buraco_quando_drop_apagado(self):
         self.j["clips"] = [c for c in self.j["clips"] if c["name"] not in ("Drop 2", "Drop 3")]
         rows = {r["old"]: r for r in self.plan()["rows"]}

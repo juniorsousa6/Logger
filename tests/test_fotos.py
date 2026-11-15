@@ -73,19 +73,36 @@ class Plano(Base):
         self.assertEqual(p["trash_files"], 8)
         self.assertEqual(p["select_files"], 2)
 
-    def test_trava_se_falta_foto_com_estrela(self):
+    def test_foto_com_estrela_fora_do_select_vai_ser_copiada(self):
         self.setup(moved=False)
         p = self.plan()
+        self.assertTrue(p["ready"], p["reasons"])
+        self.assertEqual(p["missing"], 0)
+        self.assertEqual(sorted(os.path.basename(x) for x in p["to_copy"]), ["JRS3002.ARW", "JRS3005.ARW"])
+        self.assertFalse(p["select_exists"])
+
+    def test_trava_se_foto_com_estrela_sumiu(self):
+        self.setup(moved=False)
+        os.remove(self.fotos / "JRS3002.ARW")
+        p = self.plan()
         self.assertFalse(p["ready"])
-        self.assertEqual(p["missing"], 2)
-        self.assertIn("fora do Select Fotos", " ".join(p["reasons"]))
+        self.assertEqual(p["missing"], 1)
+        self.assertIn("não estão no disco", " ".join(p["reasons"]))
 
     def test_arrastou_pelo_finder_tambem_vale(self):
         self.setup(moved=False)
         self.sel.mkdir()
         for n in ("JRS3002.ARW", "JRS3005.ARW"):
-            (self.sel / n).write_text("raw")
-        self.assertTrue(self.plan()["ready"])
+            (self.sel / n).write_text("raw" * 10)
+        p = self.plan()
+        self.assertTrue(p["ready"])
+        self.assertEqual(p["to_copy"], [])
+
+    def test_mesmo_nome_outro_conteudo_nao_conta_como_salvo(self):
+        self.setup(moved=False)
+        self.sel.mkdir()
+        (self.sel / "JRS3002.ARW").write_text("outra foto")
+        self.assertEqual(len(self.plan()["to_copy"]), 2)
 
     def test_select_apagado_do_disco(self):
         self.setup()
@@ -143,6 +160,52 @@ class Plano(Base):
                 self.assertIn(3, [i["rating"] for i in c.images_under(self.festa)])
         finally:
             db.close()
+
+
+class Copia(Base):
+    def test_copia_confere_e_depois_esta_pronto(self):
+        self.setup(moved=False)
+        (self.fotos / "JRS3002.xmp").write_text("<x:xmpmeta/>")
+        p = self.plan()
+        res = fotos.copy_to_select(self.festa, p["to_copy"])
+        self.assertTrue(all(r["ok"] for r in res), res)
+        self.assertEqual((self.sel / "JRS3002.ARW").read_text(), "raw" * 10)
+        self.assertTrue((self.sel / "JRS3002.xmp").exists())
+        self.assertFalse([f for f in os.listdir(self.sel) if f.endswith(".parcial")])
+        p2 = self.plan()
+        self.assertEqual(p2["to_copy"], [])
+        self.assertEqual(p2["select_files"], 3)
+        self.assertTrue(p2["ready"])
+        # de novo: nao duplica
+        res = fotos.copy_to_select(self.festa, p["to_copy"])
+        self.assertEqual(sorted(os.listdir(self.sel)), ["JRS3002.ARW", "JRS3002.xmp", "JRS3005.ARW"])
+
+    def test_nome_repetido_nunca_sobrescreve(self):
+        self.setup(moved=False)
+        self.sel.mkdir()
+        (self.sel / "JRS3002.ARW").write_text("outra foto")
+        fotos.copy_to_select(self.festa, self.plan()["to_copy"])
+        self.assertEqual((self.sel / "JRS3002.ARW").read_text(), "outra foto")
+        self.assertEqual((self.sel / "JRS3002 (2).ARW").read_text(), "raw" * 10)
+        self.assertEqual(self.plan()["to_copy"], [])
+
+    def test_duas_subpastas_com_o_mesmo_nome(self):
+        a, b = self.fotos / "100MSDCF", self.fotos / "101MSDCF"
+        a.mkdir(); b.mkdir()
+        (a / "DSC0001.ARW").write_text("primeira")
+        (b / "DSC0001.ARW").write_text("segunda!!")
+        make_catalog(self.cat, {str(a): [("DSC0001.ARW", 1)], str(b): [("DSC0001.ARW", 2)]})
+        fotos.copy_to_select(self.festa, self.plan()["to_copy"])
+        self.assertEqual(sorted(p.read_text() for p in self.sel.iterdir()), ["primeira", "segunda!!"])
+        p = self.plan()
+        self.assertEqual(p["to_copy"], [])
+        self.assertTrue(p["ready"])
+
+    def test_nao_copia_de_fora_da_festa(self):
+        self.setup(moved=False)
+        fora = Path(self.tmp.name) / "fora.ARW"
+        fora.write_text("x")
+        self.assertFalse(fotos.copy_to_select(self.festa, [str(fora)])[0]["ok"])
 
 
 class Seguranca(Base):

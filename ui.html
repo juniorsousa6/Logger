@@ -252,12 +252,14 @@ input[type=date]:disabled{opacity:.5}
 .field.stack{flex-direction:column;align-items:stretch;gap:12px;padding:14px 0}
 .field.stack .head{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .togs{display:flex;flex-wrap:wrap;gap:6px}
+
 .tog{border:1px solid var(--line2);background:none;border-radius:4px;padding:6px 11px;font:12px var(--mono);color:var(--mut);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:color .15s,border-color .15s,background .15s}
 .tog::before{content:"";width:6px;height:6px;border:1px solid var(--faint);transition:background .15s,border-color .15s}
 .tog:hover{color:var(--text);border-color:var(--mut)}
 .tog.on{border-color:var(--acc-line);color:var(--acc);background:var(--acc-dim)}
 .tog.on::before{background:var(--acc);border-color:var(--acc);box-shadow:0 0 6px var(--acc)}
 .tog.add{border-style:dashed;color:var(--faint)}.tog.add::before{display:none}
+.tog.all{border-style:dashed}.tog.all::before{display:none}
 .tog-in{border:1px solid var(--acc-line);background:var(--sunken);border-radius:4px;padding:5px 10px;font:12px var(--mono);width:130px;outline:none}
 .dbprev{font:12px var(--mono);color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dbprev b{color:var(--text);font-weight:400}
@@ -410,7 +412,7 @@ input[type=date]:disabled{opacity:.5}
 
 <aside class="sheet wide" id="sFotos" aria-label="Limpar fotos">
   <div class="top"><h2>Limpar fotos</h2><button class="ib" data-close>Fechar</button></div>
-  <p class="sub" style="margin:10px 0 0">Depois que você arrastou as fotos com estrela para <span class="mono">Select Fotos</span> no Lightroom: o Logger confere que todas estão lá e manda o resto para a Lixeira. Só depois do seu ok, e dá para recuperar da Lixeira.</p>
+  <p class="sub" style="margin:10px 0 0">Marque as estrelas no Lightroom e escolha a festa: o Logger copia as fotos com estrela (RAW) para <span class="mono">Select Fotos</span>, confere cada cópia e manda a pasta Fotos para a Lixeira. Só depois do seu ok, e dá para recuperar da Lixeira.</p>
   <div class="dstat" id="fCat"></div>
   <div id="fList"></div>
   <div id="fPlan"></div>
@@ -596,9 +598,13 @@ $("backupChip").onclick = async () => { const p = await pick("HD de backup"); if
 $("backupClear").onclick = () => { S.backup = ""; saveSet({backup_dir:""}); renderChips(); };
 /* pastas como botões liga/desliga (HD e Dropbox) */
 function togs(el, list, sel, onAdd, onChange){
-  el.innerHTML = list.map(f => `<button class="tog ${sel.has(f)?"on":""}" data-f="${esc(f)}" aria-pressed="${sel.has(f)}">${esc(f)}</button>`).join("")
+  const any = list.some(f => sel.has(f));
+  el.innerHTML = (list.length ? `<button class="tog all" title="${any?"Tirar a seleção de todas as pastas":"Marcar todas as pastas"}">${any?"☐ Desmarcar todas":"☑ Marcar todas"}</button>` : "")
+    + list.map(f => `<button class="tog ${sel.has(f)?"on":""}" data-f="${esc(f)}" aria-pressed="${sel.has(f)}">${esc(f)}</button>`).join("")
     + `<button class="tog add" title="Nova pasta">+ pasta</button>`;
   el.querySelectorAll(".tog[data-f]").forEach(b => b.onclick = () => { const f = b.dataset.f; sel.has(f) ? sel.delete(f) : sel.add(f); onChange(); });
+  const all = el.querySelector(".tog.all");
+  if (all) all.onclick = () => { if (any) list.forEach(f => sel.delete(f)); else list.forEach(f => sel.add(f)); onChange(); };
   el.querySelector(".tog.add").onclick = e => {
     const i = document.createElement("input"); i.className = "tog-in"; i.placeholder = "nome da pasta"; e.currentTarget.replaceWith(i); i.focus();
     let fin = false; const done = ok => { if (fin) return; fin = true; const v = i.value.trim().replace(/[\/:]/g, "");
@@ -932,28 +938,35 @@ async function planFotos(dir){
   catch(e){ $("fPlan").innerHTML = ""; $("fErr").textContent = e.message; }
 }
 function renderFotos(){
-  const p = F.plan, st = p.starred.length, safe = st - p.missing;
+  const p = F.plan, st = p.starred.length;
   const miss = p.starred.filter(s => !s.safe);
   $("fPlan").innerHTML = `<h3>${esc(p.festa.split("/").pop())}</h3>
     <div class="fcheck">
-      <div class="${st && !p.missing ? "ok" : "bad"}">${!p.missing && st ? "✓" : "!"} ${safe} de ${st} fotos com estrela estão no Select Fotos</div>
-      ${miss.length ? `<div class="fmiss">${miss.map(m => esc(m.where)).join("<br>")}</div>` : ""}
-      <div class="${p.select_exists ? "ok" : "bad"}">${p.select_exists ? "✓" : "!"} Select Fotos: ${p.select_files} arquivo${p.select_files === 1 ? "" : "s"} (fica)</div>
+      <div class="${st && !p.missing ? "ok" : "bad"}">${!p.missing && st ? "✓" : "!"} ${st} foto${st === 1 ? "" : "s"} com estrela${p.to_copy.length ? ` · ${p.to_copy.length} vão ser copiadas para o Select Fotos (${hb(p.copy_bytes)})` : " · todas já estão no Select Fotos"}</div>
+      ${miss.filter(m => !m.copy).length ? `<div class="fmiss">${miss.filter(m => !m.copy).map(m => esc(m.where) + " · " + esc(m.path.split("/").pop())).join("<br>")}</div>` : ""}
+      <div class="ok">✓ Select Fotos: ${p.select_exists ? `${p.select_files} arquivo${p.select_files === 1 ? "" : "s"} hoje` : "vai ser criada"} (fica)</div>
       ${p.trash.map(t => `<div>→ Lixeira: <b>${esc(t.dir.slice(p.festa.length + 1))}</b> · ${t.files} arquivos · ${hb(t.bytes)}</div>
         ${t.not_photos_count ? `<div class="bad">! ${t.not_photos_count} arquivo(s) que não são foto vão junto: ${esc(t.not_photos.slice(0, 5).join(", "))}${t.not_photos_count > 5 ? "…" : ""}</div>` : ""}`).join("")}
     </div>
     ${p.reasons.length ? `<div class="err">${esc(p.reasons.join(" "))}</div>` : ""}
-    <div class="dbtns"><button class="btn ${F.armed ? "danger" : ""}" id="fGo" ${p.ready ? "" : "disabled"}>${F.armed ? `Confirmar: ${p.trash_files} arquivos para a Lixeira` : "Mandar o resto para a Lixeira"}</button>
+    <div class="dbtns"><button class="btn ${F.armed ? "danger" : ""}" id="fGo" ${p.ready ? "" : "disabled"}>${F.armed ? (p.to_copy.length ? `Confirmar: copiar ${p.to_copy.length} e mandar ${p.trash_files} arquivos para a Lixeira` : `Confirmar: ${p.trash_files} arquivos para a Lixeira`) : (p.to_copy.length ? "Salvar o select e limpar" : "Mandar o resto para a Lixeira")}</button>
       <button class="btn ghost" id="fBack">Outra festa</button><span class="sub" id="fRes"></span></div>`;
   $("fBack").onclick = loadFestas;
   $("fGo").onclick = async () => {
     if (!F.armed){ F.armed = true; renderFotos(); return; }
     const b = $("fGo"); b.classList.add("busy");
-    try { const r = await api("/api/fotos/trash", {festa_dir: p.festa, dirs: p.trash.map(t => t.dir), files: p.trash_files});
-      const bad = r.results.filter(x => !x.ok);
+    try { await api("/api/fotos/trash", {festa_dir: p.festa, dirs: p.trash.map(t => t.dir), files: p.trash_files, copy: p.to_copy.length});
+      let j; for (;;) { j = await api("/api/fotos/status"); if (!j.running) break;
+        b.textContent = j.now === "Lixeira" ? "mandando para a Lixeira…" : `copiando ${j.done + 1} de ${j.total} · ${j.now}`;
+        await new Promise(ok => setTimeout(ok, 500)); }
+      if (j.error) throw new Error(j.error);
+      const r = j.result;
+      const bad = r.results.filter(x => !x.ok).concat((r.copied || []).filter(x => !x.ok));
       F.armed = false; await planFotos(p.festa);
-      $("fRes").textContent = bad.length ? "✕ " + bad.map(x => x.path.split("/").pop() + ": " + x.msg).join(" · ")
-        : `✓ foi para a Lixeira. Select Fotos ficou com ${r.select_files} arquivos.`;
+      const nc = (r.copied || []).filter(x => x.ok).length;
+      $("fRes").textContent = r.error ? "✕ " + r.error + " " + bad.map(x => x.path.split("/").pop() + ": " + x.msg).join(" · ")
+        : bad.length ? "✕ " + bad.map(x => x.path.split("/").pop() + ": " + x.msg).join(" · ")
+        : `✓ ${nc ? nc + " fotos copiadas e conferidas, " : ""}Fotos foi para a Lixeira. Select Fotos ficou com ${r.select_files} arquivos.`;
     } catch(e){ $("fErr").textContent = e.message; F.armed = false; renderFotos(); }
   };
 }

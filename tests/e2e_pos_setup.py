@@ -15,18 +15,14 @@ for j, sub in zip(d["jobs"], ("9x16", "4x5")):
 sys.path[:0] = [str(Path(__file__).parent), str(Path(__file__).parent.parent)]
 from test_fotos import make_catalog  # noqa: E402
 festa = S / "HD2" / "2026_11_14 - Eco Club"
-(festa / "Fotos").mkdir(parents=True, exist_ok=True)
-(festa / "Select Fotos").mkdir(exist_ok=True)
-fotos_files, sel = [], []
-for i in range(20):
+(festa / "Fotos" / "101MSDCF").mkdir(parents=True, exist_ok=True)
+fotos_files = []
+for i in range(20):  # fluxo novo: as 3 com estrela ainda estao em Fotos; o Logger copia
     n = f"JRS{3000 + i}.ARW"
-    if i in (3, 7, 11):
-        (festa / "Select Fotos" / n).write_text("raw")
-        sel.append((n, 1 + i % 3))
-    else:
-        (festa / "Fotos" / n).write_text("raw" * 100)
-        fotos_files.append((n, 0))
-make_catalog(S / "2026.lrcat", {str(festa / "Fotos"): fotos_files, str(festa / "Select Fotos"): sel})
+    (festa / "Fotos" / "101MSDCF" / n).write_text(f"raw{i:02d}" * 100)
+    fotos_files.append((n, 1 + i % 3 if i in (3, 7, 11) else 0))
+(festa / "Fotos" / "101MSDCF" / "JRS3003.xmp").write_text("<x:xmpmeta/>")
+make_catalog(S / "2026.lrcat", {str(festa / "Fotos" / "101MSDCF"): fotos_files})
 # osascript falso: "Finder delete" move a pasta para $S/Lixeira (como o Finder faria)
 (S / "bin" / "osascript").write_text(f"""#!/bin/bash
 if [[ "$2" == *Finder*delete* ]]; then mkdir -p "{S}/Lixeira" && mv "$3" "{S}/Lixeira/"; fi
