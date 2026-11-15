@@ -12,7 +12,7 @@ echo "== servidor (endpoints) =="
 echo "== revisao 1.3.3 (achados do relatorio) =="
 "$PY" -m unittest tests.test_revisao || FAIL=1
 echo "== renomear drops e limpeza de fotos =="
-"$PY" -m unittest tests.test_posrender tests.test_fotos || FAIL=1
+"$PY" -m unittest tests.test_posrender tests.test_fotos tests.test_fotos_falhas || FAIL=1
 
 if command -v node >/dev/null && node -e "require('playwright')" 2>/dev/null; then
   echo "== interface (todos os botoes) =="

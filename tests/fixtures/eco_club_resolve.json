@@ -1,1457 +1,1617 @@
 {
-"project": "Eco Club",
-"jobs": [
-{
-"timeline": "9x16 · Drops",
-"target_dir": "/Users/juniorsousa/Library/CloudStorage/Dropbox/VIOT/2026_11_14 - Eco Club/9x16",
-"mark_in": 92557,
-"mark_out": 331715,
-"mode": "Individual clips",
-"status": "Complete",
-"pct": 100,
-"eta_ms": null,
-"clips": [
-{
-"track": 1,
-"name": "Drop 1",
-"start": 92557,
-"end": 93288
-},
-{
-"track": 1,
-"name": "Drop 2",
-"start": 95526,
-"end": 96257
-},
-{
-"track": 1,
-"name": "Drop 3",
-"start": 96988,
-"end": 97718
-},
-{
-"track": 1,
-"name": "Drop 4",
-"start": 99902,
-"end": 100628
-},
-{
-"track": 1,
-"name": "Drop 5",
-"start": 103889,
-"end": 104614
-},
-{
-"track": 1,
-"name": "Drop 6",
-"start": 106842,
-"end": 107526
-},
-{
-"track": 1,
-"name": "Drop 7",
-"start": 110242,
-"end": 110767
-},
-{
-"track": 1,
-"name": "Drop 8",
-"start": 112097,
-"end": 112772
-},
-{
-"track": 1,
-"name": "Drop 9",
-"start": 114946,
-"end": 115671
-},
-{
-"track": 1,
-"name": "Drop 10",
-"start": 121132,
-"end": 121843
-},
-{
-"track": 1,
-"name": "Drop 11",
-"start": 123282,
-"end": 124002
-},
-{
-"track": 1,
-"name": "Drop 12",
-"start": 125801,
-"end": 126520
-},
-{
-"track": 1,
-"name": "Drop 13",
-"start": 128677,
-"end": 129396
-},
-{
-"track": 1,
-"name": "Drop 14",
-"start": 131555,
-"end": 132273
-},
-{
-"track": 1,
-"name": "Drop 15",
-"start": 135513,
-"end": 136230
-},
-{
-"track": 1,
-"name": "Drop 16",
-"start": 138344,
-"end": 139063
-},
-{
-"track": 1,
-"name": "Drop 17",
-"start": 140547,
-"end": 141266
-},
-{
-"track": 1,
-"name": "Drop 18",
-"start": 142705,
-"end": 143424
-},
-{
-"track": 1,
-"name": "Drop 19",
-"start": 145582,
-"end": 146301
-},
-{
-"track": 1,
-"name": "Drop 20",
-"start": 154484,
-"end": 155203
-},
-{
-"track": 1,
-"name": "Drop 21",
-"start": 160876,
-"end": 164820
-},
-{
-"track": 1,
-"name": "Drop 22",
-"start": 167658,
-"end": 168423
-},
-{
-"track": 1,
-"name": "Drop 23",
-"start": 170941,
-"end": 171661
-},
-{
-"track": 1,
-"name": "Drop 24",
-"start": 174966,
-"end": 175597
-},
-{
-"track": 1,
-"name": "Drop 25",
-"start": 182451,
-"end": 183170
-},
-{
-"track": 1,
-"name": "Drop 26",
-"start": 184980,
-"end": 185689
-},
-{
-"track": 1,
-"name": "Drop 27",
-"start": 194366,
-"end": 195086
-},
-{
-"track": 1,
-"name": "Drop 28",
-"start": 196884,
-"end": 197603
-},
-{
-"track": 1,
-"name": "Drop 29",
-"start": 201655,
-"end": 202272
-},
-{
-"track": 1,
-"name": "Drop 30",
-"start": 203351,
-"end": 204071
-},
-{
-"track": 1,
-"name": "Drop 31",
-"start": 204431,
-"end": 205150
-},
-{
-"track": 1,
-"name": "Drop 32",
-"start": 211257,
-"end": 211970
-},
-{
-"track": 1,
-"name": "Drop 33",
-"start": 214113,
-"end": 214826
-},
-{
-"track": 1,
-"name": "Drop 34",
-"start": 218932,
-"end": 219645
-},
-{
-"track": 1,
-"name": "Drop 35",
-"start": 222501,
-"end": 223214
-},
-{
-"track": 1,
-"name": "Drop 36",
-"start": 225716,
-"end": 226427
-},
-{
-"track": 1,
-"name": "Drop 37",
-"start": 229277,
-"end": 230002
-},
-{
-"track": 1,
-"name": "Drop 38",
-"start": 231553,
-"end": 232992
-},
-{
-"track": 1,
-"name": "Drop 39",
-"start": 239595,
-"end": 240309
-},
-{
-"track": 1,
-"name": "Drop 40",
-"start": 243249,
-"end": 243963
-},
-{
-"track": 1,
-"name": "Drop 41",
-"start": 246818,
-"end": 247532
-},
-{
-"track": 1,
-"name": "Drop 42",
-"start": 266797,
-"end": 267517
-},
-{
-"track": 1,
-"name": "Drop 43",
-"start": 270684,
-"end": 271264
-},
-{
-"track": 1,
-"name": "Drop 44",
-"start": 273538,
-"end": 274252
-},
-{
-"track": 1,
-"name": "Drop 45",
-"start": 276795,
-"end": 277509
-},
-{
-"track": 1,
-"name": "Drop 46",
-"start": 278937,
-"end": 279651
-},
-{
-"track": 1,
-"name": "Drop 47",
-"start": 295322,
-"end": 295892
-},
-{
-"track": 1,
-"name": "Drop 48",
-"start": 297320,
-"end": 298034
-},
-{
-"track": 1,
-"name": "Drop 49",
-"start": 300099,
-"end": 300533
-},
-{
-"track": 1,
-"name": "Drop 50",
-"start": 313881,
-"end": 314594
-},
-{
-"track": 2,
-"name": "Drop 51",
-"start": 316024,
-"end": 316779
-},
-{
-"track": 2,
-"name": "Drop 52",
-"start": 331002,
-"end": 331716
-}
-],
-"markers": [
-{
-"frame": 87458,
-"name": "♪ Amine Edge, DANCE, Blaze (Kevin Hedge) - Lovelee Dae (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 95800,
-"name": "♪ Fer BR - Mousy (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 121029,
-"name": "♪ Viot - Cardio (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 140186,
-"name": "♪ Viot - Flex (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 153816,
-"name": "♪ Emanuel Satie - Give It All (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 159334,
-"name": "♪ Viot - Blitz (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 159335,
-"name": "♪ Viot - Blitz (Intro Mix)",
-"color": "Sand"
-},
-{
-"frame": 166093,
-"name": "♪ Cajmere, Dajae - Brighter Days (Marco Lys Remix)",
-"color": "Purple"
-},
-{
-"frame": 187386,
-"name": "♪ Green Velvet, Meduza, GENESI (ITA), ESSENTIA (IT) - La La Land (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 194387,
-"name": "♪ Adrian Hour - Kickback (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 199410,
-"name": "♪ Oxia - Domino (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 206200,
-"name": "♪ Vintage Culture, Viot - Anthem (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 213379,
-"name": "♪ Noir feat. Haze - Around (Viot, Gabe & Bhaskar Remix)",
-"color": "Purple"
-},
-{
-"frame": 228926,
-"name": "♪ Jorge Ben - Chove Chuva (Viot & Let BR Remix)",
-"color": "Purple"
-},
-{
-"frame": 235964,
-"name": "♪ Carloh - Back To House (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 241790,
-"name": "♪ Adam Ten, Viot - Put Id Down 30.8",
-"color": "Purple"
-},
-{
-"frame": 249572,
-"name": "♪ Khia - My Neck My Back (Beltran Funky Edit)",
-"color": "Purple"
-},
-{
-"frame": 256436,
-"name": "♪ Viot & Vinter - Good Life (Inner City New Mix)",
-"color": "Purple"
-},
-{
-"frame": 269373,
-"name": "♪ Freenzy - Watchin' You",
-"color": "Purple"
-},
-{
-"frame": 275623,
-"name": "♪ Freenzy, Ric J - Baile in Braza",
-"color": "Purple"
-},
-{
-"frame": 294542,
-"name": "♪ Viot - No Brakes (Final mix)",
-"color": "Purple"
-},
-{
-"frame": 303428,
-"name": "♪ Viot - The Ride (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 315921,
-"name": "♪ DJ Glen - Tom Honks (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 326305,
-"name": "♪ Viot - Fyrah (Ammo Avenue Remix)",
-"color": "Purple"
-},
-{
-"frame": 328424,
-"name": "♪ Black Alien, Gabe, Viot - Como Eu Te Quero (Remix)",
-"color": "Purple"
-},
-{
-"frame": 89999,
-"name": "DROP 1",
-"color": "Red"
-},
-{
-"frame": 92922,
-"name": "DROP 2",
-"color": "Red"
-},
-{
-"frame": 95891,
-"name": "DROP 3",
-"color": "Red"
-},
-{
-"frame": 97353,
-"name": "DROP 4",
-"color": "Red"
-},
-{
-"frame": 100265,
-"name": "DROP 5",
-"color": "Red"
-},
-{
-"frame": 104252,
-"name": "DROP 6",
-"color": "Red"
-},
-{
-"frame": 107152,
-"name": "DROP 7",
-"color": "Red"
-},
-{
-"frame": 110412,
-"name": "DROP 8",
-"color": "Red"
-},
-{
-"frame": 112409,
-"name": "DROP 9",
-"color": "Red"
-},
-{
-"frame": 115309,
-"name": "DROP 10",
-"color": "Red"
-},
-{
-"frame": 121484,
-"name": "DROP 11",
-"color": "Red"
-},
-{
-"frame": 123642,
-"name": "DROP 12",
-"color": "Red"
-},
-{
-"frame": 126160,
-"name": "DROP 13",
-"color": "Red"
-},
-{
-"frame": 129037,
-"name": "DROP 14",
-"color": "Red"
-},
-{
-"frame": 131914,
-"name": "DROP 15",
-"color": "Red"
-},
-{
-"frame": 135870,
-"name": "DROP 16",
-"color": "Red"
-},
-{
-"frame": 138703,
-"name": "DROP 17",
-"color": "Red"
-},
-{
-"frame": 140907,
-"name": "DROP 18",
-"color": "Red"
-},
-{
-"frame": 143065,
-"name": "DROP 19",
-"color": "Red"
-},
-{
-"frame": 145942,
-"name": "DROP 20",
-"color": "Red"
-},
-{
-"frame": 154843,
-"name": "DROP 21",
-"color": "Red"
-},
-{
-"frame": 164471,
-"name": "DROP 22",
-"color": "Red"
-},
-{
-"frame": 168063,
-"name": "DROP 23",
-"color": "Red"
-},
-{
-"frame": 171301,
-"name": "DROP 24",
-"color": "Red"
-},
-{
-"frame": 175276,
-"name": "DROP 25",
-"color": "Red"
-},
-{
-"frame": 182811,
-"name": "DROP 26",
-"color": "Red"
-},
-{
-"frame": 185329,
-"name": "DROP 27",
-"color": "Red"
-},
-{
-"frame": 192164,
-"name": "DROP 28",
-"color": "Red"
-},
-{
-"frame": 194726,
-"name": "DROP 29",
-"color": "Red"
-},
-{
-"frame": 197243,
-"name": "DROP 30",
-"color": "Red"
-},
-{
-"frame": 201913,
-"name": "DROP 31",
-"color": "Red"
-},
-{
-"frame": 203711,
-"name": "DROP 32",
-"color": "Red"
-},
-{
-"frame": 204790,
-"name": "DROP 33",
-"color": "Red"
-},
-{
-"frame": 211613,
-"name": "DROP 34",
-"color": "Red"
-},
-{
-"frame": 214470,
-"name": "DROP 35",
-"color": "Red"
-},
-{
-"frame": 219289,
-"name": "DROP 36",
-"color": "Red"
-},
-{
-"frame": 222857,
-"name": "DROP 37",
-"color": "Red"
-},
-{
-"frame": 226070,
-"name": "DROP 38",
-"color": "Red"
-},
-{
-"frame": 229634,
-"name": "DROP 39",
-"color": "Red"
-},
-{
-"frame": 232267,
-"name": "DROP 40",
-"color": "Red"
-},
-{
-"frame": 239952,
-"name": "DROP 41",
-"color": "Red"
-},
-{
-"frame": 243606,
-"name": "DROP 42",
-"color": "Red"
-},
-{
-"frame": 247175,
-"name": "DROP 43",
-"color": "Red"
-},
-{
-"frame": 267160,
-"name": "DROP 44",
-"color": "Red"
-},
-{
-"frame": 271085,
-"name": "DROP 45",
-"color": "Red"
-},
-{
-"frame": 273895,
-"name": "DROP 46",
-"color": "Red"
-},
-{
-"frame": 277152,
-"name": "DROP 47",
-"color": "Red"
-},
-{
-"frame": 279294,
-"name": "DROP 48",
-"color": "Red"
-},
-{
-"frame": 295535,
-"name": "DROP 49",
-"color": "Red"
-},
-{
-"frame": 297677,
-"name": "DROP 50",
-"color": "Red"
-},
-{
-"frame": 299495,
-"name": "DROP 51",
-"color": "Red"
-},
-{
-"frame": 300176,
-"name": "DROP 52",
-"color": "Red"
-},
-{
-"frame": 314237,
-"name": "DROP 53",
-"color": "Red"
-},
-{
-"frame": 316401,
-"name": "DROP 54",
-"color": "Red"
-},
-{
-"frame": 331359,
-"name": "DROP 55",
-"color": "Red"
-}
-]
-},
-{
-"timeline": "4x5 · Drops",
-"target_dir": "/Users/juniorsousa/Library/CloudStorage/Dropbox/VIOT/2026_11_14 - Eco Club/4x5",
-"mark_in": 92557,
-"mark_out": 331715,
-"mode": "Individual clips",
-"status": "Ready",
-"pct": 0,
-"eta_ms": null,
-"clips": [
-{
-"track": 1,
-"name": "Drop 1",
-"start": 92557,
-"end": 93288
-},
-{
-"track": 1,
-"name": "Drop 2",
-"start": 95526,
-"end": 96257
-},
-{
-"track": 1,
-"name": "Drop 3",
-"start": 96988,
-"end": 97718
-},
-{
-"track": 1,
-"name": "Drop 4",
-"start": 99902,
-"end": 100628
-},
-{
-"track": 1,
-"name": "Drop 5",
-"start": 103889,
-"end": 104614
-},
-{
-"track": 1,
-"name": "Drop 6",
-"start": 106842,
-"end": 107526
-},
-{
-"track": 1,
-"name": "Drop 7",
-"start": 110242,
-"end": 110767
-},
-{
-"track": 1,
-"name": "Drop 8",
-"start": 112097,
-"end": 112772
-},
-{
-"track": 1,
-"name": "Drop 9",
-"start": 114946,
-"end": 115671
-},
-{
-"track": 1,
-"name": "Drop 10",
-"start": 121132,
-"end": 121843
-},
-{
-"track": 1,
-"name": "Drop 11",
-"start": 123282,
-"end": 124002
-},
-{
-"track": 1,
-"name": "Drop 12",
-"start": 125801,
-"end": 126520
-},
-{
-"track": 1,
-"name": "Drop 13",
-"start": 128677,
-"end": 129396
-},
-{
-"track": 1,
-"name": "Drop 14",
-"start": 131555,
-"end": 132273
-},
-{
-"track": 1,
-"name": "Drop 15",
-"start": 135513,
-"end": 136230
-},
-{
-"track": 1,
-"name": "Drop 16",
-"start": 138344,
-"end": 139063
-},
-{
-"track": 1,
-"name": "Drop 17",
-"start": 140547,
-"end": 141266
-},
-{
-"track": 1,
-"name": "Drop 18",
-"start": 142705,
-"end": 143424
-},
-{
-"track": 1,
-"name": "Drop 19",
-"start": 145582,
-"end": 146301
-},
-{
-"track": 1,
-"name": "Drop 20",
-"start": 154484,
-"end": 155203
-},
-{
-"track": 1,
-"name": "Drop 21",
-"start": 160876,
-"end": 164820
-},
-{
-"track": 1,
-"name": "Drop 22",
-"start": 167658,
-"end": 168423
-},
-{
-"track": 1,
-"name": "Drop 23",
-"start": 170941,
-"end": 171661
-},
-{
-"track": 1,
-"name": "Drop 24",
-"start": 174966,
-"end": 175597
-},
-{
-"track": 1,
-"name": "Drop 25",
-"start": 182451,
-"end": 183170
-},
-{
-"track": 1,
-"name": "Drop 26",
-"start": 184980,
-"end": 185689
-},
-{
-"track": 1,
-"name": "Drop 27",
-"start": 194366,
-"end": 195086
-},
-{
-"track": 1,
-"name": "Drop 28",
-"start": 196884,
-"end": 197603
-},
-{
-"track": 1,
-"name": "Drop 29",
-"start": 201655,
-"end": 202272
-},
-{
-"track": 1,
-"name": "Drop 30",
-"start": 203351,
-"end": 204071
-},
-{
-"track": 1,
-"name": "Drop 31",
-"start": 204431,
-"end": 205150
-},
-{
-"track": 1,
-"name": "Drop 32",
-"start": 211257,
-"end": 211970
-},
-{
-"track": 1,
-"name": "Drop 33",
-"start": 214113,
-"end": 214826
-},
-{
-"track": 1,
-"name": "Drop 34",
-"start": 218932,
-"end": 219645
-},
-{
-"track": 1,
-"name": "Drop 35",
-"start": 222501,
-"end": 223214
-},
-{
-"track": 1,
-"name": "Drop 36",
-"start": 225716,
-"end": 226427
-},
-{
-"track": 1,
-"name": "Drop 37",
-"start": 229277,
-"end": 230002
-},
-{
-"track": 1,
-"name": "Drop 38",
-"start": 231553,
-"end": 232992
-},
-{
-"track": 1,
-"name": "Drop 39",
-"start": 239595,
-"end": 240309
-},
-{
-"track": 1,
-"name": "Drop 40",
-"start": 243249,
-"end": 243963
-},
-{
-"track": 1,
-"name": "Drop 41",
-"start": 246818,
-"end": 247532
-},
-{
-"track": 1,
-"name": "Drop 42",
-"start": 266797,
-"end": 267517
-},
-{
-"track": 1,
-"name": "Drop 43",
-"start": 270684,
-"end": 271264
-},
-{
-"track": 1,
-"name": "Drop 44",
-"start": 273538,
-"end": 274252
-},
-{
-"track": 1,
-"name": "Drop 45",
-"start": 276795,
-"end": 277509
-},
-{
-"track": 1,
-"name": "Drop 46",
-"start": 278937,
-"end": 279651
-},
-{
-"track": 1,
-"name": "Drop 47",
-"start": 295322,
-"end": 295892
-},
-{
-"track": 1,
-"name": "Drop 48",
-"start": 297320,
-"end": 298034
-},
-{
-"track": 1,
-"name": "Drop 49",
-"start": 300099,
-"end": 300533
-},
-{
-"track": 1,
-"name": "Drop 50",
-"start": 313881,
-"end": 314594
-},
-{
-"track": 2,
-"name": "Drop 51",
-"start": 316024,
-"end": 316779
-},
-{
-"track": 2,
-"name": "Drop 52",
-"start": 331002,
-"end": 331716
-}
-],
-"markers": [
-{
-"frame": 87458,
-"name": "♪ Amine Edge, DANCE, Blaze (Kevin Hedge) - Lovelee Dae (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 95800,
-"name": "♪ Fer BR - Mousy (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 121029,
-"name": "♪ Viot - Cardio (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 140186,
-"name": "♪ Viot - Flex (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 153816,
-"name": "♪ Emanuel Satie - Give It All (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 159334,
-"name": "♪ Viot - Blitz (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 159335,
-"name": "♪ Viot - Blitz (Intro Mix)",
-"color": "Sand"
-},
-{
-"frame": 166093,
-"name": "♪ Cajmere, Dajae - Brighter Days (Marco Lys Remix)",
-"color": "Purple"
-},
-{
-"frame": 187386,
-"name": "♪ Green Velvet, Meduza, GENESI (ITA), ESSENTIA (IT) - La La Land (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 194387,
-"name": "♪ Adrian Hour - Kickback (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 199410,
-"name": "♪ Oxia - Domino (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 206200,
-"name": "♪ Vintage Culture, Viot - Anthem (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 213379,
-"name": "♪ Noir feat. Haze - Around (Viot, Gabe & Bhaskar Remix)",
-"color": "Purple"
-},
-{
-"frame": 228926,
-"name": "♪ Jorge Ben - Chove Chuva (Viot & Let BR Remix)",
-"color": "Purple"
-},
-{
-"frame": 235964,
-"name": "♪ Carloh - Back To House (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 241790,
-"name": "♪ Adam Ten, Viot - Put Id Down 30.8",
-"color": "Purple"
-},
-{
-"frame": 249572,
-"name": "♪ Khia - My Neck My Back (Beltran Funky Edit)",
-"color": "Purple"
-},
-{
-"frame": 256436,
-"name": "♪ Viot & Vinter - Good Life (Inner City New Mix)",
-"color": "Purple"
-},
-{
-"frame": 269373,
-"name": "♪ Freenzy - Watchin' You",
-"color": "Purple"
-},
-{
-"frame": 275623,
-"name": "♪ Freenzy, Ric J - Baile in Braza",
-"color": "Purple"
-},
-{
-"frame": 294542,
-"name": "♪ Viot - No Brakes (Final mix)",
-"color": "Purple"
-},
-{
-"frame": 303428,
-"name": "♪ Viot - The Ride (Original Mix)",
-"color": "Purple"
-},
-{
-"frame": 315921,
-"name": "♪ DJ Glen - Tom Honks (Extended Mix)",
-"color": "Purple"
-},
-{
-"frame": 326305,
-"name": "♪ Viot - Fyrah (Ammo Avenue Remix)",
-"color": "Purple"
-},
-{
-"frame": 328424,
-"name": "♪ Black Alien, Gabe, Viot - Como Eu Te Quero (Remix)",
-"color": "Purple"
-},
-{
-"frame": 89999,
-"name": "DROP 1",
-"color": "Red"
-},
-{
-"frame": 92922,
-"name": "DROP 2",
-"color": "Red"
-},
-{
-"frame": 95891,
-"name": "DROP 3",
-"color": "Red"
-},
-{
-"frame": 97353,
-"name": "DROP 4",
-"color": "Red"
-},
-{
-"frame": 100265,
-"name": "DROP 5",
-"color": "Red"
-},
-{
-"frame": 104252,
-"name": "DROP 6",
-"color": "Red"
-},
-{
-"frame": 107152,
-"name": "DROP 7",
-"color": "Red"
-},
-{
-"frame": 110412,
-"name": "DROP 8",
-"color": "Red"
-},
-{
-"frame": 112409,
-"name": "DROP 9",
-"color": "Red"
-},
-{
-"frame": 115309,
-"name": "DROP 10",
-"color": "Red"
-},
-{
-"frame": 121484,
-"name": "DROP 11",
-"color": "Red"
-},
-{
-"frame": 123642,
-"name": "DROP 12",
-"color": "Red"
-},
-{
-"frame": 126160,
-"name": "DROP 13",
-"color": "Red"
-},
-{
-"frame": 129037,
-"name": "DROP 14",
-"color": "Red"
-},
-{
-"frame": 131914,
-"name": "DROP 15",
-"color": "Red"
-},
-{
-"frame": 135870,
-"name": "DROP 16",
-"color": "Red"
-},
-{
-"frame": 138703,
-"name": "DROP 17",
-"color": "Red"
-},
-{
-"frame": 140907,
-"name": "DROP 18",
-"color": "Red"
-},
-{
-"frame": 143065,
-"name": "DROP 19",
-"color": "Red"
-},
-{
-"frame": 145942,
-"name": "DROP 20",
-"color": "Red"
-},
-{
-"frame": 154843,
-"name": "DROP 21",
-"color": "Red"
-},
-{
-"frame": 164471,
-"name": "DROP 22",
-"color": "Red"
-},
-{
-"frame": 168063,
-"name": "DROP 23",
-"color": "Red"
-},
-{
-"frame": 171301,
-"name": "DROP 24",
-"color": "Red"
-},
-{
-"frame": 175276,
-"name": "DROP 25",
-"color": "Red"
-},
-{
-"frame": 182811,
-"name": "DROP 26",
-"color": "Red"
-},
-{
-"frame": 185329,
-"name": "DROP 27",
-"color": "Red"
-},
-{
-"frame": 192164,
-"name": "DROP 28",
-"color": "Red"
-},
-{
-"frame": 194726,
-"name": "DROP 29",
-"color": "Red"
-},
-{
-"frame": 197243,
-"name": "DROP 30",
-"color": "Red"
-},
-{
-"frame": 201913,
-"name": "DROP 31",
-"color": "Red"
-},
-{
-"frame": 203711,
-"name": "DROP 32",
-"color": "Red"
-},
-{
-"frame": 204790,
-"name": "DROP 33",
-"color": "Red"
-},
-{
-"frame": 211613,
-"name": "DROP 34",
-"color": "Red"
-},
-{
-"frame": 214470,
-"name": "DROP 35",
-"color": "Red"
-},
-{
-"frame": 219289,
-"name": "DROP 36",
-"color": "Red"
-},
-{
-"frame": 222857,
-"name": "DROP 37",
-"color": "Red"
-},
-{
-"frame": 226070,
-"name": "DROP 38",
-"color": "Red"
-},
-{
-"frame": 229634,
-"name": "DROP 39",
-"color": "Red"
-},
-{
-"frame": 232267,
-"name": "DROP 40",
-"color": "Red"
-},
-{
-"frame": 239952,
-"name": "DROP 41",
-"color": "Red"
-},
-{
-"frame": 243606,
-"name": "DROP 42",
-"color": "Red"
-},
-{
-"frame": 247175,
-"name": "DROP 43",
-"color": "Red"
-},
-{
-"frame": 267160,
-"name": "DROP 44",
-"color": "Red"
-},
-{
-"frame": 271085,
-"name": "DROP 45",
-"color": "Red"
-},
-{
-"frame": 273895,
-"name": "DROP 46",
-"color": "Red"
-},
-{
-"frame": 277152,
-"name": "DROP 47",
-"color": "Red"
-},
-{
-"frame": 279294,
-"name": "DROP 48",
-"color": "Red"
-},
-{
-"frame": 295535,
-"name": "DROP 49",
-"color": "Red"
-},
-{
-"frame": 297677,
-"name": "DROP 50",
-"color": "Red"
-},
-{
-"frame": 299495,
-"name": "DROP 51",
-"color": "Red"
-},
-{
-"frame": 300176,
-"name": "DROP 52",
-"color": "Red"
-},
-{
-"frame": 314237,
-"name": "DROP 53",
-"color": "Red"
-},
-{
-"frame": 316401,
-"name": "DROP 54",
-"color": "Red"
-},
-{
-"frame": 331359,
-"name": "DROP 55",
-"color": "Red"
-}
-]
-}
-]
+ "project": "Eco Club",
+ "jobs": [
+  {
+   "timeline": "9x16 · Drops",
+   "target_dir": "/Users/juniorsousa/Library/CloudStorage/Dropbox/VIOT/2026_11_14 - Eco Club/9x16",
+   "mark_in": 92557,
+   "mark_out": 331715,
+   "mode": "Individual clips",
+   "status": "Complete",
+   "pct": 100,
+   "eta_ms": null,
+   "clips": [
+    {
+     "track": 1,
+     "name": "Drop 1",
+     "start": 92557,
+     "end": 93288
+    },
+    {
+     "track": 1,
+     "name": "Drop 2",
+     "start": 95526,
+     "end": 96257
+    },
+    {
+     "track": 1,
+     "name": "Drop 3",
+     "start": 96988,
+     "end": 97718
+    },
+    {
+     "track": 1,
+     "name": "Drop 4",
+     "start": 99902,
+     "end": 100628
+    },
+    {
+     "track": 1,
+     "name": "Drop 5",
+     "start": 103889,
+     "end": 104614
+    },
+    {
+     "track": 1,
+     "name": "Drop 6",
+     "start": 106842,
+     "end": 107526
+    },
+    {
+     "track": 1,
+     "name": "Drop 7",
+     "start": 110242,
+     "end": 110767
+    },
+    {
+     "track": 1,
+     "name": "Drop 8",
+     "start": 112097,
+     "end": 112772
+    },
+    {
+     "track": 1,
+     "name": "Drop 9",
+     "start": 114946,
+     "end": 115671
+    },
+    {
+     "track": 1,
+     "name": "Drop 10",
+     "start": 121132,
+     "end": 121843
+    },
+    {
+     "track": 1,
+     "name": "Drop 11",
+     "start": 123282,
+     "end": 124002
+    },
+    {
+     "track": 1,
+     "name": "Drop 12",
+     "start": 125801,
+     "end": 126520
+    },
+    {
+     "track": 1,
+     "name": "Drop 13",
+     "start": 128677,
+     "end": 129396
+    },
+    {
+     "track": 1,
+     "name": "Drop 14",
+     "start": 131555,
+     "end": 132273
+    },
+    {
+     "track": 1,
+     "name": "Drop 15",
+     "start": 135513,
+     "end": 136230
+    },
+    {
+     "track": 1,
+     "name": "Drop 16",
+     "start": 138344,
+     "end": 139063
+    },
+    {
+     "track": 1,
+     "name": "Drop 17",
+     "start": 140547,
+     "end": 141266
+    },
+    {
+     "track": 1,
+     "name": "Drop 18",
+     "start": 142705,
+     "end": 143424
+    },
+    {
+     "track": 1,
+     "name": "Drop 19",
+     "start": 145582,
+     "end": 146301
+    },
+    {
+     "track": 1,
+     "name": "Drop 20",
+     "start": 154484,
+     "end": 155203
+    },
+    {
+     "track": 1,
+     "name": "Drop 21",
+     "start": 160876,
+     "end": 164820
+    },
+    {
+     "track": 1,
+     "name": "Drop 22",
+     "start": 167658,
+     "end": 168423
+    },
+    {
+     "track": 1,
+     "name": "Drop 23",
+     "start": 170941,
+     "end": 171661
+    },
+    {
+     "track": 1,
+     "name": "Drop 24",
+     "start": 174966,
+     "end": 175597
+    },
+    {
+     "track": 1,
+     "name": "Drop 25",
+     "start": 182451,
+     "end": 183170
+    },
+    {
+     "track": 1,
+     "name": "Drop 26",
+     "start": 184980,
+     "end": 185689
+    },
+    {
+     "track": 1,
+     "name": "Drop 27",
+     "start": 194366,
+     "end": 195086
+    },
+    {
+     "track": 1,
+     "name": "Drop 28",
+     "start": 196884,
+     "end": 197603
+    },
+    {
+     "track": 1,
+     "name": "Drop 29",
+     "start": 201655,
+     "end": 202272
+    },
+    {
+     "track": 1,
+     "name": "Drop 30",
+     "start": 203351,
+     "end": 204071
+    },
+    {
+     "track": 1,
+     "name": "Drop 31",
+     "start": 204431,
+     "end": 205150
+    },
+    {
+     "track": 1,
+     "name": "Drop 32",
+     "start": 211257,
+     "end": 211970
+    },
+    {
+     "track": 1,
+     "name": "Drop 33",
+     "start": 214113,
+     "end": 214826
+    },
+    {
+     "track": 1,
+     "name": "Drop 34",
+     "start": 218932,
+     "end": 219645
+    },
+    {
+     "track": 1,
+     "name": "Drop 35",
+     "start": 222501,
+     "end": 223214
+    },
+    {
+     "track": 1,
+     "name": "Drop 36",
+     "start": 225716,
+     "end": 226427
+    },
+    {
+     "track": 1,
+     "name": "Drop 37",
+     "start": 229277,
+     "end": 230002
+    },
+    {
+     "track": 1,
+     "name": "Drop 38",
+     "start": 231553,
+     "end": 232992
+    },
+    {
+     "track": 1,
+     "name": "Drop 39",
+     "start": 239595,
+     "end": 240309
+    },
+    {
+     "track": 1,
+     "name": "Drop 40",
+     "start": 243249,
+     "end": 243963
+    },
+    {
+     "track": 1,
+     "name": "Drop 41",
+     "start": 246818,
+     "end": 247532
+    },
+    {
+     "track": 1,
+     "name": "Drop 42",
+     "start": 266797,
+     "end": 267517
+    },
+    {
+     "track": 1,
+     "name": "Drop 43",
+     "start": 270684,
+     "end": 271264
+    },
+    {
+     "track": 1,
+     "name": "Drop 44",
+     "start": 273538,
+     "end": 274252
+    },
+    {
+     "track": 1,
+     "name": "Drop 45",
+     "start": 276795,
+     "end": 277509
+    },
+    {
+     "track": 1,
+     "name": "Drop 46",
+     "start": 278937,
+     "end": 279651
+    },
+    {
+     "track": 1,
+     "name": "Drop 47",
+     "start": 295322,
+     "end": 295892
+    },
+    {
+     "track": 1,
+     "name": "Drop 48",
+     "start": 297320,
+     "end": 298034
+    },
+    {
+     "track": 1,
+     "name": "Drop 49",
+     "start": 300099,
+     "end": 300533
+    },
+    {
+     "track": 1,
+     "name": "Drop 50",
+     "start": 313881,
+     "end": 314594
+    },
+    {
+     "track": 2,
+     "name": "Drop 51",
+     "start": 316024,
+     "end": 316779
+    },
+    {
+     "track": 2,
+     "name": "Drop 52",
+     "start": 331002,
+     "end": 331716
+    }
+   ],
+   "markers": [
+    {
+     "frame": 87458,
+     "name": "♪ Amine Edge, DANCE, Blaze (Kevin Hedge) - Lovelee Dae (Original Mix)",
+     "color": "Purple",
+     "duration": 7612
+    },
+    {
+     "frame": 95800,
+     "name": "♪ Fer BR - Mousy (Original Mix)",
+     "color": "Purple",
+     "duration": 3809
+    },
+    {
+     "frame": 121029,
+     "name": "♪ Viot - Cardio (Extended Mix)",
+     "color": "Purple",
+     "duration": 5975
+    },
+    {
+     "frame": 140186,
+     "name": "♪ Viot - Flex (Extended Mix)",
+     "color": "Purple",
+     "duration": 6103
+    },
+    {
+     "frame": 153816,
+     "name": "♪ Emanuel Satie - Give It All (Extended Mix)",
+     "color": "Purple",
+     "duration": 5549
+    },
+    {
+     "frame": 159334,
+     "name": "♪ Viot - Blitz (Original Mix)",
+     "color": "Purple",
+     "duration": 6482
+    },
+    {
+     "frame": 159335,
+     "name": "♪ Viot - Blitz (Intro Mix)",
+     "color": "Sand",
+     "duration": 6524
+    },
+    {
+     "frame": 166093,
+     "name": "♪ Cajmere, Dajae - Brighter Days (Marco Lys Remix)",
+     "color": "Purple",
+     "duration": 6371
+    },
+    {
+     "frame": 187386,
+     "name": "♪ Green Velvet, Meduza, GENESI (ITA), ESSENTIA (IT) - La La Land (Extended Mix)",
+     "color": "Purple",
+     "duration": 6533
+    },
+    {
+     "frame": 194387,
+     "name": "♪ Adrian Hour - Kickback (Original Mix)",
+     "color": "Purple",
+     "duration": 4203
+    },
+    {
+     "frame": 199410,
+     "name": "♪ Oxia - Domino (Original Mix)",
+     "color": "Purple",
+     "duration": 6269
+    },
+    {
+     "frame": 206200,
+     "name": "♪ Vintage Culture, Viot - Anthem (Original Mix)",
+     "color": "Purple",
+     "duration": 4612
+    },
+    {
+     "frame": 213379,
+     "name": "♪ Noir feat. Haze - Around (Viot, Gabe & Bhaskar Remix)",
+     "color": "Purple",
+     "duration": 8299
+    },
+    {
+     "frame": 228926,
+     "name": "♪ Jorge Ben - Chove Chuva (Viot & Let BR Remix)",
+     "color": "Purple",
+     "duration": 6070
+    },
+    {
+     "frame": 235964,
+     "name": "♪ Carloh - Back To House (Original Mix)",
+     "color": "Purple",
+     "duration": 6105
+    },
+    {
+     "frame": 241790,
+     "name": "♪ Adam Ten, Viot - Put Id Down 30.8",
+     "color": "Purple",
+     "duration": 7179
+    },
+    {
+     "frame": 249572,
+     "name": "♪ Khia - My Neck My Back (Beltran Funky Edit)",
+     "color": "Purple",
+     "duration": 6588
+    },
+    {
+     "frame": 256436,
+     "name": "♪ Viot & Vinter - Good Life (Inner City New Mix)",
+     "color": "Purple",
+     "duration": 5753
+    },
+    {
+     "frame": 269373,
+     "name": "♪ Freenzy - Watchin' You",
+     "color": "Purple",
+     "duration": 5557
+    },
+    {
+     "frame": 275623,
+     "name": "♪ Freenzy, Ric J - Baile in Braza",
+     "color": "Purple",
+     "duration": 6150
+    },
+    {
+     "frame": 294542,
+     "name": "♪ Viot - No Brakes (Final mix)",
+     "color": "Purple",
+     "duration": 7254
+    },
+    {
+     "frame": 303428,
+     "name": "♪ Viot - The Ride (Original Mix)",
+     "color": "Purple",
+     "duration": 7165
+    },
+    {
+     "frame": 315921,
+     "name": "♪ DJ Glen - Tom Honks (Extended Mix)",
+     "color": "Purple",
+     "duration": 2931
+    },
+    {
+     "frame": 326305,
+     "name": "♪ Viot - Fyrah (Ammo Avenue Remix)",
+     "color": "Purple",
+     "duration": 1576
+    },
+    {
+     "frame": 328424,
+     "name": "♪ Black Alien, Gabe, Viot - Como Eu Te Quero (Remix)",
+     "color": "Purple",
+     "duration": 5876
+    },
+    {
+     "frame": 89999,
+     "name": "DROP 1",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 92922,
+     "name": "DROP 2",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 95891,
+     "name": "DROP 3",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 97353,
+     "name": "DROP 4",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 100265,
+     "name": "DROP 5",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 104252,
+     "name": "DROP 6",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 107152,
+     "name": "DROP 7",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 110412,
+     "name": "DROP 8",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 112409,
+     "name": "DROP 9",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 115309,
+     "name": "DROP 10",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 121484,
+     "name": "DROP 11",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 123642,
+     "name": "DROP 12",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 126160,
+     "name": "DROP 13",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 129037,
+     "name": "DROP 14",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 131914,
+     "name": "DROP 15",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 135870,
+     "name": "DROP 16",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 138703,
+     "name": "DROP 17",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 140907,
+     "name": "DROP 18",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 143065,
+     "name": "DROP 19",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 145942,
+     "name": "DROP 20",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 154843,
+     "name": "DROP 21",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 164471,
+     "name": "DROP 22",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 168063,
+     "name": "DROP 23",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 171301,
+     "name": "DROP 24",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 175276,
+     "name": "DROP 25",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 182811,
+     "name": "DROP 26",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 185329,
+     "name": "DROP 27",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 192164,
+     "name": "DROP 28",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 194726,
+     "name": "DROP 29",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 197243,
+     "name": "DROP 30",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 201913,
+     "name": "DROP 31",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 203711,
+     "name": "DROP 32",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 204790,
+     "name": "DROP 33",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 211613,
+     "name": "DROP 34",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 214470,
+     "name": "DROP 35",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 219289,
+     "name": "DROP 36",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 222857,
+     "name": "DROP 37",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 226070,
+     "name": "DROP 38",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 229634,
+     "name": "DROP 39",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 232267,
+     "name": "DROP 40",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 239952,
+     "name": "DROP 41",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 243606,
+     "name": "DROP 42",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 247175,
+     "name": "DROP 43",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 267160,
+     "name": "DROP 44",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 271085,
+     "name": "DROP 45",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 273895,
+     "name": "DROP 46",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 277152,
+     "name": "DROP 47",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 279294,
+     "name": "DROP 48",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 295535,
+     "name": "DROP 49",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 297677,
+     "name": "DROP 50",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 299495,
+     "name": "DROP 51",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 300176,
+     "name": "DROP 52",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 314237,
+     "name": "DROP 53",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 316401,
+     "name": "DROP 54",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 331359,
+     "name": "DROP 55",
+     "color": "Red",
+     "duration": 1
+    }
+   ]
+  },
+  {
+   "timeline": "4x5 · Drops",
+   "target_dir": "/Users/juniorsousa/Library/CloudStorage/Dropbox/VIOT/2026_11_14 - Eco Club/4x5",
+   "mark_in": 92557,
+   "mark_out": 331715,
+   "mode": "Individual clips",
+   "status": "Ready",
+   "pct": 0,
+   "eta_ms": null,
+   "clips": [
+    {
+     "track": 1,
+     "name": "Drop 1",
+     "start": 92557,
+     "end": 93288
+    },
+    {
+     "track": 1,
+     "name": "Drop 2",
+     "start": 95526,
+     "end": 96257
+    },
+    {
+     "track": 1,
+     "name": "Drop 3",
+     "start": 96988,
+     "end": 97718
+    },
+    {
+     "track": 1,
+     "name": "Drop 4",
+     "start": 99902,
+     "end": 100628
+    },
+    {
+     "track": 1,
+     "name": "Drop 5",
+     "start": 103889,
+     "end": 104614
+    },
+    {
+     "track": 1,
+     "name": "Drop 6",
+     "start": 106842,
+     "end": 107526
+    },
+    {
+     "track": 1,
+     "name": "Drop 7",
+     "start": 110242,
+     "end": 110767
+    },
+    {
+     "track": 1,
+     "name": "Drop 8",
+     "start": 112097,
+     "end": 112772
+    },
+    {
+     "track": 1,
+     "name": "Drop 9",
+     "start": 114946,
+     "end": 115671
+    },
+    {
+     "track": 1,
+     "name": "Drop 10",
+     "start": 121132,
+     "end": 121843
+    },
+    {
+     "track": 1,
+     "name": "Drop 11",
+     "start": 123282,
+     "end": 124002
+    },
+    {
+     "track": 1,
+     "name": "Drop 12",
+     "start": 125801,
+     "end": 126520
+    },
+    {
+     "track": 1,
+     "name": "Drop 13",
+     "start": 128677,
+     "end": 129396
+    },
+    {
+     "track": 1,
+     "name": "Drop 14",
+     "start": 131555,
+     "end": 132273
+    },
+    {
+     "track": 1,
+     "name": "Drop 15",
+     "start": 135513,
+     "end": 136230
+    },
+    {
+     "track": 1,
+     "name": "Drop 16",
+     "start": 138344,
+     "end": 139063
+    },
+    {
+     "track": 1,
+     "name": "Drop 17",
+     "start": 140547,
+     "end": 141266
+    },
+    {
+     "track": 1,
+     "name": "Drop 18",
+     "start": 142705,
+     "end": 143424
+    },
+    {
+     "track": 1,
+     "name": "Drop 19",
+     "start": 145582,
+     "end": 146301
+    },
+    {
+     "track": 1,
+     "name": "Drop 20",
+     "start": 154484,
+     "end": 155203
+    },
+    {
+     "track": 1,
+     "name": "Drop 21",
+     "start": 160876,
+     "end": 164820
+    },
+    {
+     "track": 1,
+     "name": "Drop 22",
+     "start": 167658,
+     "end": 168423
+    },
+    {
+     "track": 1,
+     "name": "Drop 23",
+     "start": 170941,
+     "end": 171661
+    },
+    {
+     "track": 1,
+     "name": "Drop 24",
+     "start": 174966,
+     "end": 175597
+    },
+    {
+     "track": 1,
+     "name": "Drop 25",
+     "start": 182451,
+     "end": 183170
+    },
+    {
+     "track": 1,
+     "name": "Drop 26",
+     "start": 184980,
+     "end": 185689
+    },
+    {
+     "track": 1,
+     "name": "Drop 27",
+     "start": 194366,
+     "end": 195086
+    },
+    {
+     "track": 1,
+     "name": "Drop 28",
+     "start": 196884,
+     "end": 197603
+    },
+    {
+     "track": 1,
+     "name": "Drop 29",
+     "start": 201655,
+     "end": 202272
+    },
+    {
+     "track": 1,
+     "name": "Drop 30",
+     "start": 203351,
+     "end": 204071
+    },
+    {
+     "track": 1,
+     "name": "Drop 31",
+     "start": 204431,
+     "end": 205150
+    },
+    {
+     "track": 1,
+     "name": "Drop 32",
+     "start": 211257,
+     "end": 211970
+    },
+    {
+     "track": 1,
+     "name": "Drop 33",
+     "start": 214113,
+     "end": 214826
+    },
+    {
+     "track": 1,
+     "name": "Drop 34",
+     "start": 218932,
+     "end": 219645
+    },
+    {
+     "track": 1,
+     "name": "Drop 35",
+     "start": 222501,
+     "end": 223214
+    },
+    {
+     "track": 1,
+     "name": "Drop 36",
+     "start": 225716,
+     "end": 226427
+    },
+    {
+     "track": 1,
+     "name": "Drop 37",
+     "start": 229277,
+     "end": 230002
+    },
+    {
+     "track": 1,
+     "name": "Drop 38",
+     "start": 231553,
+     "end": 232992
+    },
+    {
+     "track": 1,
+     "name": "Drop 39",
+     "start": 239595,
+     "end": 240309
+    },
+    {
+     "track": 1,
+     "name": "Drop 40",
+     "start": 243249,
+     "end": 243963
+    },
+    {
+     "track": 1,
+     "name": "Drop 41",
+     "start": 246818,
+     "end": 247532
+    },
+    {
+     "track": 1,
+     "name": "Drop 42",
+     "start": 266797,
+     "end": 267517
+    },
+    {
+     "track": 1,
+     "name": "Drop 43",
+     "start": 270684,
+     "end": 271264
+    },
+    {
+     "track": 1,
+     "name": "Drop 44",
+     "start": 273538,
+     "end": 274252
+    },
+    {
+     "track": 1,
+     "name": "Drop 45",
+     "start": 276795,
+     "end": 277509
+    },
+    {
+     "track": 1,
+     "name": "Drop 46",
+     "start": 278937,
+     "end": 279651
+    },
+    {
+     "track": 1,
+     "name": "Drop 47",
+     "start": 295322,
+     "end": 295892
+    },
+    {
+     "track": 1,
+     "name": "Drop 48",
+     "start": 297320,
+     "end": 298034
+    },
+    {
+     "track": 1,
+     "name": "Drop 49",
+     "start": 300099,
+     "end": 300533
+    },
+    {
+     "track": 1,
+     "name": "Drop 50",
+     "start": 313881,
+     "end": 314594
+    },
+    {
+     "track": 2,
+     "name": "Drop 51",
+     "start": 316024,
+     "end": 316779
+    },
+    {
+     "track": 2,
+     "name": "Drop 52",
+     "start": 331002,
+     "end": 331716
+    }
+   ],
+   "markers": [
+    {
+     "frame": 87458,
+     "name": "♪ Amine Edge, DANCE, Blaze (Kevin Hedge) - Lovelee Dae (Original Mix)",
+     "color": "Purple",
+     "duration": 7612
+    },
+    {
+     "frame": 95800,
+     "name": "♪ Fer BR - Mousy (Original Mix)",
+     "color": "Purple",
+     "duration": 3809
+    },
+    {
+     "frame": 121029,
+     "name": "♪ Viot - Cardio (Extended Mix)",
+     "color": "Purple",
+     "duration": 5975
+    },
+    {
+     "frame": 140186,
+     "name": "♪ Viot - Flex (Extended Mix)",
+     "color": "Purple",
+     "duration": 6103
+    },
+    {
+     "frame": 153816,
+     "name": "♪ Emanuel Satie - Give It All (Extended Mix)",
+     "color": "Purple",
+     "duration": 5549
+    },
+    {
+     "frame": 159334,
+     "name": "♪ Viot - Blitz (Original Mix)",
+     "color": "Purple",
+     "duration": 6482
+    },
+    {
+     "frame": 159335,
+     "name": "♪ Viot - Blitz (Intro Mix)",
+     "color": "Sand",
+     "duration": 6524
+    },
+    {
+     "frame": 166093,
+     "name": "♪ Cajmere, Dajae - Brighter Days (Marco Lys Remix)",
+     "color": "Purple",
+     "duration": 6371
+    },
+    {
+     "frame": 187386,
+     "name": "♪ Green Velvet, Meduza, GENESI (ITA), ESSENTIA (IT) - La La Land (Extended Mix)",
+     "color": "Purple",
+     "duration": 6533
+    },
+    {
+     "frame": 194387,
+     "name": "♪ Adrian Hour - Kickback (Original Mix)",
+     "color": "Purple",
+     "duration": 4203
+    },
+    {
+     "frame": 199410,
+     "name": "♪ Oxia - Domino (Original Mix)",
+     "color": "Purple",
+     "duration": 6269
+    },
+    {
+     "frame": 206200,
+     "name": "♪ Vintage Culture, Viot - Anthem (Original Mix)",
+     "color": "Purple",
+     "duration": 4612
+    },
+    {
+     "frame": 213379,
+     "name": "♪ Noir feat. Haze - Around (Viot, Gabe & Bhaskar Remix)",
+     "color": "Purple",
+     "duration": 8299
+    },
+    {
+     "frame": 228926,
+     "name": "♪ Jorge Ben - Chove Chuva (Viot & Let BR Remix)",
+     "color": "Purple",
+     "duration": 6070
+    },
+    {
+     "frame": 235964,
+     "name": "♪ Carloh - Back To House (Original Mix)",
+     "color": "Purple",
+     "duration": 6105
+    },
+    {
+     "frame": 241790,
+     "name": "♪ Adam Ten, Viot - Put Id Down 30.8",
+     "color": "Purple",
+     "duration": 7179
+    },
+    {
+     "frame": 249572,
+     "name": "♪ Khia - My Neck My Back (Beltran Funky Edit)",
+     "color": "Purple",
+     "duration": 6588
+    },
+    {
+     "frame": 256436,
+     "name": "♪ Viot & Vinter - Good Life (Inner City New Mix)",
+     "color": "Purple",
+     "duration": 5753
+    },
+    {
+     "frame": 269373,
+     "name": "♪ Freenzy - Watchin' You",
+     "color": "Purple",
+     "duration": 5557
+    },
+    {
+     "frame": 275623,
+     "name": "♪ Freenzy, Ric J - Baile in Braza",
+     "color": "Purple",
+     "duration": 6150
+    },
+    {
+     "frame": 294542,
+     "name": "♪ Viot - No Brakes (Final mix)",
+     "color": "Purple",
+     "duration": 7254
+    },
+    {
+     "frame": 303428,
+     "name": "♪ Viot - The Ride (Original Mix)",
+     "color": "Purple",
+     "duration": 7165
+    },
+    {
+     "frame": 315921,
+     "name": "♪ DJ Glen - Tom Honks (Extended Mix)",
+     "color": "Purple",
+     "duration": 2931
+    },
+    {
+     "frame": 326305,
+     "name": "♪ Viot - Fyrah (Ammo Avenue Remix)",
+     "color": "Purple",
+     "duration": 1576
+    },
+    {
+     "frame": 328424,
+     "name": "♪ Black Alien, Gabe, Viot - Como Eu Te Quero (Remix)",
+     "color": "Purple",
+     "duration": 5876
+    },
+    {
+     "frame": 89999,
+     "name": "DROP 1",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 92922,
+     "name": "DROP 2",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 95891,
+     "name": "DROP 3",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 97353,
+     "name": "DROP 4",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 100265,
+     "name": "DROP 5",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 104252,
+     "name": "DROP 6",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 107152,
+     "name": "DROP 7",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 110412,
+     "name": "DROP 8",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 112409,
+     "name": "DROP 9",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 115309,
+     "name": "DROP 10",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 121484,
+     "name": "DROP 11",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 123642,
+     "name": "DROP 12",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 126160,
+     "name": "DROP 13",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 129037,
+     "name": "DROP 14",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 131914,
+     "name": "DROP 15",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 135870,
+     "name": "DROP 16",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 138703,
+     "name": "DROP 17",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 140907,
+     "name": "DROP 18",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 143065,
+     "name": "DROP 19",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 145942,
+     "name": "DROP 20",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 154843,
+     "name": "DROP 21",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 164471,
+     "name": "DROP 22",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 168063,
+     "name": "DROP 23",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 171301,
+     "name": "DROP 24",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 175276,
+     "name": "DROP 25",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 182811,
+     "name": "DROP 26",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 185329,
+     "name": "DROP 27",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 192164,
+     "name": "DROP 28",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 194726,
+     "name": "DROP 29",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 197243,
+     "name": "DROP 30",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 201913,
+     "name": "DROP 31",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 203711,
+     "name": "DROP 32",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 204790,
+     "name": "DROP 33",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 211613,
+     "name": "DROP 34",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 214470,
+     "name": "DROP 35",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 219289,
+     "name": "DROP 36",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 222857,
+     "name": "DROP 37",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 226070,
+     "name": "DROP 38",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 229634,
+     "name": "DROP 39",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 232267,
+     "name": "DROP 40",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 239952,
+     "name": "DROP 41",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 243606,
+     "name": "DROP 42",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 247175,
+     "name": "DROP 43",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 267160,
+     "name": "DROP 44",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 271085,
+     "name": "DROP 45",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 273895,
+     "name": "DROP 46",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 277152,
+     "name": "DROP 47",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 279294,
+     "name": "DROP 48",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 295535,
+     "name": "DROP 49",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 297677,
+     "name": "DROP 50",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 299495,
+     "name": "DROP 51",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 300176,
+     "name": "DROP 52",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 314237,
+     "name": "DROP 53",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 316401,
+     "name": "DROP 54",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 331359,
+     "name": "DROP 55",
+     "color": "Red",
+     "duration": 1
+    }
+   ]
+  }
+ ]
 }

@@ -14,6 +14,7 @@ O Logger:
 Nada e apagado direto, e nada sai se faltar uma foto com estrela no Select Fotos.
 """
 import glob
+import hashlib
 import os
 import re
 import shutil
@@ -124,6 +125,104 @@ def _walk(d):
                 yield os.path.join(root, f)
 
 
+_COPY_SUFFIX = re.compile(r" \(\d+\)$")
+
+
+def _key(path, size):
+    stem, ext = os.path.splitext(os.path.basename(path))
+    return (_fold(_COPY_SUFFIX.sub("", stem)), ext.lower(), size)
+
+
+def _select_index(select):
+    """Arquivos do Select Fotos por (nome sem ' (2)', extensao, tamanho)."""
+    if not os.path.isdir(select):
+        return set()
+    return {_key(f, _size(f)) for f in _walk(select)}
+
+
+def sidecars(path):
+    """Arquivos que acompanham a foto: o .xmp (edicao do Lightroom, quando ele grava no arquivo)."""
+    base = os.path.splitext(path)[0]
+    out = []
+    for ext in (".xmp", ".XMP", ".Xmp"):
+        if os.path.isfile(base + ext) and (base + ext) not in out:
+            out.append(base + ext)
+    return out
+
+
+def _sha(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for b in iter(lambda: f.read(4 << 20), b""):
+            h.update(b)
+    return h.hexdigest()
+
+
+def _free_name(dst_dir, name, src_size, src_sha):
+    """Nome livre no Select Fotos. Se ja existe o mesmo arquivo (mesmo conteudo), devolve None (nada a fazer)."""
+    stem, ext = os.path.splitext(name)
+    n = 1
+    while True:
+        cand = os.path.join(dst_dir, name if n == 1 else f"{stem} ({n}){ext}")
+        if not os.path.lexists(cand):
+            return cand
+        if os.path.isfile(cand) and _size(cand) == src_size and _sha(cand) == src_sha:
+            return None
+        n += 1
+        if n > 999:
+            raise OSError("nomes demais iguais no Select Fotos: " + name)
+
+
+def _copy_one(src, dst_dir):
+    """Copia conferida: escreve num .parcial, compara SHA-256 com a origem e so entao da o nome final.
+    Nunca sobrescreve. Devolve o caminho final (ou o que ja existia igual)."""
+    size, sha = _size(src), _sha(src)
+    dst = _free_name(dst_dir, os.path.basename(src), size, sha)
+    if dst is None:
+        return None
+    tmp = os.path.join(dst_dir, "." + os.path.basename(dst) + ".parcial")
+    try:
+        with open(src, "rb") as a, open(tmp, "wb") as b:
+            shutil.copyfileobj(a, b, 4 << 20)
+            b.flush()
+            os.fsync(b.fileno())
+        shutil.copystat(src, tmp)
+        if _size(tmp) != size or _sha(tmp) != sha:
+            raise OSError("a cópia não bateu com o original")
+        if os.path.lexists(dst):
+            raise OSError("apareceu um arquivo com o mesmo nome durante a cópia")
+        os.rename(tmp, dst)
+        return dst
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
+def copy_to_select(festa_dir, paths, progress=None):
+    """Copia as fotos com estrela (e o .xmp delas) para <festa>/Select Fotos, conferindo cada uma."""
+    festa = os.path.realpath(festa_dir)
+    dst_dir = os.path.join(festa, SELECT_NAME)
+    os.makedirs(dst_dir, exist_ok=True)
+    res = []
+    for i, p in enumerate(paths):
+        if progress:
+            progress(i, len(paths), os.path.basename(p))
+        if not os.path.realpath(p).startswith(festa + "/"):
+            res.append({"path": p, "ok": False, "msg": "fora da pasta da festa"})
+            continue
+        try:
+            out = _copy_one(p, dst_dir)
+            dst = out or os.path.join(dst_dir, os.path.basename(p))
+            for x in sidecars(p):
+                sx = os.path.splitext(dst)[0] + os.path.splitext(x)[1]
+                if not os.path.lexists(sx):
+                    shutil.copy2(x, sx)
+            res.append({"path": p, "ok": True, "to": dst, "msg": "" if out else "já estava lá"})
+        except OSError as e:
+            res.append({"path": p, "ok": False, "msg": str(e)})
+    return res
+
+
 def plan(festa_dir, images, exists=os.path.exists):
     """festa_dir: pasta da festa no HD. images: Catalog.images_under(festa_dir).
 
@@ -134,9 +233,7 @@ def plan(festa_dir, images, exists=os.path.exists):
     """
     festa = _nfc(str(festa_dir)).rstrip("/")
     select = festa + "/" + SELECT_NAME
-    sel_names = set()
-    if os.path.isdir(select):
-        sel_names = {_fold(os.path.basename(f)) for f in _walk(select)}
+    sel_index = _select_index(select)
     starred, problems = [], []
     for im in images:
         if im["rating"] < 1:
@@ -144,11 +241,14 @@ def plan(festa_dir, images, exists=os.path.exists):
         p = im["path"]
         in_select = p.startswith(select + "/")
         on_disk = exists(p)
-        same_name = _fold(os.path.basename(p)) in sel_names
-        safe = (in_select and on_disk) or same_name
-        starred.append({"path": p, "rating": im["rating"], "safe": safe,
-                        "where": "Select Fotos" if safe else ("sumiu do disco" if in_select else p[len(festa) + 1:])})
-        if not safe:
+        if on_disk:
+            safe = in_select or _key(p, _size(p)) in sel_index
+        else:  # original ja apagado: basta ter uma foto com o mesmo nome no Select Fotos
+            safe = not in_select and _key(p, None)[:2] in {k[:2] for k in sel_index}
+        copyable = not safe and not in_select and on_disk
+        starred.append({"path": p, "rating": im["rating"], "safe": safe, "copy": copyable,
+                        "where": "Select Fotos" if safe else ("sumiu do disco" if in_select or not on_disk else p[len(festa) + 1:])})
+        if not safe and not copyable:
             problems.append(p)
     # pastas a apagar: a pasta onde estao as fotos fora do Select Fotos (normalmente "Fotos").
     # Nunca uma pasta acima disso (ex.: Boma/festa/Fotos apaga Fotos, nao "festa", que tem videos).
@@ -175,17 +275,17 @@ def plan(festa_dir, images, exists=os.path.exists):
         trash.append({"dir": t, "files": len(files), "bytes": sum(_size(f) for f in files),
                       "not_photos": [f[len(t) + 1:] for f in extra][:30], "not_photos_count": len(extra)})
     n_sel = len(list(_walk(select))) if os.path.isdir(select) else 0
+    to_copy = [s["path"] for s in starred if s["copy"]]
     reasons = []
     if not starred:
         reasons.append("Nenhuma foto com estrela no catálogo para esta festa.")
     if problems:
-        reasons.append(f"{len(problems)} foto(s) com estrela ainda fora do Select Fotos.")
-    if not os.path.isdir(select):
-        reasons.append("A pasta Select Fotos não existe nesta festa.")
+        reasons.append(f"{len(problems)} foto(s) com estrela não estão no disco (nem no Select Fotos).")
     if not trash:
         reasons.append("Nada para limpar: não há fotos fora do Select Fotos.")
     return {"festa": festa, "select": select, "select_exists": os.path.isdir(select), "select_files": n_sel,
             "total": len(images), "starred": starred, "missing": len(problems), "trash": trash,
+            "to_copy": to_copy, "copy_bytes": sum(_size(f) + sum(_size(x) for x in sidecars(f)) for f in to_copy),
             "trash_files": sum(t["files"] for t in trash), "trash_bytes": sum(t["bytes"] for t in trash),
             "ready": not reasons, "reasons": reasons}
 
