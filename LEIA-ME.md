@@ -27,6 +27,21 @@ O instalador monta o app no próprio Mac, então ele sai certo para a versão do
 - **Cartões:** aparecem sozinhos quando você pluga. Cada um mostra o tipo reconhecido, quantos arquivos novos tem e para qual pasta vai. Dá para trocar o destino (ex.: Sony → `Fixa Wide`) e ele lembra a escolha para aquele cartão.
 - **Continuar trabalho existente:** para logar mais cartões num trabalho já criado (ex.: segundo dia).
 
+## Depois da edição
+
+**Renomear drops** (botão *Drops* no topo): com o render terminado no DaVinci, o Logger lê o projeto aberto
+(renders da fila, clipes "Drop N" e os marcadores ♪ que o Ghost Junior põe) e mostra a prévia:
+`V1-0011_Drop 11.mp4` → `11_Eco Club Cardio.mp4`. Número = ordem na timeline; nome da festa = pasta
+`AAAA_MM_DD - Festa`; música do VIOT ganha só o título (sem autor e sem "Extended Mix"). Dá para corrigir
+o título na prévia (o Logger lembra) e ligar/desligar o VIOT de um drop. Nada é sobrescrito, e o botão
+*Desfazer* volta os nomes do render. Se o render ainda estiver rodando, o Logger fica de olho e avisa.
+Precisa do DaVinci aberto com *Preferences > System > General > External scripting using* em **Local**.
+
+**Limpar fotos** (botão *Fotos*): depois de arrastar as fotos com estrela para `Select Fotos` no Lightroom,
+o Logger lê o catálogo (uma cópia, o Lightroom pode estar aberto), confere que **toda** foto com estrela
+está no Select Fotos e mostra o que vai sair. Só manda a pasta Fotos para a **Lixeira** (pelo Finder, dá
+para recuperar) depois de dois cliques seus. Se faltar uma foto com estrela, não deixa limpar.
+
 ## Segurança e conferência
 - Cada arquivo é lido do cartão, gravado, relido do HD e comparado por checksum (BLAKE2b) antes de valer.
 - Antes de começar ele confere se tem espaço livre suficiente.

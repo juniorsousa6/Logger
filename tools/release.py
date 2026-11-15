@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FILES = ["app.py", "cardlogger.py", "media.py", "cards.json", "ui.html", "VERSION",
+FILES = ["app.py", "cardlogger.py", "media.py", "posrender.py", "fotos.py", "cards.json", "ui.html", "VERSION",
          "Instalar Logger.command", "Abrir Logger.command", "LEIA-ME.md",
          "mac/LoggerApp.swift", "mac/Info.plist", "mac/UPDATE_URL", "mac/icon.png"]
 RAW = "https://raw.githubusercontent.com/juniorsousa6/Logger/main/"

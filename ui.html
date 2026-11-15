@@ -221,6 +221,31 @@ input[type=date]:disabled{opacity:.5}
 .scrim.on{opacity:1;pointer-events:auto}
 .sheet{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:rgba(9,10,12,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-left:1px solid var(--line2);z-index:11;transform:translateX(100%);transition:transform .28s var(--ease);overflow-y:auto;padding:24px 26px 40px}
 .sheet.on{transform:none}
+.sheet.wide{width:min(640px,100%)}
+/* pos-render: renomear drops */
+.dstat{font:12px var(--mono);color:var(--mut);margin:14px 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dstat .dot{width:7px;height:7px;background:var(--faint);display:inline-block}
+.dstat .dot.ok{background:var(--acc);box-shadow:0 0 8px var(--acc)}.dstat .dot.warn{background:var(--warn)}
+.djob{margin-top:22px}
+.djob .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--line2);padding-bottom:8px}
+.djob .h b{font:600 13px var(--mono);letter-spacing:.06em}
+.drow{display:grid;grid-template-columns:34px 1fr;gap:2px 10px;padding:9px 0;border-bottom:1px solid var(--line);font:12px var(--mono)}
+.drow .n{color:var(--faint);text-align:right;padding-top:2px}
+.drow .new{color:var(--text);font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.drow .old,.drow .song{color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drow .song.v{color:var(--acc)}
+.drow input{border:1px solid var(--acc-line);background:var(--sunken);border-radius:4px;padding:3px 7px;font:12px var(--mono);width:170px;outline:none}
+.drow.skip .new{color:var(--warn)}
+.drow .vt{font-size:10px;letter-spacing:.08em;border:1px solid var(--acc-line);color:var(--acc);padding:0 5px;border-radius:3px;cursor:pointer;background:none}
+.drow .vt.off{border-color:var(--line2);color:var(--faint)}
+.fest{display:flex;justify-content:space-between;gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 0;cursor:pointer;font:13px var(--mono);color:var(--text)}
+.fest:hover{color:var(--acc)}.fest.off{color:var(--faint);cursor:default}
+.fest small{color:var(--mut)}
+.fcheck{margin-top:18px;border:1px solid var(--line2);border-radius:4px;padding:14px 16px;font:13px var(--mono)}
+.fcheck div{padding:3px 0}.fcheck .ok{color:var(--acc)}.fcheck .bad{color:var(--warn)}
+.fmiss{font:12px var(--mono);color:var(--warn);max-height:140px;overflow:auto;margin-top:6px}
+.btn.danger{background:var(--bad);color:#0a0b0c}
+.dbtns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
 .sheet h2{font:600 13px var(--mono);letter-spacing:.14em;text-transform:uppercase;margin:0}
 .sheet h3{font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:30px 0 8px;font-weight:400}
 .sheet .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
@@ -275,6 +300,8 @@ input[type=date]:disabled{opacity:.5}
     <div class="brand"><i></i>Logger <small>// cartões</small></div>
     <div class="icons">
       <button class="ib" id="openFind" title="Buscar trabalhos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar <kbd>⌘K</kbd></button>
+      <button class="ib" id="openPos" title="Depois do render: renomear os drops"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M4 12h16M4 18h7"/><path d="m16 15 3 3-3 3"/></svg>Drops</button>
+      <button class="ib" id="openFotos" title="Depois do Lightroom: limpar as fotos que não entraram no select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="m3 15 5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></svg>Fotos</button>
       <button class="ib" id="openSet" title="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Ajustes</button>
     </div>
   </header>
@@ -370,6 +397,24 @@ input[type=date]:disabled{opacity:.5}
   <label class="opt"><input type="checkbox" class="sw" id="mhl"><span>Manifesto padrão cinema (ASC MHL)<small>Só se uma produtora pedir. Cria a pasta ascmhl com o checksum de cada arquivo.</small></span></label>
   <h3>Sempre ligado</h3>
   <ul class="always"><li>Nada é apagado do cartão</li><li>Cada arquivo é conferido por checksum</li><li>Só arquivos novos são copiados</li><li>Relatório visual e catálogo são gerados sozinhos</li></ul>
+</aside>
+
+<aside class="sheet wide" id="sPos" aria-label="Renomear drops">
+  <div class="top"><h2>Renomear drops</h2><button class="ib" data-close>Fechar</button></div>
+  <p class="sub" style="margin:10px 0 0">Depois do render no DaVinci: <span class="mono">V1-0011_Drop 11.mp4</span> vira <span class="mono">11_Festa.mp4</span>, e música do VIOT ganha o nome dela no lugar do asterisco. Nada muda antes de você confirmar.</p>
+  <div class="dstat" id="dStat"></div>
+  <div class="dbtns"><button class="btn ghost" id="dRead">Ler o DaVinci</button><span class="sub" id="dHint"></span></div>
+  <div id="dJobs"></div>
+  <div class="err" id="dErr"></div>
+</aside>
+
+<aside class="sheet wide" id="sFotos" aria-label="Limpar fotos">
+  <div class="top"><h2>Limpar fotos</h2><button class="ib" data-close>Fechar</button></div>
+  <p class="sub" style="margin:10px 0 0">Depois que você arrastou as fotos com estrela para <span class="mono">Select Fotos</span> no Lightroom: o Logger confere que todas estão lá e manda o resto para a Lixeira. Só depois do seu ok, e dá para recuperar da Lixeira.</p>
+  <div class="dstat" id="fCat"></div>
+  <div id="fList"></div>
+  <div id="fPlan"></div>
+  <div class="err" id="fErr"></div>
 </aside>
 
 <aside class="sheet" id="sFind" aria-label="Buscar trabalhos">
@@ -806,12 +851,119 @@ $("eject").onclick = async () => { const b = $("eject"); b.classList.add("busy")
     $("ejectMsg").textContent = r.map(x => (x.ok?"✓ ":"✕ ") + x.path.split("/").pop() + (x.ok?" ejetado":": "+x.msg)).join("   "); }
   finally { b.classList.remove("busy"); } };
 
+/* ---------- depois do render: renomear drops ---------- */
+const D = {plan:null, timer:null, wasPending:0, edits:{}, undo:{}};
+const dName = (r, party, title) => `${r.n}_${party}${title ? " " + title : ""}` + (r.old.match(/\.[^.]+$/)||[""])[0];
+async function readDrops(){
+  clearTimeout(D.timer); const b = $("dRead"); b.classList.add("busy"); $("dErr").textContent = "";
+  $("dStat").innerHTML = `<span class="dot"></span>conectando no DaVinci…`;
+  try {
+    const p = await api("/api/drops/plan"); D.plan = p;
+    const pend = p.pending.length;
+    $("dStat").innerHTML = `<span class="dot ${pend ? "warn" : "ok"}"></span>projeto <b>${esc(p.project)}</b>` +
+      p.pending.map(j => ` · ${esc(j.timeline)}: ${j.status === "Rendering" ? "renderizando " + (j.pct||0) + "%" : esc(j.status === "Ready" ? "na fila" : j.status)}`).join("");
+    if (D.wasPending && !pend && p.jobs.length) api("/api/notify", {title:"Render terminou", msg:"Os drops estão prontos para renomear no Logger."}).catch(()=>{});
+    D.wasPending = pend;
+    $("dHint").textContent = pend ? "Fico de olho e aviso quando o render terminar." : "";
+    renderDrops();
+    if (pend && $("sPos").classList.contains("on")) D.timer = setTimeout(readDrops, 15000);
+  } catch(e){ $("dStat").innerHTML = `<span class="dot warn"></span>DaVinci não respondeu`; $("dErr").textContent = e.message; }
+  finally { b.classList.remove("busy"); }
+}
+function renderDrops(){
+  const p = D.plan; if (!p) return;
+  if (!p.jobs.length){ $("dJobs").innerHTML = `<p class="sub" style="margin-top:22px">${p.pending.length ? "Nenhum render terminou ainda." : "Nenhum render na fila deste projeto."}</p>`; return; }
+  $("dJobs").innerHTML = p.jobs.map((j, ji) => {
+    const rows = j.rows.map((r, ri) => {
+      const k = ji + ":" + ri, ok = r.status === "ok", t = D.edits[k] ?? r.title, v = D.edits[k] !== undefined ? !!D.edits[k] : r.viot;
+      return `<div class="drow ${ok ? "" : "skip"}"><span class="n">${r.n ?? "–"}</span><div>
+        <div class="new">${ok ? `${esc(r.n + "_" + j.party)}${v ? ` <input data-k="${k}" value="${esc(t)}" aria-label="Nome da música">` : ""}${esc((r.old.match(/\.[^.]+$/)||[""])[0])}
+          <button class="vt ${v ? "" : "off"}" data-v="${k}" title="Música do VIOT?">VIOT</button>` : esc(r.status)}</div>
+        <div class="old">${esc(r.old)}</div>${r.song ? `<div class="song ${v ? "v" : ""}">♪ ${esc(r.song)}</div>` : ""}</div></div>`; }).join("");
+    const n = j.rows.filter(r => r.status === "ok").length;
+    const nv = j.rows.filter(r => r.status === "ok" && r.viot).length;
+    return `<div class="djob"><div class="h"><b>${esc(j.target_dir.split("/").pop())}</b><span class="sub">${esc(j.timeline)} · ${n} para renomear${nv ? ` · ${nv} do VIOT` : ""}</span></div>
+      ${j.error ? `<div class="err">${esc(j.error)}</div>` : ""}
+      <div class="dbtns" style="margin-bottom:6px">${n ? `<button class="btn" data-apply="${ji}">Renomear ${n} arquivo${n > 1 ? "s" : ""}</button>` : ""}
+      ${D.undo[j.target_dir] ? `<button class="btn ghost" data-undo="${ji}">Desfazer</button>` : ""}<span class="sub" id="dRes${ji}"></span></div>${j.error ? "" : rows}</div>`;
+  }).join("");
+  $("dJobs").querySelectorAll("input[data-k]").forEach(i => i.oninput = () => { D.edits[i.dataset.k] = i.value; });
+  $("dJobs").querySelectorAll("[data-v]").forEach(b => b.onclick = () => { const [ji, ri] = b.dataset.v.split(":"), r = D.plan.jobs[ji].rows[ri];
+    const cur = D.edits[b.dataset.v] !== undefined ? !!D.edits[b.dataset.v] : r.viot;
+    D.edits[b.dataset.v] = cur ? "" : (r.title || (r.song.split(" - ").slice(1).join(" - ").replace(/[(\[].*$/, "").trim())); renderDrops(); });
+  $("dJobs").querySelectorAll("[data-apply]").forEach(b => b.onclick = () => applyDrops(+b.dataset.apply, b));
+  $("dJobs").querySelectorAll("[data-undo]").forEach(b => b.onclick = () => undoDrops(+b.dataset.undo, b));
+}
+async function applyDrops(ji, b){
+  const j = D.plan.jobs[ji], fixes = {};
+  const renames = j.rows.map((r, ri) => { if (r.status !== "ok") return null;
+    const k = ji + ":" + ri, t = (D.edits[k] ?? r.title).trim();
+    if (r.viot && r.title && t && t !== r.title) fixes[r.title] = t;
+    return {old: r.old, new: dName(r, j.party, t)}; }).filter(Boolean);
+  b.classList.add("busy");
+  try { const res = await api("/api/drops/apply", {target_dir: j.target_dir, renames, fixes});
+    if (res.undo) D.undo[j.target_dir] = res.undo;
+    const msg = `✓ ${res.done.length} renomeado${res.done.length === 1 ? "" : "s"}` + (res.errors.length ? ` · ✕ ${res.errors.length}: ${res.errors.map(e => e.old + " (" + e.error + ")").join(", ")}` : "");
+    D.edits = {}; await readDrops(); const el = $("dRes" + ji); if (el) el.textContent = msg; }
+  catch(e){ $("dErr").textContent = e.message; } finally { b.classList.remove("busy"); }
+}
+async function undoDrops(ji, b){
+  const j = D.plan.jobs[ji]; b.classList.add("busy");
+  try { const res = await api("/api/drops/undo", {undo: D.undo[j.target_dir]}); delete D.undo[j.target_dir];
+    await readDrops(); const el = $("dRes" + ji); if (el) el.textContent = `↺ ${res.done.length} voltaram ao nome do render` + (res.errors.length ? ` · ✕ ${res.errors.length}` : ""); }
+  catch(e){ $("dErr").textContent = e.message; } finally { b.classList.remove("busy"); }
+}
+$("dRead").onclick = readDrops;
+
+/* ---------- depois do Lightroom: limpar fotos ---------- */
+const F = {plan:null, armed:false};
+async function loadFestas(){
+  $("fErr").textContent = ""; $("fPlan").innerHTML = ""; $("fList").innerHTML = `<p class="sub" style="margin-top:18px">lendo o catálogo…</p>`;
+  try { const r = await api("/api/fotos/festas");
+    $("fCat").innerHTML = `<span class="dot ok"></span>catálogo <b>${esc(r.catalog.split("/").pop())}</b>`;
+    $("fList").innerHTML = `<h3>Festas no catálogo</h3>` + r.festas.map((f, i) => `<button class="fest ${f.online ? "" : "off"}" data-f="${i}" ${f.online ? "" : "disabled"}>
+      <span>${esc(f.name)}</span><small>${f.online ? `${f.stars} ★ de ${f.total}` : "HD desconectado"}</small></button>`).join("");
+    $("fList").querySelectorAll("[data-f]").forEach(b => b.onclick = () => planFotos(r.festas[+b.dataset.f].dir));
+  } catch(e){ $("fList").innerHTML = ""; $("fErr").textContent = e.message; }
+}
+async function planFotos(dir){
+  $("fErr").textContent = ""; F.armed = false; $("fPlan").innerHTML = `<p class="sub" style="margin-top:18px">conferindo…</p>`;
+  try { F.plan = await api("/api/fotos/plan", {festa_dir: dir}); $("fList").innerHTML = ""; renderFotos(); }
+  catch(e){ $("fPlan").innerHTML = ""; $("fErr").textContent = e.message; }
+}
+function renderFotos(){
+  const p = F.plan, st = p.starred.length, safe = st - p.missing;
+  const miss = p.starred.filter(s => !s.safe);
+  $("fPlan").innerHTML = `<h3>${esc(p.festa.split("/").pop())}</h3>
+    <div class="fcheck">
+      <div class="${st && !p.missing ? "ok" : "bad"}">${!p.missing && st ? "✓" : "!"} ${safe} de ${st} fotos com estrela estão no Select Fotos</div>
+      ${miss.length ? `<div class="fmiss">${miss.map(m => esc(m.where)).join("<br>")}</div>` : ""}
+      <div class="${p.select_exists ? "ok" : "bad"}">${p.select_exists ? "✓" : "!"} Select Fotos: ${p.select_files} arquivo${p.select_files === 1 ? "" : "s"} (fica)</div>
+      ${p.trash.map(t => `<div>→ Lixeira: <b>${esc(t.dir.slice(p.festa.length + 1))}</b> · ${t.files} arquivos · ${hb(t.bytes)}</div>
+        ${t.not_photos_count ? `<div class="bad">! ${t.not_photos_count} arquivo(s) que não são foto vão junto: ${esc(t.not_photos.slice(0, 5).join(", "))}${t.not_photos_count > 5 ? "…" : ""}</div>` : ""}`).join("")}
+    </div>
+    ${p.reasons.length ? `<div class="err">${esc(p.reasons.join(" "))}</div>` : ""}
+    <div class="dbtns"><button class="btn ${F.armed ? "danger" : ""}" id="fGo" ${p.ready ? "" : "disabled"}>${F.armed ? `Confirmar: ${p.trash_files} arquivos para a Lixeira` : "Mandar o resto para a Lixeira"}</button>
+      <button class="btn ghost" id="fBack">Outra festa</button><span class="sub" id="fRes"></span></div>`;
+  $("fBack").onclick = loadFestas;
+  $("fGo").onclick = async () => {
+    if (!F.armed){ F.armed = true; renderFotos(); return; }
+    const b = $("fGo"); b.classList.add("busy");
+    try { const r = await api("/api/fotos/trash", {festa_dir: p.festa, dirs: p.trash.map(t => t.dir), files: p.trash_files});
+      const bad = r.results.filter(x => !x.ok);
+      F.armed = false; await planFotos(p.festa);
+      $("fRes").textContent = bad.length ? "✕ " + bad.map(x => x.path.split("/").pop() + ": " + x.msg).join(" · ")
+        : `✓ foi para a Lixeira. Select Fotos ficou com ${r.select_files} arquivos.`;
+    } catch(e){ $("fErr").textContent = e.message; F.armed = false; renderFotos(); }
+  };
+}
+
 /* painéis */
 function openSheet(id){ closeSheets(); $("scrim").classList.add("on"); $(id).classList.add("on"); if(id==="sFind"){ setTimeout(()=>$("q").focus(),50); find(); } }
 function closeSheets(){ $("scrim").classList.remove("on"); document.querySelectorAll(".sheet").forEach(s => s.classList.remove("on")); }
 $("scrim").onclick = closeSheets; document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeSheets);
 document.addEventListener("keydown", e => { if (e.key==="Escape") closeSheets(); if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); openSheet("sFind"); } });
-$("openSet").onclick = () => openSheet("sSet"); $("openFind").onclick = () => openSheet("sFind");
+$("openSet").onclick = () => openSheet("sSet"); $("openPos").onclick = () => { openSheet("sPos"); readDrops(); }; $("openFotos").onclick = () => { openSheet("sFotos"); loadFestas(); }; $("openFind").onclick = () => openSheet("sFind");
 function saveFolders(){ tidy(S.folders); S.on = new Set([...S.on].filter(f => S.folders.includes(f)));
   saveSet( {folders:S.folders, folders_on:S.folders.filter(f => S.on.has(f))}); renderTogs(); renderPfx(); }
 function editList(el, arr, sel, save){
