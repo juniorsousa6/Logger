@@ -1,0 +1,33 @@
+// Tela "Limpar fotos": catalogo simulado (Eco Club), confere o select, pede confirmacao e manda Fotos para a Lixeira.
+const {chromium} = require('playwright');
+const fs = require('fs'), path = require('path');
+const U = process.env.U, S = process.env.S, SHOTS = process.env.SHOTS || S;
+const festa = path.join(S, 'HD2/2026_11_14 - Eco Club');
+let fails = 0, oks = 0;
+const ok = (c, m) => { if (c) oks++; else { fails++; console.log('  ✕ ' + m); } };
+(async () => {
+  const b = await chromium.launch(); const p = await b.newPage({viewport: {width: 1200, height: 900}, deviceScaleFactor: 2});
+  const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.goto(U); await p.waitForTimeout(600);
+  await p.click('#openFotos'); await p.waitForSelector('#sFotos .fest');
+  ok((await p.textContent('#fList')).includes('3 ★ de 20'), 'lista de festas sem as estrelas');
+  await p.click('#sFotos .fest'); await p.waitForSelector('#fGo');
+  const t = await p.textContent('#fPlan');
+  ok(t.includes('3 de 3 fotos com estrela'), 'não conferiu o select: ' + t);
+  ok(t.includes('17 arquivos'), 'não mostrou o que vai para a Lixeira');
+  await p.screenshot({path: path.join(SHOTS, 'fotos-1-previa.png')});
+  await p.click('#fGo'); await p.waitForTimeout(200);
+  ok(fs.existsSync(path.join(festa, 'Fotos')), 'apagou sem a confirmação');
+  ok((await p.textContent('#fGo')).includes('Confirmar: 17 arquivos'), 'não pediu confirmação');
+  await p.screenshot({path: path.join(SHOTS, 'fotos-2-confirmar.png')});
+  await p.click('#fGo'); await p.waitForTimeout(1200);
+  ok(!fs.existsSync(path.join(festa, 'Fotos')), 'Fotos não foi para a Lixeira');
+  ok(fs.existsSync(path.join(S, 'Lixeira/Fotos/JRS3000.ARW')), 'não está na Lixeira');
+  ok(fs.readdirSync(path.join(festa, 'Select Fotos')).length === 3, 'mexeu no Select Fotos');
+  ok((await p.textContent('#fRes')).includes('foi para a Lixeira'), 'não avisou: ' + await p.textContent('#fRes'));
+  await p.screenshot({path: path.join(SHOTS, 'fotos-3-pronto.png')});
+  ok(errs.length === 0, 'erro de JavaScript: ' + errs.join(' | '));
+  await b.close();
+  console.log(`Limpar fotos: ${oks} verificações ok, ${fails} falharam`);
+  process.exit(fails ? 1 : 0);
+})().catch(e => { console.log('  ✕ ' + e.message); process.exit(1); });

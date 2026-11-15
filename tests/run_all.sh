@@ -11,17 +11,22 @@ echo "== servidor (endpoints) =="
 "$PY" -m unittest tests.test_api || FAIL=1
 echo "== revisao 1.3.3 (achados do relatorio) =="
 "$PY" -m unittest tests.test_revisao || FAIL=1
+echo "== renomear drops e limpeza de fotos =="
+"$PY" -m unittest tests.test_posrender tests.test_fotos || FAIL=1
 
 if command -v node >/dev/null && node -e "require('playwright')" 2>/dev/null; then
   echo "== interface (todos os botoes) =="
   S="$(mktemp -d)"
   "$PY" tests/e2e_setup.py "$S" >/dev/null
+  "$PY" tests/e2e_pos_setup.py "$S"
   PORT=$((20000 + RANDOM % 20000))
-  CARDLOGGER_HOME="$S/home" CARDLOGGER_VOLUMES="$S/V" LOGGER_PORT=$PORT LOGGER_NO_BROWSER=1 \
+  CARDLOGGER_HOME="$S/home" CARDLOGGER_VOLUMES="$S/V" LOGGER_PORT=$PORT LOGGER_NO_BROWSER=1 LOGGER_RESOLVE_FIXTURE="$S/resolve.json" LOGGER_LR_CATALOG="$S/2026.lrcat" \
     PATH="$S/bin:$PATH" "$PY" app.py >"$S/server.log" 2>&1 &
   SRV=$!
   sleep 1.5
   S="$S" U="http://127.0.0.1:$PORT/" SHOTS="${SHOTS:-$S}" node tests/e2e_ui.js || FAIL=1
+  S="$S" U="http://127.0.0.1:$PORT/" SHOTS="${SHOTS:-$S}" node tests/e2e_drops.js || FAIL=1
+  S="$S" U="http://127.0.0.1:$PORT/" SHOTS="${SHOTS:-$S}" node tests/e2e_fotos.js || FAIL=1
   kill $SRV 2>/dev/null
   echo "(telas e log do servidor em $S)"
 else

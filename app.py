@@ -20,6 +20,8 @@ from urllib.parse import parse_qs, urlparse
 
 import cardlogger as cl
 import media
+import posrender
+import fotos
 
 HERE = Path(__file__).resolve().parent
 SETTINGS_PATH = cl.STATE_DIR / "settings.json"
@@ -43,6 +45,8 @@ DEFAULT_SETTINGS = {
     "dropbox_folders_on": None,
     "dropbox_dest": "viot",  # "viot" = pasta do VIOT no Dropbox (atalho do cliente mais comum) ou "pasta" = outra pasta escolhida
     "viot_dir": "",          # pasta do VIOT no Dropbox (vazio = procura sozinho)
+    "viot_title_fix": {},
+    "lr_catalog": "",        # catalogo do Lightroom (vazio = o .lrcat mais recente em ~/Pictures)    # Renomear drops: titulo lido do marcador -> titulo que o Junior corrigiu
 }
 
 
@@ -539,6 +543,89 @@ def eject(paths):
     return res
 
 
+# ---------------------------------------------------------------- pos-render: renomear drops
+def drops_plan():
+    """Le o DaVinci (renders da fila, clipes e marcadores do Ghost) e monta a previa dos nomes."""
+    data = posrender.read_resolve_subprocess()
+    return posrender.build_plan(data, settings().get("viot_title_fix") or {})
+
+
+def _undo_path(p):
+    """So aceita registro de dentro de ~/.cardlogger/renomeios (nada de caminho vindo de fora)."""
+    path = Path(p).resolve()
+    if posrender.UNDO_DIR.resolve() not in path.parents or path.suffix != ".json":
+        raise ValueError("registro de renomeio invalido")
+    return str(path)
+
+
+def drops_apply(body):
+    """body: {target_dir, renames:[{old,new}], fixes:{titulo lido: titulo corrigido}}"""
+    folder = Path(body["target_dir"])
+    if not folder.is_dir():
+        raise ValueError("A pasta do render nao existe mais.")
+    renames = [{"old": str(r["old"]), "new": safe_name(str(r["new"]))} for r in body.get("renames", [])
+               if isinstance(r, dict) and r.get("old") and r.get("new")]
+    for r in renames:
+        if "/" in r["old"] or r["old"] in (".", ".."):
+            raise ValueError("nome de arquivo invalido")
+    fixes = body.get("fixes")
+    if isinstance(fixes, dict) and fixes:
+        with SETTINGS_LOCK:
+            s = settings()
+            fx = s.setdefault("viot_title_fix", {})
+            for k, v in fixes.items():
+                k, v = str(k).strip(), safe_name(str(v)).strip()
+                if k and v and k != v:
+                    fx[k] = v
+            save_settings(s)
+    return posrender.apply(folder, renames)
+
+
+# ---------------------------------------------------------------- limpeza das fotos (Lightroom)
+def lr_catalog():
+    if os.environ.get("LOGGER_LR_CATALOG"):  # testes
+        return os.environ["LOGGER_LR_CATALOG"]
+    s = settings()
+    if s.get("lr_catalog") and Path(s["lr_catalog"]).is_file():
+        return s["lr_catalog"]
+    cats = fotos.find_catalogs()
+    if not cats:
+        raise ValueError("Não achei nenhum catálogo do Lightroom em Imagens.")
+    return cats[0]
+
+
+def fotos_festas():
+    cat = lr_catalog()
+    with fotos.Catalog(cat) as c:
+        return {"catalog": cat, "festas": c.festas()}
+
+
+def fotos_plan(festa_dir):
+    if not Path(festa_dir).is_dir():
+        raise ValueError("A pasta da festa não está acessível. O HD está conectado?")
+    cat = lr_catalog()
+    with fotos.Catalog(cat) as c:
+        p = fotos.plan(festa_dir, c.images_under(festa_dir))
+    p["catalog"] = cat
+    return p
+
+
+def fotos_trash(body):
+    """So manda para a Lixeira o que o plano de agora (refeito aqui) diz, e so se estiver tudo salvo."""
+    p = fotos_plan(body["festa_dir"])
+    if not p["ready"]:
+        raise ValueError("Ainda não dá para limpar: " + " ".join(p["reasons"]))
+    want = sorted(body.get("dirs") or [])
+    have = sorted(t["dir"] for t in p["trash"])
+    if want != have or body.get("files") != p["trash_files"]:
+        raise ValueError("As pastas mudaram desde a prévia. Confira de novo antes de apagar.")
+    targets = [fotos.check_trash_target(p["festa"], d) for d in have]
+    res = fotos.to_trash(targets)
+    if all(r["ok"] for r in res):
+        notify("Fotos limpas", f"{p['trash_files']} arquivos foram para a Lixeira. O Select Fotos ficou.")
+    return {"results": res, "select_files": p["select_files"]}
+
+
 # ---------------------------------------------------------------- http
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
@@ -590,6 +677,10 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, subfolders(q["path"]))
             if u.path == "/api/search":
                 return self.send(200, media.search(load_catalog(), q.get("q", "")))
+            if u.path == "/api/fotos/festas":
+                return self.send(200, fotos_festas())
+            if u.path == "/api/drops/plan":
+                return self.send(200, drops_plan())
             if u.path == "/api/progress":
                 for _ in range(20):  # a copia mexe no progresso enquanto lemos: tenta de novo
                     try:
@@ -665,6 +756,17 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, start_log(body))
             if self.path == "/api/cancel":
                 JOB["cancel"].set()
+                return self.send(200, {"ok": True})
+            if self.path == "/api/fotos/plan":
+                return self.send(200, fotos_plan(body["festa_dir"]))
+            if self.path == "/api/fotos/trash":
+                return self.send(200, fotos_trash(body))
+            if self.path == "/api/drops/apply":
+                return self.send(200, drops_apply(body))
+            if self.path == "/api/drops/undo":
+                return self.send(200, posrender.undo(_undo_path(body["undo"])))
+            if self.path == "/api/notify":
+                notify(str(body.get("title", "Logger"))[:80], str(body.get("msg", ""))[:200], body.get("ok", True) is not False)
                 return self.send(200, {"ok": True})
             if self.path == "/api/eject":
                 return self.send(200, eject(body["paths"]))
