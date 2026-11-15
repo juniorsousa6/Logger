@@ -13,6 +13,8 @@ echo "== revisao 1.3.3 (achados do relatorio) =="
 "$PY" -m unittest tests.test_revisao || FAIL=1
 echo "== renomear drops e limpeza de fotos =="
 "$PY" -m unittest tests.test_posrender tests.test_fotos tests.test_fotos_falhas || FAIL=1
+echo "== Meus HDs (mapa offline dos HDs) =="
+"$PY" -W ignore -m unittest tests.test_hds || FAIL=1
 
 if command -v node >/dev/null && node -e "require('playwright')" 2>/dev/null; then
   echo "== interface (todos os botoes) =="

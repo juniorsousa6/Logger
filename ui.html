@@ -285,6 +285,72 @@ input[type=date]:disabled{opacity:.5}
 .res .m{font:12px var(--mono);color:var(--mut);margin-top:3px}
 .res .hits{font:12px var(--mono);color:var(--mut);margin-top:6px;padding-left:10px;border-left:1px solid var(--acc-line)}
 .res .a{margin-top:8px;display:flex;gap:14px}
+/* ---------- Meus HDs ---------- */
+.sheet.xwide{width:min(840px,100%)}
+.hdbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 0 14px;flex-wrap:wrap}
+.hdtools{display:flex;gap:16px;align-items:center}
+.hdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.hdc{cursor:pointer;padding:16px 16px 14px;transition:border-color .15s,transform .15s;text-align:left;width:100%;color:inherit;font:inherit;display:block}
+.hdc:hover{border-color:var(--acc-line)}
+.hdc .nm{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px;min-width:0}
+.hdc .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdc .ic{width:22px;height:22px;flex:0 0 auto;color:var(--faint)}
+.hdc.on .ic{color:var(--acc);filter:drop-shadow(0 0 6px rgba(198,255,61,.5))}
+.hdc .segbar{margin:14px 0 9px}
+.hdc .m{font:12px var(--mono);color:var(--mut);line-height:1.6}
+.hdc .m b{color:var(--text);font-weight:400}
+.hdc .ft{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font:11px var(--mono);color:var(--faint)}
+.hdc.new{border-style:dashed}
+.st{display:inline-flex;align-items:center;gap:6px;font:11px var(--mono);color:var(--faint);letter-spacing:.03em}
+.st::before{content:"";width:6px;height:6px;background:var(--faint)}
+.st.on{color:var(--acc)}.st.on::before{background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.st.run{color:var(--acc)}.st.run::before{background:var(--acc);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
+.delta{font:11px var(--mono)}.delta .p{color:var(--acc)}.delta .n{color:var(--warn)}
+.hdlist{border-top:1px solid var(--line)}
+.hdrow{display:grid;grid-template-columns:minmax(0,1.5fr) 110px 1fr 80px 160px;gap:12px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:14px;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;color:inherit}
+.hdrow:hover{background:rgba(198,255,61,.03)}
+.hdrow .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdrow .c{font:12px var(--mono);color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdrow.hd{cursor:default;font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+.hdrow.hd:hover{background:none}
+.scanbar{height:2px;background:var(--line);position:relative;overflow:hidden;margin:14px 0 9px}
+.scanbar::after{content:"";position:absolute;top:0;height:2px;width:30%;background:var(--acc);box-shadow:0 0 8px var(--acc);animation:slide 1.1s linear infinite}
+.hdsec{font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:26px 0 10px}
+.hdhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.hdhead h3{margin:4px 0 2px!important;color:var(--text)!important;font:600 20px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif!important;text-transform:none!important;letter-spacing:0!important}
+.hdacts{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.crumb{font:12px var(--mono);color:var(--mut);margin:14px 0 6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.crumb button{border:0;background:none;color:var(--mut);cursor:pointer;padding:2px 3px;font:inherit}
+.crumb button:hover{color:var(--acc)}
+.crumb b{color:var(--text);font-weight:400;padding:2px 3px}
+.crumb i{color:var(--faint);font-style:normal}
+.fl{border-top:1px solid var(--line)}
+.fi{display:grid;grid-template-columns:20px minmax(0,1fr) 90px 92px auto;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line);font-size:14px}
+.fi.dir{cursor:pointer}.fi.dir:hover{background:rgba(198,255,61,.03)}.fi.dir:hover .fn{color:var(--acc)}
+.fi.hl{background:var(--acc-dim);box-shadow:inset 2px 0 0 var(--acc)}
+.fi svg{width:16px;height:16px;color:var(--faint)}.fi.dir svg{color:var(--acc)}
+.fi .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi .fs,.fi .fdt{font:12px var(--mono);color:var(--mut);text-align:right;white-space:nowrap}
+.fi .fa{min-width:56px;display:flex;gap:12px;justify-content:flex-end;white-space:nowrap}
+.fi .fp{display:block;font:11px var(--mono);color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi mark{background:none;color:var(--acc)}
+.chg{margin:10px 0 4px;font:12px var(--mono);color:var(--mut)}
+.chg summary{cursor:pointer;list-style:none}.chg summary::-webkit-details-marker{display:none}
+.chg summary::before{content:"▸ ";color:var(--faint)}.chg[open] summary::before{content:"▾ "}
+.chg ul{margin:8px 0 0;padding:0 0 0 12px;list-style:none;border-left:1px solid var(--line2);max-height:180px;overflow:auto}
+.chg li{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdask{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:12px 16px;margin:-8px 0 26px;animation:in .3s var(--ease)}
+.hdask .sub{display:none}
+.hdask .q{margin:0!important}
+.hdask .a{margin-top:0!important}
+.hdask .q,.hdask-in .q{font-weight:600;margin-bottom:4px}
+.hdask .q span,.hdask-in .q span{color:var(--acc)}
+.hdask .a,.hdask-in .a{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.hdask .btn,.hdask-in .btn{padding:8px 16px;font-size:13px}
+.hdin{margin:0 0 14px}
+.hdfoot{margin-top:28px;color:var(--faint)}
+@media (max-width:640px){.hdrow{grid-template-columns:1fr 90px}.hdrow>:nth-child(n+3){display:none}.fi{grid-template-columns:20px minmax(0,1fr) auto}.fi .fs,.fi .fdt{display:none}}
 .always{font-size:13px;color:var(--mut);list-style:none;padding:0;margin:0}
 .always li{padding:5px 0}.always li::before{content:"◆ ";color:var(--acc);font-size:9px;vertical-align:2px;margin-right:4px}
 :focus-visible{outline:1px solid var(--acc);outline-offset:3px}
@@ -301,13 +367,14 @@ input[type=date]:disabled{opacity:.5}
   <header>
     <div class="brand"><i></i>Logger <small>// cartões</small></div>
     <div class="icons">
-      <button class="ib" id="openFind" title="Buscar trabalhos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar <kbd>⌘K</kbd></button>
+      <button class="ib" id="openFind" title="Meus HDs: o que tem em cada HD, mesmo desconectado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 14h.01M11 14h6"/></svg>Meus HDs <kbd>⌘K</kbd></button>
       <button class="ib" id="openPos" title="Depois do render: renomear os drops"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M4 12h16M4 18h7"/><path d="m16 15 3 3-3 3"/></svg>Drops</button>
       <button class="ib" id="openFotos" title="Depois do Lightroom: limpar as fotos que não entraram no select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="m3 15 5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></svg>Fotos</button>
       <button class="ib" id="openSet" title="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Ajustes</button>
     </div>
   </header>
 
+  <div class="hdask hud" id="hdAsk" hidden></div>
   <nav class="track" id="track">
     <div data-s="job"><i></i><b>01</b>Trabalho</div>
     <div data-s="cards"><i></i><b>02</b>Cartões</div>
@@ -419,13 +486,20 @@ input[type=date]:disabled{opacity:.5}
   <div class="err" id="fErr"></div>
 </aside>
 
-<aside class="sheet" id="sFind" aria-label="Buscar trabalhos">
-  <div class="top"><h2>Em qual HD está?</h2><button class="ib" data-close>Fechar</button></div>
-  <input class="search" id="q" placeholder="Cliente, evento ou arquivo" autocomplete="off">
+<aside class="sheet xwide" id="sFind" aria-label="Meus HDs">
+  <div class="top"><h2>Meus HDs</h2><button class="ib" data-close>Fechar</button></div>
+  <input class="search" id="q" placeholder="Buscar arquivo ou pasta em todos os HDs" autocomplete="off">
   <div class="sline" id="qLine"></div>
-  <div class="sub" id="catMsg">Trabalhos logados entram aqui sozinhos. <button class="link" id="catHD">Catalogar um HD antigo</button></div>
+  <div id="hdAskIn"></div>
+  <div class="hdbar" id="hdBar">
+    <span class="sub" id="hdSum"></span>
+    <span class="hdtools"><button class="link mut" id="hdPick">Mapear outro HD</button>
+    <span class="seg" id="hdView"><button data-v="grade" class="on" title="Grade">Grade</button><button data-v="lista" title="Lista">Lista</button></span></span>
+  </div>
   <div id="results"></div>
+  <p class="sub hdfoot">Só leitura: o Logger lê os nomes e tamanhos e guarda o mapa neste Mac. Nada é gravado nos HDs.</p>
 </aside>
+
 
 <script>
 /* ---------- fundo: esfera wireframe de partículas que acende com o progresso ---------- */
@@ -545,6 +619,7 @@ $("abBtn").onclick = () => ({job:createJob, cards:startCopy, done:() => { go("ca
   S.dbOn = !!st.dropbox_on; S.dbDir = st.dropbox_dir || init.dropbox_guess || ""; S.viotDir = st.viot_dir || init.viot_guess || "";
   S.dbDest = st.dropbox_dest === "pasta" ? "pasta" : "viot"; S.dbFolders = st.dropbox_folders || [];
   S.dbSel = new Set((st.dropbox_folders_on ?? S.dbFolders).filter(f => S.dbFolders.includes(f)));
+  try { HD.view = st.hds_view === "lista" ? "lista" : "grade"; } catch {}
   S.prefixes = st.prefixes || {}; S.base = st.base_dir || ""; S.backup = st.backup_dir || "";
   $("rename").checked = !!st.rename; $("mhl").checked = !!st.mhl; $("autoEject").checked = st.auto_eject !== false; $("date").value = init.date;
   if (st.mode === "multi") setMode("multi");
@@ -972,8 +1047,8 @@ function renderFotos(){
 }
 
 /* painéis */
-function openSheet(id){ closeSheets(); $("scrim").classList.add("on"); $(id).classList.add("on"); if(id==="sFind"){ setTimeout(()=>$("q").focus(),50); find(); } }
-function closeSheets(){ $("scrim").classList.remove("on"); document.querySelectorAll(".sheet").forEach(s => s.classList.remove("on")); }
+function openSheet(id){ closeSheets(); $("scrim").classList.add("on"); $(id).classList.add("on"); if(id==="sFind"){ setTimeout(()=>$("q").focus(),50); find(); } renderAsk(); }
+function closeSheets(){ $("scrim").classList.remove("on"); document.querySelectorAll(".sheet").forEach(s => s.classList.remove("on")); try { renderAsk(); } catch {} }
 $("scrim").onclick = closeSheets; document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeSheets);
 document.addEventListener("keydown", e => { if (e.key==="Escape") closeSheets(); if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); openSheet("sFind"); } });
 $("openSet").onclick = () => openSheet("sSet"); $("openPos").onclick = () => { openSheet("sPos"); readDrops(); }; $("openFotos").onclick = () => { openSheet("sFotos"); loadFestas(); }; $("openFind").onclick = () => openSheet("sFind");
@@ -1005,25 +1080,154 @@ function renderPfx(){
 $("rename").onchange = () => { renderPfx(); saveSet( {rename:$("rename").checked}); };
 $("mhl").onchange = () => saveSet( {mhl:$("mhl").checked});
 $("autoEject").onchange = () => saveSet( {auto_eject:$("autoEject").checked});
-let qT; $("q").oninput = () => { clearTimeout(qT); $("qLine").classList.add("on"); qT = setTimeout(find, 200); };
+/* ---------- Meus HDs ---------- */
+const HD = {list:null, view:"grade", browse:null, path:"", hl:"", forget:false, asked:new Set()};
+const HICON = {
+  hd:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 14h18M7 16.5h.01M11 16.5h6"/></svg>',
+  dir:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 6.5h6l2 2h10V19H3z"/></svg>',
+  file:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>',
+  vid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="1"/><path d="m16 10 5-3v10l-5-3z"/></svg>',
+  pkg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="m4 7 8 4 8-4M12 11v10"/></svg>'
+};
+const nfmt = n => (n||0).toLocaleString("pt-BR");
+const ago = iso => { if(!iso) return "nunca lido"; const d = (Date.now() - new Date(iso).getTime())/1000;
+  if (d < 90) return "agora há pouco"; if (d < 3600) return `há ${Math.round(d/60)} min`; if (d < 86400) return `há ${Math.round(d/3600)} h`;
+  const n = Math.round(d/86400); return n === 1 ? "ontem" : n < 45 ? `há ${n} dias` : new Date(iso).toLocaleDateString("pt-BR"); };
+const dday = t => t ? new Date(t*1000).toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit", year:"2-digit"}) : "";
+const isVid = n => /\.(mp4|mov|mxf|braw|r3d|avi|mts|m4v|insv|lrv)$/i.test(n);
+const hlite = (t, q) => { let h = esc(t); (q||"").trim().split(/\s+/).filter(Boolean).forEach(w => {
+  const f = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(); const i = f(t).indexOf(f(w));
+  if (i >= 0) h = esc(t.slice(0,i)) + "<mark>" + esc(t.slice(i, i+w.length)) + "</mark>" + esc(t.slice(i+w.length)); }); return h; };
+function hdState(d){
+  if (d.scanning){ const p = HD.list.progress || {}; return `<span class="st run">${d.id && d.last_scan ? "atualizando" : "mapeando"} · ${nfmt(p.files)} arq.</span>`; }
+  if (d.queued) return `<span class="st run">na fila</span>`;
+  return d.online ? `<span class="st on">conectado</span>` : `<span class="st">desconectado</span>`;
+}
+const deltaTxt = d => d.last_scan && (d.last_added || d.last_removed) ? `<span class="delta"><span class="p">+${nfmt(d.last_added)}</span> <span class="n">−${nfmt(d.last_removed)}</span></span>` : "";
+async function loadHds(){ let r; try { r = await api("/api/hds"); } catch { return; }
+  const sig = JSON.stringify(r); if (sig === HD.sig) return; HD.sig = sig; HD.list = r; renderAsk(); if ($("sFind").classList.contains("on") && !$("q").value.trim()) HD.browse == null ? renderHome() : renderBrowseHead(); }
+function askHtml(p){ return `<div class="q">HD novo conectado: <span>${esc(p.name)}</span></div>
+  <div class="sub">Quer colocar em Meus HDs? O Logger só lê os nomes dos arquivos e guarda o mapa neste Mac, para você achar tudo mesmo com ele desligado.</div>
+  <div class="a"><button class="btn" data-map="${esc(p.path)}">Mapear</button><button class="btn ghost" data-skip="${esc(p.key)}">Agora não</button><button class="link mut" data-never="${esc(p.key)}">Nunca para este HD</button></div>`; }
+function bindAsk(el){
+  el.querySelectorAll("[data-map]").forEach(b => b.onclick = async () => { b.classList.add("busy"); try { await api("/api/hds/map", {path:b.dataset.map}); } catch(e){ alertHd(e); } loadHds(); });
+  el.querySelectorAll("[data-skip]").forEach(b => b.onclick = async () => { await api("/api/hds/skip", {key:b.dataset.skip}); loadHds(); });
+  el.querySelectorAll("[data-never]").forEach(b => b.onclick = async () => { await api("/api/hds/skip", {key:b.dataset.never, forever:true}); loadHds(); });
+}
+function renderAsk(){
+  const pend = (HD.list && HD.list.pending) || [];
+  const inSheet = $("sFind").classList.contains("on");
+  const box = $("hdAsk");
+  if (pend.length && !inSheet){ box.hidden = false; box.innerHTML = askHtml(pend[0]); bindAsk(box); } else box.hidden = true;
+  const ins = $("hdAskIn");
+  ins.innerHTML = inSheet ? pend.map(p => `<div class="hud hdask-in hdin">${askHtml(p)}</div>`).join("") : "";
+  bindAsk(ins);
+}
+function alertHd(e){ $("results").insertAdjacentHTML("afterbegin", `<div class="err">${esc(e.message || e)}</div>`); }
+function renderHome(){
+  HD.browse = null; $("hdBar").hidden = false;
+  const L = HD.list; if (!L){ $("results").innerHTML = `<div class="scanbar"></div>`; return; }
+  const ds = L.drives, tot = ds.reduce((a, d) => a + (d.total ? d.total - d.free : 0), 0), nf = ds.reduce((a, d) => a + (d.files||0), 0);
+  $("hdSum").textContent = ds.length ? `${ds.length} HD${ds.length>1?"s":""} · ${nfmt(nf)} arquivos · ${hb(tot)} ocupados` : "";
+  document.querySelectorAll("#hdView button").forEach(b => b.classList.toggle("on", b.dataset.v === HD.view));
+  const um = L.unmapped || [];
+  let h = "";
+  if (!ds.length && !um.length && !(L.pending||[]).length) h = `<div class="hud emptybox"><div class="ring"></div><b>Nenhum HD mapeado ainda</b>Conecte um HD: o Logger pergunta se você quer mapear. Ou use “Mapear outro HD”.</div>`;
+  if (HD.view === "grade"){
+    h += `<div class="hdgrid">` + ds.map(d => { const used = d.total ? (d.total - d.free) / d.total : 0;
+      return `<button class="hud hdc ${d.online ? "on" : ""}" data-hd="${d.id ?? ""}">
+        <div class="nm">${HICON.hd}<span>${esc(d.name)}</span></div>
+        ${d.scanning || d.queued ? `<div class="scanbar"></div>` : segbar(used, 20, used > .92 ? "warn" : "", 5)}
+        <div class="m">${d.total ? `<b>${hb(d.total - d.free)}</b> de ${hb(d.total)}` : "&nbsp;"}<br>${nfmt(d.files)} arquivos${deltaTxt(d) ? " · " + deltaTxt(d) : ""}</div>
+        <div class="ft">${hdState(d)}<span>${d.scanning ? "" : esc(ago(d.last_scan))}</span></div>
+        ${d.error ? `<div class="err" style="font-size:12px">${esc(d.error)}</div>` : ""}
+      </button>`; }).join("") + um.map(u => `<div class="hud hdc new"><div class="nm">${HICON.hd}<span>${esc(u.name)}</span></div>
+        <div class="m" style="margin:14px 0 4px">conectado, ainda não mapeado${u.ignored ? "<br>(você marcou “nunca”)" : ""}</div>
+        <div class="ft"><span class="st on">conectado</span><button class="link" data-map="${esc(u.path)}">Mapear</button></div></div>`).join("") + `</div>`;
+  } else {
+    h += `<div class="hdlist"><div class="hdrow hd"><span>HD</span><span>Estado</span><span>Ocupado</span><span>Arquivos</span><span>Atualizado</span></div>` +
+      ds.map(d => `<button class="hdrow" data-hd="${d.id ?? ""}"><span class="n">${esc(d.name)}</span>${hdState(d)}
+        <span class="c">${d.total ? `${hb(d.total - d.free)} / ${hb(d.total)}` : "—"}</span><span class="c">${nfmt(d.files)}</span><span class="c">${d.scanning ? "…" : esc(ago(d.last_scan))} ${deltaTxt(d)}</span></button>`).join("") +
+      um.map(u => `<div class="hdrow"><span class="n">${esc(u.name)}</span><span class="st on">conectado</span><span class="c">não mapeado</span><span></span><span class="c"><button class="link" data-map="${esc(u.path)}">Mapear</button></span></div>`).join("") + `</div>`;
+  }
+  $("results").innerHTML = h;
+  $("results").querySelectorAll("[data-hd]").forEach(b => b.onclick = () => { if (b.dataset.hd) openHd(+b.dataset.hd, ""); });
+  bindAsk($("results"));
+}
+async function openHd(id, path, hl){
+  HD.browse = id; HD.path = path || ""; HD.hl = hl || ""; HD.forget = false; $("hdBar").hidden = true;
+  let r; try { r = await api(`/api/hds/ls?drive=${id}&path=${encodeURIComponent(HD.path)}`); } catch(e){ $("results").innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
+  HD.cur = r.drive;
+  const parts = HD.path ? HD.path.split("/") : [];
+  const online = !!(HD.list && HD.list.drives.find(d => d.id === id && d.online));
+  const items = r.items.map(it => { const dir = it.kind === "dir", job = dir && /^\d{4}_\d{2}_\d{2} - .+/.test(it.name) && !/ - Dia \d+$/.test(it.name);
+    return `<div class="fi ${dir ? "dir" : ""} ${it.path === HD.hl ? "hl" : ""}" ${dir ? `data-dir="${esc(it.path)}"` : ""}>
+      ${dir ? HICON.dir : it.kind === "pkg" ? HICON.pkg : isVid(it.name) ? HICON.vid : HICON.file}
+      <span class="fn" title="${esc(it.name)}">${esc(it.name)}</span>
+      <span class="fs">${it.kind === "pkg" ? "pacote" : hb(it.size)}</span>
+      <span class="fdt">${dir ? nfmt(it.files) + " arq." : dday(it.mtime)}</span>
+      <span class="fa">${online ? `${job ? `<button class="link" data-job="${esc(it.path)}">Copiar cartões aqui</button>` : ""}<button class="link mut" data-rev="${esc(it.path)}">Finder</button>` : ""}</span></div>`; }).join("");
+  $("results").innerHTML = `<div id="hdHead"></div>
+    <div class="crumb"><button data-crumb="">${esc(r.drive.name)}</button>${parts.map((p, i) => `<i>/</i>${i === parts.length-1 ? `<b>${esc(p)}</b>` : `<button data-crumb="${esc(parts.slice(0,i+1).join("/"))}">${esc(p)}</button>`}`).join("")}</div>
+    <div class="fl">${items || `<p class="sub" style="padding:14px 4px">${r.drive.last_scan ? "// pasta vazia" : "// ainda lendo este HD…"}</p>`}</div>`;
+  renderBrowseHead();
+  const el = $("results").querySelector(".fi.hl"); if (el) el.scrollIntoView({block:"center"});
+  $("results").querySelectorAll("[data-dir]").forEach(b => b.onclick = e => { if (!e.target.closest("button")) openHd(id, b.dataset.dir); });
+  $("results").querySelectorAll("[data-crumb]").forEach(b => b.onclick = () => openHd(id, b.dataset.crumb));
+  $("results").querySelectorAll("[data-rev]").forEach(b => b.onclick = async e => { e.stopPropagation(); try { await api("/api/hds/reveal", {drive:id, path:b.dataset.rev}); } catch(err){ alertHd(err); } });
+  $("results").querySelectorAll("[data-job]").forEach(b => b.onclick = async e => { e.stopPropagation(); try { const j = await api("/api/hds/job", {drive:id, path:b.dataset.job}); closeSheets(); openJob(j); } catch(err){ alertHd(err); } });
+}
+function renderBrowseHead(){
+  const box = $("hdHead"); if (!box || HD.browse == null) return;
+  const d = (HD.list && HD.list.drives.find(x => x.id === HD.browse)) || HD.cur || {};
+  const ch = d.last_changes || {}, add = ch.added || [], rm = ch.removed || [];
+  box.innerHTML = `<button class="link mut" id="hdBack">← Meus HDs</button>
+    <div class="hdhead"><div><h3>${esc(d.name)}</h3><div class="sub">${hdState(d)} · ${nfmt(d.files)} arquivos · ${hb(d.bytes)}${d.total ? ` · ${hb(d.free)} livres de ${hb(d.total)}` : ""}${!d.online && d.last_scan ? ` · mapa de ${new Date(d.last_scan).toLocaleDateString("pt-BR")}` : ""}</div></div>
+    <div class="hdacts">${d.online ? `<button class="link" id="hdRescan" ${d.scanning || d.queued ? "disabled" : ""}>${d.scanning ? "Atualizando…" : "Atualizar agora"}</button><button class="link mut" id="hdOpen">Abrir no Finder</button>` : ""}
+    ${HD.forget ? `<button class="btn danger" id="hdForgetOk" style="padding:6px 12px;font-size:12px">Esquecer o mapa</button><button class="link mut" id="hdForgetNo">cancelar</button>` : `<button class="link mut" id="hdForget">Esquecer</button>`}</div></div>
+    ${HD.forget ? `<div class="sub" style="color:var(--warn)">Apaga só o mapa guardado neste Mac. O HD e os arquivos dele não são tocados.</div>` : ""}
+    ${d.last_scan && (add.length || rm.length) ? `<details class="chg"><summary>Última atualização (${esc(ago(d.last_scan))}): <span class="delta"><span class="p">${nfmt(d.last_added)} entraram</span> · <span class="n">${nfmt(d.last_removed)} saíram</span></span></summary><ul>${add.map(x => `<li class="delta"><span class="p">+</span> ${esc(x)}</li>`).join("")}${rm.map(x => `<li class="delta"><span class="n">−</span> ${esc(x)}</li>`).join("")}${(d.last_added + d.last_removed) > add.length + rm.length ? `<li>…</li>` : ""}</ul></details>` : ""}`;
+  $("hdBack").onclick = () => { HD.browse = null; renderHome(); };
+  const rs = $("hdRescan"); if (rs) rs.onclick = async () => { try { await api("/api/hds/rescan", {drive:d.id}); } catch(e){ alertHd(e); } loadHds(); };
+  const op = $("hdOpen"); if (op) op.onclick = () => api("/api/hds/reveal", {drive:d.id, path:""}).catch(alertHd);
+  const fg = $("hdForget"); if (fg) fg.onclick = () => { HD.forget = true; renderBrowseHead(); };
+  const fn = $("hdForgetNo"); if (fn) fn.onclick = () => { HD.forget = false; renderBrowseHead(); };
+  const fo = $("hdForgetOk"); if (fo) fo.onclick = async () => { await api("/api/hds/forget", {drive:d.id}); HD.browse = null; await loadHds(); renderHome(); };
+}
+let qT; $("q").oninput = () => { clearTimeout(qT); $("qLine").classList.add("on"); qT = setTimeout(find, 220); };
 async function find(){
-  $("qLine").classList.add("on");
+  const q = $("q").value;
+  if (!q.trim()){ $("qLine").classList.remove("on"); HD.sig = ""; await loadHds(); if (HD.browse == null) renderHome(); else openHd(HD.browse, HD.path); return; }
+  $("qLine").classList.add("on"); $("hdBar").hidden = true;
   try {
-  const r = await api("/api/search?q="+encodeURIComponent($("q").value));
-  $("results").innerHTML = r.length ? r.map(j => `<div class="res">
+    const r = await api("/api/hds/search?q=" + encodeURIComponent(q));
+    if (q !== $("q").value) return;
+    const groups = {}; r.results.forEach(x => (groups[x.hd] = groups[x.hd] || []).push(x));
+    let h = Object.entries(groups).map(([hd, xs]) => `<div class="hdsec">${esc(hd)} · ${xs.length}${xs[0].online ? ` <span class="st on">conectado</span>` : ""}</div><div class="fl">` +
+      xs.map(x => { const par = x.path.includes("/") ? x.path.slice(0, x.path.lastIndexOf("/")) : "";
+        return `<div class="fi ${x.kind === "dir" ? "dir" : ""}" data-go="${x.drive}" data-par="${esc(x.kind === "dir" ? x.path : par)}" data-hl="${esc(x.kind === "dir" ? "" : x.path)}" style="cursor:pointer">
+          ${x.kind === "dir" ? HICON.dir : x.kind === "pkg" ? HICON.pkg : isVid(x.name) ? HICON.vid : HICON.file}
+          <span class="fn"><span>${hlite(x.name, q)}</span><span class="fp">${esc(par || "/")}</span></span>
+          <span class="fs">${x.kind === "pkg" ? "pacote" : hb(x.size)}</span><span class="fdt">${x.kind === "dir" ? nfmt(x.files) + " arq." : dday(x.mtime)}</span>
+          <span class="fa">${x.online ? `<button class="link mut" data-rev="${esc(x.path)}" data-d="${x.drive}">Finder</button>` : ""}</span></div>`; }).join("") + `</div>`).join("");
+    if (r.more) h += `<p class="sub" style="margin-top:12px">// mostrando os primeiros 300. Digite mais do nome para filtrar.</p>`;
+    if (r.legacy.length) h += `<div class="hdsec">Trabalhos logados (HDs ainda não mapeados)</div>` + r.legacy.map(j => `<div class="res">
       <div class="t"><span>${esc(j.name)}</span>${j.online ? '<span class="pill ok">● conectado</span>' : `<span class="pill mut">${esc(j.hd)}</span>`}</div>
       <div class="m">${esc(j.hd)} · ${j.bytes}${j.seconds ? " · "+j.seconds+" gravados" : ""}</div>
       ${j.file_hits.length ? `<div class="hits">${j.file_hits.map(esc).join("<br>")}${j.more_hits?`<br>+${j.more_hits}`:""}</div>` : ""}
-      ${j.online ? `<div class="a"><button class="link" data-open="${esc(j.path)}">Abrir no Finder</button><button class="link" data-cont="${esc(j.path)}">Copiar mais cartões aqui</button></div>` : ""}
-    </div>`).join("") : `<p class="sub" style="margin-top:20px">${$("q").value ? "// nada encontrado" : "// nenhum trabalho catalogado ainda"}</p>`;
-  $("results").querySelectorAll("[data-open]").forEach(b => b.onclick = () => api("/api/reveal", {path:b.dataset.open}));
-  $("results").querySelectorAll("[data-cont]").forEach(b => b.onclick = async () => { closeSheets(); openJob(await api("/api/open-job", {path:b.dataset.cont})); });
-  } finally { $("qLine").classList.remove("on"); }
+      ${j.online ? `<div class="a"><button class="link" data-open="${esc(j.path)}">Abrir no Finder</button><button class="link" data-cont="${esc(j.path)}">Copiar mais cartões aqui</button></div>` : ""}</div>`).join("");
+    $("results").innerHTML = h || `<p class="sub" style="margin-top:20px">// nada encontrado${HD.list && !HD.list.drives.length ? " (nenhum HD mapeado ainda)" : ""}</p>`;
+    $("results").querySelectorAll("[data-go]").forEach(b => b.onclick = e => { if (e.target.closest("button")) return; $("q").value = ""; openHd(+b.dataset.go, b.dataset.par, b.dataset.hl); });
+    $("results").querySelectorAll("[data-rev]").forEach(b => b.onclick = e => { e.stopPropagation(); api("/api/hds/reveal", {drive:+b.dataset.d, path:b.dataset.rev}).catch(alertHd); });
+    $("results").querySelectorAll("[data-open]").forEach(b => b.onclick = () => api("/api/reveal", {path:b.dataset.open}));
+    $("results").querySelectorAll("[data-cont]").forEach(b => b.onclick = async () => { closeSheets(); openJob(await api("/api/open-job", {path:b.dataset.cont})); });
+  } catch(e){ $("results").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  finally { $("qLine").classList.remove("on"); }
 }
-$("catHD").onclick = async () => { const p = await pick("Escolha o HD com os trabalhos"); if (!p) return;
-  $("catMsg").innerHTML = "Catalogando… (só lê nomes, não altera nada)<div class='catbar'></div>";
-  try { const c = await api("/api/catalog-hd", {path:p}); $("catMsg").textContent = `${c.found} trabalho(s) encontrado(s) em ${volName(p)}.`; find(); }
-  catch(e){ $("catMsg").textContent = e.message; } };
+document.querySelectorAll("#hdView button").forEach(b => b.onclick = () => { HD.view = b.dataset.v; saveSet({hds_view:HD.view}); renderHome(); });
+$("hdPick").onclick = async () => { const p = await pick("Escolha o HD para mapear"); if (!p) return;
+  try { await api("/api/hds/map", {path:p}); await loadHds(); renderHome(); } catch(e){ alertHd(e); } };
+setInterval(loadHds, 2500); loadHds();
 </script>
 </body>
 </html>

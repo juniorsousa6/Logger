@@ -60,7 +60,12 @@ dois cliques seus. Se uma foto com estrela sumiu do disco ou uma cópia não bat
 - **Cópia em paralelo:** até 4 cartões copiando ao mesmo tempo, cada um com sua barra.
 - **Prefixo da câmera (opcional):** renomeia só a cópia (JR_C0001.MP4, WIDE_C0001.MP4…). Os prefixos de cada pasta são editáveis.
 - **Relatório visual:** `Relatorio.html` na pasta do trabalho, com miniatura, duração, resolução, fps e horário de cada clipe, horas gravadas por câmera e linha do tempo de todas as câmeras. Também mostra alertas para arquivo corrompido, clipe com menos de 1 segundo e câmera com o relógio errado. Miniaturas usam as ferramentas do macOS; se tiver o ffmpeg instalado (`brew install ffmpeg`), ficam melhores.
-- **Buscar trabalhos:** digite cliente, evento ou nome de arquivo e ele diz em qual HD está, mesmo com o HD desligado. "Catalogar um HD" inclui os trabalhos antigos (só lê nomes, não altera nada).
+- **Meus HDs (⌘K):** um mapa de cada HD externo, em grade ou lista. Dá para abrir as pastas e ver os arquivos mesmo com o HD desligado, e a busca procura o nome em todos os HDs de uma vez (sem ligar para acento; "eco club jrs0001" acha o JRS0001 da pasta Eco Club).
+  - HD novo conectado: o Logger pergunta se quer mapear (Mapear / Agora não / Nunca para este HD). Também dá para clicar em "Mapear" em qualquer HD conectado, ou "Mapear outro HD".
+  - HD que já está no mapa: cada vez que você conecta, ele relê sozinho e rápido (só confere o que mudou) e mostra o que entrou e o que saiu. Depois de uma cópia de cartões, o HD do trabalho também é atualizado.
+  - Só leitura: o Logger lê nomes, tamanhos e datas e guarda o mapa neste Mac (~/.cardlogger/hds.sqlite). Nada é gravado nos HDs. Se o HD for desconectado no meio da leitura, o mapa anterior fica como estava. Enquanto copia cartões, a leitura espera.
+  - "Esquecer" apaga só o mapa guardado no Mac; o HD não é tocado. Pacotes como catálogos do Lightroom (.lrdata) entram como um item só.
+  - Trabalhos do catálogo antigo (de HDs ainda não mapeados) continuam aparecendo na busca.
 - **Manifesto padrão cinema (ASC MHL, opcional):** cria a pasta `ascmhl` com o checksum de cada arquivo, no formato que produtoras e finalizadoras usam.
 
 ## Reconhecimento dos cartões

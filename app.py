@@ -22,6 +22,7 @@ import cardlogger as cl
 import media
 import posrender
 import fotos
+import hds
 
 HERE = Path(__file__).resolve().parent
 SETTINGS_PATH = cl.STATE_DIR / "settings.json"
@@ -46,6 +47,7 @@ DEFAULT_SETTINGS = {
     "dropbox_dest": "viot",  # "viot" = pasta do VIOT no Dropbox (atalho do cliente mais comum) ou "pasta" = outra pasta escolhida
     "viot_dir": "",          # pasta do VIOT no Dropbox (vazio = procura sozinho)
     "viot_title_fix": {},
+    "hds_view": "grade",     # Meus HDs: "grade" ou "lista"
     "lr_catalog": "",        # catalogo do Lightroom (vazio = o .lrcat mais recente em ~/Pictures)    # Renomear drops: titulo lido do marcador -> titulo que o Junior corrigiu
 }
 
@@ -119,6 +121,99 @@ def update_catalog(job_dir, summary=None):
         cat = load_catalog()
         media.catalog_job(cat, job_dir, summary)
         cl.save_json(CATALOG_PATH, cat)
+    if summary is not None and WATCHER is not None:
+        WATCHER.rescan_path(job_dir)  # o HD do trabalho mudou: atualiza o mapa dele em Meus HDs
+
+
+# ---------------------------------------------------------------- Meus HDs
+WATCHER = None
+
+
+def hd_kind(vol):
+    """HD/SSD vira 'drive'; cartao (ou o que voce marcou como cartao) nunca entra em Meus HDs."""
+    kinds = settings().get("volume_kinds", {})
+    if (kinds.get(cl.volume_uuid(vol)) or kinds.get("name:" + vol.name)) == "card":
+        return "card"
+    kind = cl.media_kind(vol)
+    if kind == "unknown":  # fora do Mac (testes): pasta sem nada de camera conta como HD
+        if cl.looks_like_work_drive(vol):
+            return "drive"
+        return "card" if cl.identify(vol, cl.load_config()["profiles"]) else "drive"
+    return kind
+
+
+def hd_done(key, res):
+    if res.get("ok") and not res.get("first") and (res.get("added") or res.get("removed")):
+        notify("Meus HDs: %s atualizado" % res["name"], "%d entraram, %d saíram" % (res["added"], res["removed"]))
+    elif res.get("ok") and res.get("first"):
+        notify("Meus HDs: %s mapeado" % res["name"], "%d arquivos no mapa" % res["files"])
+
+
+def hds_list():
+    st = WATCHER.status() if WATCHER else {"online": {}, "pending": [], "queue": [], "current": None, "progress": {}, "last": {}}
+    known = hds.drives()
+    keys = {d["key"] for d in known}
+    out = []
+    for d in known:
+        d = dict(d)
+        d["online"] = d["key"] in st["online"]
+        d["scanning"] = st["current"] == d["key"]
+        d["queued"] = any(q["key"] == d["key"] for q in st["queue"])
+        d["error"] = (st["last"].get(d["key"]) or {}).get("error", "")
+        out.append(d)
+    # sendo mapeado pela primeira vez (ainda sem linha no banco)
+    for q in st["queue"]:
+        if q["key"] not in keys:
+            out.append({"id": None, "key": q["key"], "name": q["name"], "online": True, "queued": True, "scanning": False, "files": 0})
+    if st["current"] and st["current"] not in keys:
+        out.append({"id": None, "key": st["current"], "name": st["progress"].get("name", ""), "online": True, "scanning": True, "files": 0})
+    ig = hds.ignored()
+    loose = [{"key": k, "name": Path(v).name, "path": v, "ignored": k in ig} for k, v in st["online"].items()
+             if k not in keys and k != st["current"] and not any(q["key"] == k for q in st["queue"])]
+    return {"drives": out, "pending": st["pending"], "unmapped": loose, "progress": st["progress"], "current": st["current"]}
+
+
+def hd_mount(drive_id):
+    d = hds.drive_by(id_=int(drive_id))
+    if not d:
+        raise ValueError("HD não encontrado.")
+    root = (WATCHER.status()["online"] if WATCHER else {}).get(d["key"])
+    return d, (Path(root) if root else None)
+
+
+def hd_reveal(body):
+    d, root = hd_mount(body["drive"])
+    if root is None:
+        raise ValueError("Conecte o HD %s para abrir no Finder." % d["name"])
+    rel = str(body.get("path", ""))
+    target = (root / rel).resolve() if rel else root
+    if root.resolve() not in (target, *target.parents) or not target.exists():
+        raise ValueError("Esse item não está mais no HD. Ele será atualizado no próximo escaneio.")
+    subprocess.run(["open", "-R", str(target)] if rel else ["open", str(target)])
+    return {"ok": True}
+
+
+def hd_search(q):
+    res = hds.search(q)
+    online = WATCHER.status()["online"] if WATCHER else {}
+    keys = {d["id"]: d["key"] for d in hds.drives()}
+    for r in res:
+        r["online"] = keys.get(r["drive"]) in online
+        r["job"] = bool(media.JOB_RE.match(r["name"])) and r["kind"] == "dir"
+    # trabalhos do catalogo antigo que estao em HDs ainda nao mapeados
+    mapped = set(keys.values())
+    legacy = [j for j in media.search(load_catalog(), q) if q.strip()] if q.strip() else []
+    cat = load_catalog().get("jobs", {})
+    legacy = [j for j in legacy if (cat.get(j["path"], {}).get("hd_uuid") or "") not in mapped]
+    return {"results": res[:300], "more": len(res) > 300, "legacy": legacy[:30]}
+
+
+def hd_job_path(body):
+    """Pasta de trabalho de um HD conectado (para 'Copiar mais cartões aqui')."""
+    d, root = hd_mount(body["drive"])
+    if root is None:
+        raise ValueError("Conecte o HD %s primeiro." % d["name"])
+    return str(root / body["path"])
 
 
 def catalog_hd(path):
@@ -533,6 +628,8 @@ def eject_msg(raw):
 def eject(paths):
     res = []
     for p in paths:
+        if WATCHER is not None:
+            WATCHER.cancel_path(p)
         try:
             r = subprocess.run(["diskutil", "eject", p], capture_output=True, text=True, timeout=60)
             ok = r.returncode == 0
@@ -715,7 +812,7 @@ class H(BaseHTTPRequestHandler):
                 s = settings()
                 return self.send(200, {"settings": {k: s[k] for k in ("base_dir", "backup_dir", "folders", "mode", "rename", "prefixes", "mhl", "auto_eject",
                                                                        "folders_on", "dropbox_on", "dropbox_dir", "dropbox_folders", "dropbox_folders_on",
-                                                                       "dropbox_dest", "viot_dir")},
+                                                                       "dropbox_dest", "viot_dir", "hds_view")},
                                        "date": suggested_date(), "dropbox_guess": dropbox_guess(), "viot_guess": viot_guess(),
                                        "warnings": list(cl.WARNINGS)})
             if u.path == "/api/cards":
@@ -724,6 +821,15 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, folder_status(q["target"]))
             if u.path == "/api/subfolders":
                 return self.send(200, subfolders(q["path"]))
+            if u.path == "/api/hds":
+                return self.send(200, hds_list())
+            if u.path == "/api/hds/ls":
+                d = hds.drive_by(id_=int(q["drive"]))
+                if not d:
+                    raise ValueError("HD não encontrado.")
+                return self.send(200, {"drive": d, "items": hds.ls(d["id"], q.get("path", ""))})
+            if u.path == "/api/hds/search":
+                return self.send(200, hd_search(q.get("q", "")))
             if u.path == "/api/search":
                 return self.send(200, media.search(load_catalog(), q.get("q", "")))
             if u.path == "/api/fotos/status":
@@ -773,6 +879,8 @@ class H(BaseHTTPRequestHandler):
                 for k in ("base_dir", "backup_dir", "rename", "mhl", "auto_eject", "dropbox_on", "dropbox_dir", "viot_dir"):
                     if k in body:
                         s[k] = body[k]
+                if body.get("hds_view") in ("grade", "lista"):
+                    s["hds_view"] = body["hds_view"]
                 if body.get("dropbox_dest") in ("viot", "pasta"):
                     s["dropbox_dest"] = body["dropbox_dest"]
                 if isinstance(body.get("prefixes"), dict):
@@ -798,6 +906,24 @@ class H(BaseHTTPRequestHandler):
                 s["folders"] = [safe_name(f) for f in body["folders"] if safe_name(f)]
                 save_settings(s)
                 return self.send(200, {"ok": True})
+            if self.path == "/api/hds/map":
+                return self.send(200, WATCHER.map(body["path"]))
+            if self.path == "/api/hds/skip":
+                WATCHER.skip(str(body["key"]), bool(body.get("forever")))
+                return self.send(200, {"ok": True})
+            if self.path == "/api/hds/rescan":
+                d, root = hd_mount(body["drive"])
+                if root is None:
+                    raise ValueError("Conecte o HD %s para atualizar." % d["name"])
+                WATCHER.enqueue(d["key"])
+                return self.send(200, {"ok": True})
+            if self.path == "/api/hds/forget":
+                WATCHER.forget(int(body["drive"]))
+                return self.send(200, {"ok": True})
+            if self.path == "/api/hds/reveal":
+                return self.send(200, hd_reveal(body))
+            if self.path == "/api/hds/job":
+                return self.send(200, open_job(hd_job_path(body)))
             if self.path == "/api/catalog-hd":
                 return self.send(200, catalog_hd(body["path"]))
             if self.path == "/api/report":
@@ -866,6 +992,10 @@ def main():
                 pass
     if srv is None:
         sys.exit("Nao achei uma porta livre (8765-8774). Reinicie o Mac e tente de novo.")
+    global WATCHER
+    if os.environ.get("LOGGER_HD_WATCH", "1") != "0":
+        WATCHER = hds.Watcher(kind_of=hd_kind, busy=lambda: bool(JOB["thread"] and JOB["thread"].is_alive()),
+                              on_done=hd_done, interval=float(os.environ.get("LOGGER_HD_INTERVAL", "4"))).start()
     url = f"http://127.0.0.1:{srv.server_address[1]}/"
     print(f"LOGGER_URL {url}", flush=True)
     print(f"Logger aberto em {url}  (feche esta janela para encerrar)", flush=True)

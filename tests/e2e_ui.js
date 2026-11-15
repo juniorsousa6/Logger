@@ -237,6 +237,36 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     ok(seen >= 10, `foco visível em só ${seen} de 15 tabs`);
   });
 
+  await step('Meus HDs: HD novo pergunta, mapear, grade/lista, navegar, buscar, esquecer', async () => {
+    await p.keyboard.press('Escape');
+    await p.waitForSelector('#hdAsk:not([hidden])', {timeout: 8000});
+    ok((await p.textContent('#hdAsk')).includes('HD novo conectado'), 'não perguntou do HD novo');
+    await p.click('#hdAsk [data-skip]'); await p.waitForTimeout(400);
+    await p.click('#openFind'); await p.fill('#q', ''); await p.waitForTimeout(900);
+    const ep = await p.$('#results [data-map$="Extreme Pro"]');
+    ok(!!ep, 'HD conectado não aparece para mapear'); if (!ep) return;
+    await ep.click();
+    await p.waitForFunction(() => [...document.querySelectorAll('.hdc[data-hd]')].some(e => e.dataset.hd && e.textContent.includes('Extreme Pro') && !e.textContent.includes('mapeando') && !e.textContent.includes('fila')), null, {timeout: 10000});
+    ok((await p.textContent('#results')).includes('conectado'), 'HD mapeado não aparece conectado');
+    await p.click('#hdView button[data-v=lista]'); await p.waitForTimeout(200);
+    ok((await p.$$('.hdrow[data-hd]')).length >= 1, 'lista vazia');
+    await p.click('.hdrow[data-hd]'); await p.waitForSelector('#hdBack');
+    ok((await p.textContent('#results')).includes('2026_10_01 - Show'), 'conteúdo do HD não aparece');
+    await p.click('.fi.dir'); await p.waitForTimeout(300);
+    ok((await p.textContent('.crumb')).includes('Show'), 'não entrou na pasta');
+    await p.click('#hdBack'); await p.waitForTimeout(200);
+    await p.click('#hdView button[data-v=grade]');
+    await p.fill('#q', 'tascam'); await p.waitForTimeout(700);
+    ok((await p.textContent('#results')).includes('TASCAM_0001.wav'), 'busca não achou o arquivo');
+    await p.click('.fi[data-go]'); await p.waitForTimeout(500);
+    ok(!!(await p.$('.fi.hl')), 'clicar no resultado não marcou o arquivo na pasta');
+    await p.screenshot({path: SHOTS + '/e2e-meus-hds.png'});
+    await p.click('#hdForget'); await p.click('#hdForgetOk'); await p.waitForTimeout(500);
+    ok(!(await p.$('.hdc[data-hd]:not([data-hd=""])')), 'esquecer não tirou o HD');
+    ok(require('fs').existsSync(S + '/V/Extreme Pro/2026_10_01 - Show/Áudio/TASCAM_0001.wav'), 'esquecer mexeu no HD');
+    await p.keyboard.press('Escape');
+  });
+
   ok(errors.length === 0, 'erros de JavaScript:\n    ' + errors.join('\n    '));
   await b.close();
   console.log(`\nInterface: ${passes} verificações ok, ${fails} falharam`);
