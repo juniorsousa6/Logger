@@ -1,6 +1,6 @@
 {
-  "version": "1.3.4",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.3.4.zip",
-  "sha256": "195b3d2b06130951592f3b5637cc82a86c5b10b27278d8a9b376fefe80cf0654",
-  "notes": "Volta o verde-limão. Espelho do Dropbox com atalho direto para a pasta do VIOT (ou outra pasta)."
+  "version": "1.3.6",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.3.6.zip",
+  "sha256": "53c72ad0116227f2299e47e73b4b07a83c903bbd96a7d74784a109f071eead97",
+  "notes": "Reconhece a câmera pelo número de série e lembra o destino por câmera; cartão com dois aparelhos (drone + gravador) separado certo; mostra as pastas que ainda faltam cartão; avisa arquivo de outro dia; lista de pastas se atualiza sozinha e tem '+ nova pasta'; memória do cartão só pelo ID (não confunde dois 'Untitled'); erro de ejetar em português."
 }
