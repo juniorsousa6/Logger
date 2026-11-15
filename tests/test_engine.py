@@ -167,10 +167,11 @@ class Regras(unittest.TestCase):
         # lembranca de pasta que nao existe neste trabalho: cai na regra
         rs = app.card_routes(p, items, {"Vídeos": "Zoom"}, ["Ronin", "Fixa"])
         self.assertEqual(rs[1]["dest"], "Fixa")
-        # "nao copiar" lembrado
+        # 1.3.5: "nao copiar" antigo NAO vale mais (deixava gravacao no cartao em silencio): volta a regra
         rs = app.card_routes(p, items, {"Vídeos": ""}, ["Ronin", "Fixa"])
-        self.assertEqual(rs[1]["dest"], "")
-        self.assertFalse(rs[1]["ask"])
+        self.assertEqual(rs[1]["dest"], "Fixa")
+        rs = app.card_routes(p, items, {"Vídeos": ""}, ["Ronin", "Dj Booth"])
+        self.assertTrue(rs[1]["ask"], "sem Fixa no trabalho tem que perguntar, nao pular")
 
     def test_gravador_externo_sempre_pergunta(self):
         p = PROFILES["Gravador externo / Blackmagic"]

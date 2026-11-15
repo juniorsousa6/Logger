@@ -463,5 +463,27 @@ class CartaoComDoisAparelhos(unittest.TestCase):
         self.assertIn("pré-visualização", msg)
         self.assertNotIn("dissented", msg)
 
+
+class MemoriaDeCartao(unittest.TestCase):
+    """1.3.5: dois cartoes chamados Untitled nao podem herdar a escolha um do outro."""
+
+    def test_nome_repetido_nao_vira_memoria(self):
+        tmp = Path(tempfile.mkdtemp(prefix="logger-mem-"))
+        try:
+            vol = make_card("Untitled", {"PRIVATE/M4ROOT/CLIP/C8976.MP4": os.urandom(500)})
+            prof = cl.identify(vol, cl.load_config()["profiles"])
+            s = app.settings()
+            s["card_prefs"] = {"name:Untitled": {"Vídeos": "Ronin"}}
+            with mock.patch.object(app, "settings", return_value=s), \
+                 mock.patch.object(cl, "volume_uuid", return_value="UUID-OUTRA-CAMERA"), \
+                 mock.patch.object(cl, "mounted_volumes", return_value=[vol]), \
+                 mock.patch.object(app, "classify_volume", return_value=("card", "")):
+                (tmp / "Ronin").mkdir(); (tmp / "Dj Booth").mkdir()
+                cards = app.list_cards(str(tmp))
+            vid = [r for r in cards[0]["routes"] if r["label"] == "Vídeos"][0]
+            self.assertTrue(vid["ask"], "usou a escolha de outro cartao com o mesmo nome")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
 if __name__ == "__main__":
     unittest.main()

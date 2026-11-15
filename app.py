@@ -260,9 +260,7 @@ def card_routes(prof, items, remembered, subs, days=None):
         b = sum(it["size"] for it in items if it["route"] == i)
         dest, why = None, ""
         mem = None if r.get("lock") else remembered.get(label)
-        if mem == "":
-            dest, why = "", "lembrado"          # voce marcou "nao copiar" para esse cartao
-        elif mem and (resolve_dest(mem, subs) or not subs):
+        if mem and (resolve_dest(mem, subs) or not subs):
             dest, why = resolve_dest(mem, subs) or mem, "lembrado"
         else:
             dest = (resolve_dest(r["to"], subs) if subs else r["to"]) or None
@@ -329,7 +327,9 @@ def list_cards(target, backup=""):
             out.append({"volume": vol.name, "path": str(vol), "profile": None})
             continue
         c = cl.scan_card(vol, prof, ledger)
-        remembered = prefs.get(c["uuid"]) or prefs.get("name:" + vol.name)
+        # o nome do volume (Untitled, SD_Card, NO NAME...) se repete entre cameras diferentes:
+        # so serve de memoria quando o cartao nao tem UUID
+        remembered = prefs.get(c["uuid"]) if not c["uuid"].startswith("noid-") else prefs.get("name:" + vol.name)
         routes = card_routes(prof, c["items"], remembered, subs, job_days(target))
         out.append({"volume": vol.name, "path": str(vol), "uuid": c["uuid"], "profile": prof["name"], "kind": kind,
                     "new": len(c["items"]), "bytes": cl.human(c["bytes"]), "already": c["already"],
@@ -398,9 +398,9 @@ def _start_log(body):
         c["dests"] = [d or "_ignorado" for d in dests]
         c["path"] = str(vol)
         cards.append(c)
-        mem = {r.get("label", r["to"]): d for r, d in zip(prof["routes"], dests)}
-        s["card_prefs"][c["uuid"]] = mem
-        s["card_prefs"]["name:" + vol.name] = mem
+        # "nao copiar" nunca e lembrado: num cartao com outro conteudo ele deixaria gravacao para tras em silencio
+        mem = {r.get("label", r["to"]): d for r, d in zip(prof["routes"], dests) if d}
+        s["card_prefs"]["name:" + vol.name if c["uuid"].startswith("noid-") else c["uuid"]] = mem
     backups = []
     backup = (body.get("backup_dir") or "").strip()
     if backup:
