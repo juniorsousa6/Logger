@@ -486,6 +486,18 @@ class MemoriaDeCartao(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+class MiniaturaSonyNaRaiz(unittest.TestCase):
+    """1.3.7: miniaturas M4ROOT/THMBNL (sem PRIVATE) nao contam como 'ficou no cartao'."""
+
+    def test_thmbnl_na_raiz_e_pulado(self):
+        vol = make_card("Untitled", {"PRIVATE/M4ROOT/CLIP/C0001.MP4": os.urandom(300),
+                                     "M4ROOT/THMBNL/C0001T01.JPG": os.urandom(100)})
+        prof = cl.identify(vol, cl.load_config()["profiles"])
+        r = cl.scan_card(vol, prof, {"cards": {}})
+        self.assertNotIn("M4ROOT/THMBNL/C0001T01.JPG", r["ignored_media"])
+        self.assertNotIn("M4ROOT/THMBNL/C0001T01.JPG", [i["rel"] for i in r["items"]])
+
+
 class CameraPeloNumeroDeSerie(unittest.TestCase):
     """1.3.6: o destino fica preso a camera (numero de serie), nao ao cartao."""
 
