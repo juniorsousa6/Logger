@@ -90,11 +90,11 @@ class PodeFormatarHonesto(unittest.TestCase):
 
     def test_midia_fora_das_regras_nao_libera_formatar(self):
         v = make_card("SONY_A", {"PRIVATE/M4ROOT/CLIP/JRS00001.MP4": os.urandom(800),
-                                 "PRIVATE/M4ROOT/OUTRA/X0001.MXF": os.urandom(300)})
+                                 "PRIVATE/M4ROOT/OUTRA/X0001.M2TS": os.urandom(300)})
         rep, card = self.run_card(v)
         self.assertTrue(card["conferido_ok"])            # o que foi copiado confere
         self.assertFalse(card["pode_formatar"], "disse 'pode formatar' com video que ficou no cartao")
-        self.assertIn("PRIVATE/M4ROOT/OUTRA/X0001.MXF", card["sobrou"])
+        self.assertIn("PRIVATE/M4ROOT/OUTRA/X0001.M2TS", card["sobrou"])
         self.assertFalse(rep["pode_formatar_tudo"])
 
     def test_rota_nao_copiar_nao_libera_formatar(self):
@@ -254,7 +254,7 @@ def setUpModule():
     (V / "HD").mkdir(parents=True)
     info = {}
     for name, files in {"SONYOK": {"PRIVATE/M4ROOT/CLIP/C0001.MP4": 4000},
-                        "SONYSOBRA": {"PRIVATE/M4ROOT/CLIP/JRS00001.MP4": 4000, "PRIVATE/M4ROOT/OUTRA/Z.MXF": 500},
+                        "SONYSOBRA": {"PRIVATE/M4ROOT/CLIP/JRS00001.MP4": 4000, "PRIVATE/M4ROOT/OUTRA/Z.M2TS": 500},
                         "SUMIU": {"PRIVATE/M4ROOT/CLIP/C0009.MP4": 4000}}.items():
         for rel, size in files.items():
             p = V / name / rel
@@ -418,6 +418,50 @@ class EspelhoVIOT(unittest.TestCase):
     def test_viot_sumiu_avisa_em_portugues(self):
         with self.assertRaisesRegex(ValueError, "VIOT"):
             app.create_job(self.body(dropbox_dir=str(self.db / "Nao"), dropbox_dest="viot"))
+
+
+class CartaoComDoisAparelhos(unittest.TestCase):
+    """1.3.5: o mesmo SD com sobra de drone (DCIM) e gravacao do TASCAM (SOUND): os .wav nao podem ficar para tras."""
+
+    def setUp(self):
+        self.ledger = {"cards": {}}
+        self.job = fresh_job()
+
+    def test_drone_e_tascam_no_mesmo_cartao(self):
+        v = make_card("SD_DUO", {"DCIM/100MEDIA/DJI_20261112092315_0001_D.MP4": os.urandom(900),
+                                 "DCIM/100MEDIA/DJI_20261112092315_0001_D.SRT": b"1",
+                                 "SOUND/TASCAM_0368_MIX.wav": os.urandom(700),
+                                 "SOUND/TASCAM_0368_1-2.wav": os.urandom(600)})
+        prof = cl.identify(v, cl.load_config()["profiles"])
+        self.assertIn("Drone", prof["name"])
+        self.assertIn("audio", prof["name"].lower())
+        dests = [r["to"] for r in prof["routes"]]
+        self.assertIn("Áudio", dests)
+        c = cl.scan_card(v, prof, self.ledger)
+        wav = [it for it in c["items"] if it["rel"].lower().endswith(".wav")]
+        self.assertEqual(len(wav), 2)
+        self.assertTrue(all(prof["routes"][it["route"]]["to"] == "Áudio" for it in wav))
+        self.assertEqual(c["ignored_media"], [])
+
+    def test_cartao_de_um_aparelho_nao_muda(self):
+        v = make_card("SD_DRONE", {"DCIM/100MEDIA/DJI_0001.MP4": os.urandom(100), "DCIM/100MEDIA/DJI_0001.SRT": b"1"})
+        self.assertEqual(cl.identify(v, cl.load_config()["profiles"])["name"], "Drone DJI")
+
+    def test_data_de_outro_dia_e_avisada(self):
+        days = app.job_days("/V/HD/2026_11_14 - Eco Club")
+        import datetime as dt
+        old = dt.datetime(2026, 11, 12, 9, 23).timestamp()
+        ok = dt.datetime(2026, 11, 15, 1, 30).timestamp()   # virou a meia-noite: ainda e o trabalho
+        n, d = app.other_days([{"mtime": old}, {"mtime": old}, {"mtime": ok}], days)
+        self.assertEqual((n, d), (2, "12/11"))
+
+    def test_erro_de_ejetar_do_quicklook_em_portugues(self):
+        raw = ("Unmount of disk6 failed: at least one volume could not be unmounted Unmount was dissented by PID 673 "
+               "(/System/Library/Frameworks/QuickLookUI.framework/Versions/A/XPCServices/QuickLookUIService.xpc/Contents/MacOS/QuickLookUIService) "
+               "Dissenter parent PPID 1 (/sbin/launchd)")
+        msg = app.eject_msg(raw)
+        self.assertIn("pré-visualização", msg)
+        self.assertNotIn("dissented", msg)
 
 if __name__ == "__main__":
     unittest.main()

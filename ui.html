@@ -86,6 +86,11 @@ input[type=date]:disabled{opacity:.5}
 .seg button{border:0;background:none;padding:5px 12px;border-radius:3px;font-size:13px;color:var(--mut);cursor:pointer;transition:color .15s,background .15s}
 .seg button:hover{color:var(--text)}
 .seg button.on{background:var(--acc-dim);color:var(--acc)}
+.fstat{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 6px;font-family:var(--mono);font-size:12px;color:var(--mut)}
+.fstat .lbl{letter-spacing:.12em;text-transform:uppercase;margin-right:4px}
+.fstat .f{border:1px solid var(--line2);border-radius:4px;padding:3px 8px}
+.fstat .f.ok{color:var(--acc);border-color:var(--acc-dim)}
+.fstat .f.wait{border-style:dashed}
 .dbdest{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
 .stepper{display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:5px}
 .stepper button{border:0;background:none;width:30px;height:30px;cursor:pointer;color:var(--mut)}
@@ -309,6 +314,7 @@ input[type=date]:disabled{opacity:.5}
     <div class="jobhead"><h1 id="jobName"></h1><button class="link mut" id="backJob">Trocar</button></div>
     <div class="sub mono" id="jobWhere"></div>
     <div class="daytabs" id="dayTabs"></div>
+    <div class="fstat" id="fStat" hidden></div>
     <div class="listhead"><span class="lbl">Cartões conectados</span><span class="live">procurando</span></div>
     <div class="scan"></div>
     <div id="cards"></div>
@@ -481,7 +487,8 @@ function updateBar(){
     b.textContent = sel.length ? `Copiar ${sel.length} ${sel.length>1?"cartões":"cartão"}` : "Copiar"; b.disabled = !sel.length || und > 0;
     info.textContent = und ? `// escolha a pasta de ${und} ${und>1?"cartões":"cartão"}` : sel.length ? "// " + hb(bytes) + (S.backup ? " · com backup" : "") : "// selecione os cartões"; }
   else if (S.view==="copy"){ b.hidden = true; info.textContent = ""; }
-  else { b.textContent = "Copiar mais cartões"; info.textContent = ""; }
+  else { b.textContent = "Copiar mais cartões"; const pend = S.donePend || [];
+    b.classList.toggle("ghost", !pend.length); info.textContent = pend.length ? `// faltam: ${pend.join(", ")}` : ""; }
 }
 $("abBtn").onclick = () => ({job:createJob, cards:startCopy, done:() => { go("cards"); scan(); }})[S.view]?.();
 
@@ -620,8 +627,17 @@ $("backJob").onclick = () => go("job");
 async function loadSubs(){ S.subs = await api("/api/subfolders?path="+encodeURIComponent(S.target)); renderPfx(); }
 
 /* etapa 2 */
+async function folderStatus(){
+  if (!S.target) return;
+  try { const fs = await api("/api/folder-status?target="+encodeURIComponent(S.target)), wait = fs.filter(f => !f.filled);
+    $("fStat").hidden = !fs.length;
+    $("fStat").innerHTML = `<span class="lbl">Pastas</span>` + fs.map(f => `<span class="f ${f.filled?"ok":"wait"}" title="${f.filled?"já tem arquivo":"esperando cartão"}">${f.filled?"✓":"○"} ${esc(f.name)}</span>`).join("")
+      + (wait.length ? `<span>// faltam ${wait.length}: ${wait.map(f => esc(f.name)).join(", ")}</span>` : `<span>// todas com arquivo</span>`);
+  } catch(e){ /* so informativo */ }
+}
 async function scan(){
   if (S.view!=="cards" || S.copying) return;
+  folderStatus();
   try { const cards = await api("/api/cards?target="+encodeURIComponent(S.target)+"&backup="+encodeURIComponent(S.backup||""));
     const sig = JSON.stringify(cards);   /* so redesenha quando algo mudou: nao "come" um clique no meio */
     if (sig !== S.cardsSig){ S.cardsSig = sig; S.cards = cards; renderCards(); } $("cardsErr").textContent = ""; }
@@ -650,7 +666,8 @@ function renderCards(){
       : (c.already||0) ? `<span class="pill mut">já copiado</span>` : `<span class="pill mut">vazio</span>`;
     const notes = [c.recopy ? `${c.recopy} sumi${c.recopy>1?"ram":"u"} do HD e ${c.recopy>1?"vão":"vai"} ser copiado${c.recopy>1?"s":""} de novo` : "",
       left ? `${left} (${(c.ignored_media_names||[]).map(esc).join(", ")}${c.ignored_media>5?"…":""}): ${c.ignored_media>1?"ficam":"fica"} no cartão. Copie à mão antes de formatar.` : "",
-      c.offline ? `${c.offline} cópia${c.offline>1?"s estão":" está"} num HD que não está conectado; não dá para conferir.` : ""].filter(Boolean);
+      c.offline ? `${c.offline} cópia${c.offline>1?"s estão":" está"} num HD que não está conectado; não dá para conferir.` : "",
+      ...c.routes.filter(r => r.other_day).map(r => `${esc(r.label)}: ${r.other_day} arquivo${r.other_day>1?"s":""} com data ${esc(r.other_day_date)}, não é o dia deste trabalho. Sobra de outro trabalho? Se for, escolha "não copiar".`) ].filter(Boolean);
     const total = (c.already||0) + (c.new||0), frac = total ? (c.already||0)/total : 0;
     const d = document.createElement("div"); d.className = "hud card" + (ch.use ? " sel" : "") + (c.new ? "" : " dim");
     const destTxt = c.routes.map((r,i) => { if (!r.files || ch.dests[i] === null) return ""; const dest = ch.dests[i], miss = dest && !S.subs.includes(dest);
@@ -660,7 +677,7 @@ function renderCards(){
         <div class="cstat">${status}</div></div>
       ${notes.length ? `<div class="cnote">${notes.join("<br>")}</div>` : ""}
       ${total ? `<div class="cprog">${segbar(frac, 32, c.missing_on_hd ? "bad" : "", 4)}<span class="lbl">${Math.round(frac*100)}% já logado</span></div>` : ""}
-      ${c.new && ch.use ? asks.map(i => `<div class="ask" data-i="${i}"><p>Não tenho certeza de onde vão os <b>${esc(c.routes[i].label.toLowerCase())}</b> (${c.routes[i].files} arquivo${c.routes[i].files>1?"s":""}, ${c.routes[i].bytes}). Para qual pasta?</p><div class="row">${S.subs.map(f => `<button class="tog" data-f="${esc(f)}">${esc(f)}</button>`).join("")}<button class="tog add">+ pasta</button><button class="tog" data-f="">não copiar</button></div></div>`).join("") : ""}
+      ${c.new && ch.use ? asks.map(i => `<div class="ask" data-i="${i}"><p>Não tenho certeza de onde vão os <b>${esc(c.routes[i].label.toLowerCase())}</b> (${c.routes[i].files} arquivo${c.routes[i].files>1?"s":""}, ${c.routes[i].bytes}${c.routes[i].other_day ? `, ${c.routes[i].other_day} de ${esc(c.routes[i].other_day_date)}` : ""}). Para qual pasta?</p><div class="row">${S.subs.map(f => `<button class="tog" data-f="${esc(f)}">${esc(f)}</button>`).join("")}<button class="tog add">+ pasta</button><button class="tog" data-f="">não copiar</button></div></div>`).join("") : ""}
       ${c.new && destTxt ? `<div class="dest">${destTxt}<button class="link">${S.open[c.path]?"Pronto":"Trocar destino"}</button></div>` : ""}
       <div class="routes" ${S.open[c.path]&&c.new?"":"hidden"}></div>`;
     d.querySelector(".tick").onclick = () => { if(!c.new) return; ch.use = !ch.use; renderCards(); };
@@ -748,6 +765,9 @@ function showDone(p){
       (free.length ? `Pode formatar: ${free.join(", ")}. ` : "") + `Não formate: ${keepTxt}.`];
   else if (badAlerts) st = ["warn", "Copiado e conferido, com alertas", `A cópia é igual ao cartão, mas veja os alertas antes de formatar: ${free.join(", ")}.`];
   else st = ["ok", "Tudo copiado e conferido", `Cada arquivo foi relido do HD e comparado com o original. Pode formatar: ${free.join(", ")}.`];
+  const pend = p.phase==="pronto" && !R.cancelado ? (p.empty_folders||[]) : [];
+  if (pend.length && st[0] !== "bad") st = ["warn", `Faltam cartões: ${pend.join(", ")}`,
+      `Os cartões desta rodada foram copiados e conferidos${free.length ? ` (pode formatar: ${free.join(", ")})` : ""}. Ainda não chegou nada nas pastas ${pend.join(", ")}: coloque esses cartões e toque em Copiar mais cartões.`];
   $("dIco").className = "done-ico" + (st[0]==="ok" ? "" : " bad"); $("dIco").innerHTML = st[0]==="ok" ? ICON.check : ICON.warn;
   $("dTitle").textContent = st[1]; $("dLead").textContent = st[2];
   const ok = st[0] !== "bad";
@@ -760,6 +780,7 @@ function showDone(p){
   $("dAlerts").innerHTML = [...sobra, ...empt, ...(rs?.alerts||[])].map(([k,m]) => `<li class="${k}">${esc(m)}</li>`).join("");
   $("dCards").innerHTML = cards.map(c => { const f = c.novos ? c.copiados.length/c.novos : 1;
     return `<div class="r"><span class="${c.pode_formatar?"okc":"badc"}">${c.pode_formatar?"✓":"✕"} ${esc(c.volume)}</span>${segbar(f, 24, c.conferido_ok?"":"bad", 4)}<span>${c.copiados.length} de ${c.novos}${c.pode_formatar?" · pode formatar":" · não formate"}</span></div>`; }).join("");
+  S.donePend = pend;
   S.reportHtml = p.report_html || ""; $("openReport").hidden = !S.reportHtml;
   $("dLog").textContent = p.report ? "log › " + p.report.log_file : "";
   const ej = (p.ejected||[]).filter(e => e.ok).map(e => e.volume);

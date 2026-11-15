@@ -215,18 +215,63 @@ def mounted_volumes(job_dir=None):
         return []
 
 
+def _matches(vol: Path, p) -> bool:
+    rule = p.get("match", {})
+    names = rule.get("volume_name")
+    if names and not any(fnmatch.fnmatch(vol.name.upper(), n.upper()) for n in names):
+        return False
+    has = rule.get("has_any_path")
+    if has and not any(next(iter(vol.glob(g)), None) for g in has):
+        return False
+    return True
+
+
 def identify(vol: Path, profiles):
-    """Devolve o primeiro perfil cujas regras batem com o cartao."""
-    for p in profiles:
-        rule = p.get("match", {})
-        names = rule.get("volume_name")
-        if names and not any(fnmatch.fnmatch(vol.name.upper(), n.upper()) for n in names):
-            continue
-        has = rule.get("has_any_path")
-        if has and not any(next(iter(vol.glob(g)), None) for g in has):
-            continue
-        return p
-    return None
+    """Perfil do cartao. Um cartao pode ter coisa de dois aparelhos (ex.: o mesmo SD usado no
+    drone e no gravador TASCAM): o primeiro perfil que bate manda, e as rotas dos outros perfis
+    que batem entram junto, mas so as que pegam arquivos que ninguem antes pegou."""
+    hits = [p for p in profiles if _matches(vol, p)]
+    if not hits:
+        return None
+    base = hits[0]
+    if len(hits) == 1:
+        return base
+    skip = [x.upper() for h in hits for x in h.get("skip", [])]
+    rels = []
+    for src in walk(vol):
+        rel = src.relative_to(vol).as_posix().upper()
+        if not any(fnmatch.fnmatch(rel, x) for x in skip):
+            rels.append(rel)
+
+    def caught(routes):
+        return {r for r in rels for rt in routes if any(fnmatch.fnmatch(r, pat.upper()) for pat in rt["patterns"])}
+
+    routes = [dict(r) for r in base["routes"]]
+    names = [base["name"]]
+    have = caught(routes)
+    labels = {r.get("label", r["to"]) for r in routes}
+    for h in hits[1:]:
+        for r in h["routes"]:
+            got = caught([r]) - have
+            if not got:
+                continue
+            r = dict(r)
+            lab = r.get("label", r["to"])
+            if lab in labels:
+                r["label"] = f"{lab} ({h['name']})"
+            labels.add(r.get("label", r["to"]))
+            routes.append(r)
+            have |= got
+            if h["name"] not in names:
+                names.append(h["name"])
+    if len(names) == 1:
+        return base
+    for r in routes:  # com dois aparelhos, "Tudo" nao diz nada: usa o nome do aparelho
+        if r.get("label") == "Tudo":
+            r["label"] = base["name"]
+    merged = dict(base)
+    merged.update({"name": " + ".join(names), "routes": routes, "skip": sorted(set(skip))})
+    return merged
 
 
 def sub_dir(parent: Path, name: str) -> Path:
@@ -537,7 +582,7 @@ def scan_card(vol: Path, profile, ledger):
                 continue
             missing += 1           # a copia sumiu do HD: volta a ser copiavel
         items.append({"src": src, "rel": rel, "size": st.st_size, "key": key, "route": ri,
-                      "recopy": rec is not None})
+                      "recopy": rec is not None, "mtime": st.st_mtime})
     ignored_media = [r for r in ignored if Path(r).suffix.upper().lstrip(".") in MEDIA_EXT]
     # "pode formatar": nada a copiar, nenhuma midia fora das regras e toda copia conferida no HD
     return {"volume": vol.name, "path": str(vol), "uuid": uuid, "profile": profile["name"], "profile_def": profile,

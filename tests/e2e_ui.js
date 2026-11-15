@@ -140,6 +140,8 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     const txt = await p.textContent('#cards');
     ok(txt.includes('SONY_JRS') && txt.includes('SONY_C') && txt.includes('DJI'), 'faltou cartão: ' + txt);
     ok(txt.includes('fora da lista') && txt.includes('Extreme Pro'), 'HD de trabalho deveria estar fora da lista');
+    const fst = await p.textContent('#fStat');
+    ok(/faltam \d+: .*Ronin/.test(fst) && fst.includes('Áudio'), 'faixa de pastas não mostra o que espera cartão: ' + fst);
   });
 
   await step('Cartões: pergunta a pasta do drone (não tem pasta Drone) e trava a cópia', async () => {
@@ -176,8 +178,11 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     await p.waitForSelector('#vDone.on', {timeout: 120000}); await p.waitForTimeout(800);
     const t = await p.innerText('#vDone');
     // os clipes de teste sao bytes aleatorios: o relatorio acusa "corrompido", entao o titulo certo e "com alertas"
-    ok(/copiado e conferido/i.test(t) && !/não formate/i.test(t), 'não terminou tudo ok: ' + t.slice(0, 200));
-    ok(t.includes('com alertas'), 'alerta vermelho com selo verde de sucesso');
+    ok(/copiados e conferidos/i.test(t) && !/não formate/i.test(t), 'não terminou tudo ok: ' + t.slice(0, 200));
+    // ainda faltam cartoes para Making Of e Áudio: o titulo diz isso em vez de comemorar
+    ok(/Faltam cartões: Making Of, Áudio/.test(t), 'não disse que faltam cartões: ' + t.slice(0, 200));
+    ok(!(await p.$eval('#abBtn', b => b.classList.contains('ghost'))), 'Copiar mais cartões deveria ser o botão principal');
+    ok((await p.textContent('#abInfo')).includes('faltam: Making Of, Áudio'), 'barra não lista o que falta');
     ok(t.includes('já ejetados'), 'não mostrou ejetados');
     ok(t.includes('Áudio continua vazia'), 'não avisou pasta vazia');
     await p.screenshot({path: SHOTS + '/e2e-3-pronto.png', fullPage: true});

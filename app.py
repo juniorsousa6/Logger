@@ -228,7 +228,28 @@ def resolve_dest(want, subs):
     return near[0] if len(near) == 1 else None
 
 
-def card_routes(prof, items, remembered, subs):
+def job_days(target):
+    """Dias aceitos para os arquivos do trabalho: a data da pasta e o dia seguinte (evento que vira a meia-noite)."""
+    for part in [Path(target)] + list(Path(target).parents) if target else []:
+        m = re.match(r"^(\d{4})_(\d{2})_(\d{2})", part.name)
+        if m:
+            d = dt.date(*map(int, m.groups()))
+            return {d, d + dt.timedelta(days=1)}
+    return set()
+
+
+def other_days(items, days):
+    """Arquivos com data fora do trabalho (ex.: gravacao antiga esquecida no cartao)."""
+    if not days:
+        return 0, ""
+    out = [dt.date.fromtimestamp(it["mtime"]) for it in items if it.get("mtime") and dt.date.fromtimestamp(it["mtime"]) not in days]
+    if not out:
+        return 0, ""
+    common = max(set(out), key=out.count)
+    return len(out), common.strftime("%d/%m")
+
+
+def card_routes(prof, items, remembered, subs, days=None):
     """Destino de cada rota: escolha lembrada (se a pasta existe) > padrao do perfil.
     'ask' = o app nao tem certeza e precisa que voce escolha a pasta."""
     remembered = remembered if isinstance(remembered, dict) else {}  # formato antigo (lista) e ignorado
@@ -246,8 +267,10 @@ def card_routes(prof, items, remembered, subs):
         else:
             dest = (resolve_dest(r["to"], subs) if subs else r["to"]) or None
             why = "regra" if dest else ""
+        old, old_day = other_days([it for it in items if it["route"] == i], days or set())
         routes.append({"label": label, "dest": dest if dest is not None else "", "default": r["to"],
-                       "ask": dest is None and n > 0, "why": why, "files": n, "bytes": cl.human(b)})
+                       "ask": dest is None and n > 0, "why": why, "files": n, "bytes": cl.human(b),
+                       "other_day": old, "other_day_date": old_day})
     return routes
 
 
@@ -307,7 +330,7 @@ def list_cards(target, backup=""):
             continue
         c = cl.scan_card(vol, prof, ledger)
         remembered = prefs.get(c["uuid"]) or prefs.get("name:" + vol.name)
-        routes = card_routes(prof, c["items"], remembered, subs)
+        routes = card_routes(prof, c["items"], remembered, subs, job_days(target))
         out.append({"volume": vol.name, "path": str(vol), "uuid": c["uuid"], "profile": prof["name"], "kind": kind,
                     "new": len(c["items"]), "bytes": cl.human(c["bytes"]), "already": c["already"],
                     "ignored": len(c["ignored"]), "routes": routes, "ask": any(r["ask"] for r in routes),
@@ -318,14 +341,18 @@ def list_cards(target, backup=""):
     return out
 
 
+def folder_has_files(d: Path) -> bool:
+    return any(f.is_file() and not f.name.startswith(".") for f in d.rglob("*"))
+
+
 def empty_folders(target):
     """Pastas do trabalho que continuam sem nenhum arquivo."""
-    out = []
-    for name in subfolders(target):
-        d = Path(target) / name
-        if not any(f.is_file() and not f.name.startswith(".") for f in d.rglob("*")):
-            out.append(name)
-    return out
+    return [name for name in subfolders(target) if not folder_has_files(Path(target) / name)]
+
+
+def folder_status(target):
+    """Cada pasta do trabalho e se ja recebeu arquivo (para mostrar o que ainda espera cartao)."""
+    return [{"name": n, "filled": folder_has_files(Path(target) / n)} for n in subfolders(target)]
 
 
 START = threading.Lock()
@@ -405,7 +432,9 @@ def _start_log(body):
             return
         if not rep.get("pode_formatar"):  # copiou certo, mas ainda ha gravacao so no cartao
             n = len(rep.get("sobrou") or [])
-            msg = f"ficaram {n} arquivo(s) só no cartão, não ejetei" if n else "não consegui conferir o cartão, não ejetei"
+            ex = ", ".join(Path(x).name for x in (rep.get("sobrou") or [])[:3]) + ("…" if n > 3 else "")
+            msg = (f"ficaram {n} arquivo(s) só no cartão ({ex}), não ejetei" if n
+                   else "não consegui conferir o cartão, não ejetei")
             notify("Não formate esse cartão", f"{vol}: {msg}.", ok=False)
             prog["ejected"].append({"volume": vol, "ok": False, "msg": msg})
             return
@@ -475,12 +504,28 @@ def notify(title, msg, ok=True):
         pass
 
 
+def eject_msg(raw):
+    """Erro do diskutil em portugues: quem esta segurando o cartao e o que fazer."""
+    m = re.search(r"dissented by PID \d+ \(([^)]*)\)", raw or "")
+    if m or "could not be unmounted" in (raw or "") or "Resource busy" in (raw or ""):
+        who = Path(m.group(1)).name if m else ""
+        if "QuickLook" in (m.group(1) if m else ""):
+            who = "a pré-visualização do Mac (QuickLook)"
+        elif who:
+            who = f"o programa {who}"
+        return ("não ejetei porque " + (who or "outro programa") + " ainda está usando o cartão. "
+                "A cópia está ok: feche a janela que mostra esse cartão e ejete pelo Finder.")
+    return raw
+
+
 def eject(paths):
     res = []
     for p in paths:
         try:
             r = subprocess.run(["diskutil", "eject", p], capture_output=True, text=True, timeout=60)
-            res.append({"path": p, "ok": r.returncode == 0, "msg": (r.stdout + r.stderr).strip()})
+            ok = r.returncode == 0
+            raw = (r.stdout + r.stderr).strip()
+            res.append({"path": p, "ok": ok, "msg": raw if ok else eject_msg(raw)})
         except (OSError, subprocess.TimeoutExpired) as e:
             res.append({"path": p, "ok": False, "msg": str(e)})
     return res
@@ -531,6 +576,8 @@ class H(BaseHTTPRequestHandler):
                                        "warnings": list(cl.WARNINGS)})
             if u.path == "/api/cards":
                 return self.send(200, list_cards(q.get("target", ""), q.get("backup", "")))
+            if u.path == "/api/folder-status":
+                return self.send(200, folder_status(q["target"]))
             if u.path == "/api/subfolders":
                 return self.send(200, subfolders(q["path"]))
             if u.path == "/api/search":
