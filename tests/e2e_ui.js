@@ -139,6 +139,7 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
   await step('Cartões: só cartões aparecem, HD fica de fora', async () => {
     const txt = await p.textContent('#cards');
     ok(txt.includes('SONY_JRS') && txt.includes('SONY_C') && txt.includes('DJI'), 'faltou cartão: ' + txt);
+    ok(txt.includes('ILCE-7M4 · nº …2345'), 'não mostrou a câmera pelo número de série: ' + txt);
     ok(txt.includes('fora da lista') && txt.includes('Extreme Pro'), 'HD de trabalho deveria estar fora da lista');
     const fst = await p.textContent('#fStat');
     ok(/faltam \d+: .*Ronin/.test(fst) && fst.includes('Áudio'), 'faixa de pastas não mostra o que espera cartão: ' + fst);
@@ -198,6 +199,8 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     ok(!(await p.$eval('#abBtn', b => b.classList.contains('ghost'))), 'Copiar mais cartões deveria ser o botão principal');
     ok((await p.textContent('#abInfo')).includes('faltam: Making Of, Áudio'), 'barra não lista o que falta');
     ok(t.includes('já ejetados'), 'não mostrou ejetados');
+    const cp = JSON.parse(require('fs').readFileSync(S + '/home/settings.json', 'utf8')).camera_prefs || {};
+    ok(cp['SONY|ILCE-7M4|5012345'] && cp['SONY|ILCE-7M4|5012345']['Vídeos'] === 'Fixa', 'câmera não guardou o destino: ' + JSON.stringify(cp));
     ok(t.includes('Áudio continua vazia'), 'não avisou pasta vazia');
     await p.screenshot({path: SHOTS + '/e2e-3-pronto.png', fullPage: true});
   });

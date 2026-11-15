@@ -29,7 +29,8 @@ DEFAULT_SETTINGS = {
     "backup_dir": "",
     "folders": ["Ronin", "Fixa", "Fotos", "Áudio", "Action", "Drone"],
     "mode": "padrao",
-    "card_prefs": {},  # uuid / nome do volume -> destinos escolhidos da ultima vez
+    "card_prefs": {},
+    "camera_prefs": {},  # numero de serie da camera -> destinos (vale para qualquer cartao nela)  # uuid / nome do volume -> destinos escolhidos da ultima vez
     "rename": False,   # renomear a copia com prefixo da camera
     "prefixes": {"Ronin": "RON", "Fixa": "FIXA", "Fixa Wide": "WIDE", "Fixa Zoom": "ZOOM", "Action": "ACT", "Drone": "DRN", "Áudio": "AUD", "Fotos": ""},
     "mhl": False,      # manifesto padrao cinema (ASC MHL)
@@ -329,7 +330,10 @@ def list_cards(target, backup=""):
         c = cl.scan_card(vol, prof, ledger)
         # o nome do volume (Untitled, SD_Card, NO NAME...) se repete entre cameras diferentes:
         # so serve de memoria quando o cartao nao tem UUID
-        remembered = prefs.get(c["uuid"]) if not c["uuid"].startswith("noid-") else prefs.get("name:" + vol.name)
+        cam = cl.camera_id(vol)
+        cam_mem = s.get("camera_prefs", {}).get(cam["key"]) if cam and cam["key"] else None
+        card_mem = prefs.get(c["uuid"]) if not c["uuid"].startswith("noid-") else prefs.get("name:" + vol.name)
+        remembered = {**(card_mem or {}), **(cam_mem or {})} if isinstance(card_mem or {}, dict) else cam_mem
         routes = card_routes(prof, c["items"], remembered, subs, job_days(target))
         out.append({"volume": vol.name, "path": str(vol), "uuid": c["uuid"], "profile": prof["name"], "kind": kind,
                     "new": len(c["items"]), "bytes": cl.human(c["bytes"]), "already": c["already"],
@@ -337,7 +341,8 @@ def list_cards(target, backup=""):
                     "safe_to_format": c["safe_to_format"], "missing_on_hd": c["missing_on_hd"],
                     "offline": c["offline"], "ignored_media": len(c["ignored_media"]),
                     "ignored_media_names": [Path(x).name for x in c["ignored_media"][:5]],
-                    "recopy": sum(1 for it in c["items"] if it.get("recopy"))})
+                    "recopy": sum(1 for it in c["items"] if it.get("recopy")),
+                    "camera": cam["label"] if cam else "", "camera_known": bool(cam_mem)})
     return out
 
 
@@ -401,6 +406,9 @@ def _start_log(body):
         # "nao copiar" nunca e lembrado: num cartao com outro conteudo ele deixaria gravacao para tras em silencio
         mem = {r.get("label", r["to"]): d for r, d in zip(prof["routes"], dests) if d}
         s["card_prefs"]["name:" + vol.name if c["uuid"].startswith("noid-") else c["uuid"]] = mem
+        cam = cl.camera_id(vol)
+        if cam and cam["key"] and mem:   # a camera lembra para onde vai, troque o cartao que for
+            s.setdefault("camera_prefs", {})[cam["key"]] = mem
     backups = []
     backup = (body.get("backup_dir") or "").strip()
     if backup:

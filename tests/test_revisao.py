@@ -485,5 +485,53 @@ class MemoriaDeCartao(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+
+class CameraPeloNumeroDeSerie(unittest.TestCase):
+    """1.3.6: o destino fica preso a camera (numero de serie), nao ao cartao."""
+
+    XML = ('<?xml version="1.0"?><NonRealTimeMeta><Device manufacturer="Sony" modelName="ILCE-7M4" '
+           'serialNo="%s"/></NonRealTimeMeta>')
+
+    def card(self, name, serial):
+        return make_card(name, {"PRIVATE/M4ROOT/CLIP/C0001.MP4": os.urandom(400),
+                                "PRIVATE/M4ROOT/CLIP/C0001M01.XML": (self.XML % serial).encode()})
+
+    def test_le_serie_do_xml_da_sony(self):
+        cam = cl.camera_id(self.card("CAM_A", "5012345"))
+        self.assertEqual(cam["key"], "SONY|ILCE-7M4|5012345")
+        self.assertIn("ILCE-7M4", cam["label"])
+
+    def test_sem_serie_nao_vira_memoria(self):
+        v = make_card("CAM_B", {"PRIVATE/M4ROOT/CLIP/C0001M01.XML":
+                                b'<NonRealTimeMeta><Device manufacturer="Sony" modelName="FX3"/></NonRealTimeMeta>'})
+        cam = cl.camera_id(v)
+        self.assertEqual(cam["key"], "")
+
+    def test_lixo_nao_quebra(self):
+        v = make_card("CAM_C", {"DCIM/100MSDCF/DSC0001.JPG": b"\xff\xd8Exif\0\0II*\0\xff\xff\xff\x7f",
+                                "DCIM/100MSDCF/DSC0002.ARW": os.urandom(64)})
+        self.assertIsNone(cl.camera_id(v))
+
+    def test_outro_cartao_na_mesma_camera_lembra_o_destino(self):
+        tmp = Path(tempfile.mkdtemp(prefix="logger-cam-"))
+        try:
+            for f in ("Ronin", "Dj Booth", "Fotos"):
+                (tmp / f).mkdir()
+            s = app.settings()
+            s["card_prefs"] = {}
+            s["camera_prefs"] = {"SONY|ILCE-7M4|5012345": {"Vídeos": "Dj Booth"}}
+            novo = self.card("Untitled", "5012345")
+            outra = self.card("Untitled 1", "7770001")
+            with mock.patch.object(app, "settings", return_value=s), \
+                 mock.patch.object(cl, "mounted_volumes", return_value=[novo, outra]), \
+                 mock.patch.object(app, "classify_volume", return_value=("card", "")):
+                cards = {c["volume"]: c for c in app.list_cards(str(tmp))}
+            vid = lambda c: [r for r in c["routes"] if r["label"] == "Vídeos"][0]
+            self.assertEqual(vid(cards["Untitled"])["dest"], "Dj Booth")
+            self.assertTrue(cards["Untitled"]["camera_known"])
+            self.assertTrue(vid(cards["Untitled 1"])["ask"], "outra camera herdou o destino")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
 if __name__ == "__main__":
     unittest.main()
