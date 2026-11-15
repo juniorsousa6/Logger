@@ -139,7 +139,10 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
   await step('Cartões: só cartões aparecem, HD fica de fora', async () => {
     const txt = await p.textContent('#cards');
     ok(txt.includes('SONY_JRS') && txt.includes('SONY_C') && txt.includes('DJI'), 'faltou cartão: ' + txt);
+    ok(txt.includes('ILCE-7M4 · nº …2345') && !txt.includes('Sony · Sony'), 'não mostrou a câmera pelo número de série: ' + txt);
     ok(txt.includes('fora da lista') && txt.includes('Extreme Pro'), 'HD de trabalho deveria estar fora da lista');
+    const fst = await p.textContent('#fStat');
+    ok(/faltam \d+: .*Ronin/.test(fst) && fst.includes('Áudio'), 'faixa de pastas não mostra o que espera cartão: ' + fst);
   });
 
   await step('Cartões: pergunta a pasta do drone (não tem pasta Drone) e trava a cópia', async () => {
@@ -164,6 +167,20 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     ok(sels.length >= 1, 'painel de destino não abriu');
     await p.waitForTimeout(3500);  // a lista atualiza sozinha a cada 3s: a escolha nao pode sumir
     ok((await p.$$('.routes:not([hidden]) select')).length >= 1, 'painel fechou sozinho na atualização');
+    // pasta criada no Finder com o Logger aberto entra sozinha na lista
+    const fs2 = require('fs'), nova = S + '/V/HD/2026_11_14 - Casamento Ana/Dj Booth';
+    fs2.mkdirSync(nova); await p.waitForTimeout(3500);
+    const opts = await p.$$eval('.routes:not([hidden]) select option', os => os.map(o => o.textContent));
+    ok(opts.includes('Dj Booth'), 'pasta criada no Finder não apareceu no menu: ' + opts);
+    ok((await p.textContent('#fStat')).includes('Dj Booth'), 'faixa de pastas não atualizou');
+    fs2.renameSync(nova, S + '/fora-dj-booth'); await p.waitForTimeout(3500);
+    // "+ nova pasta…" direto no menu
+    const last = (await p.$$('.routes:not([hidden]) select')).pop();
+    await last.selectOption('__nova'); await p.waitForTimeout(150);
+    await p.fill('.routes:not([hidden]) .tog-in', 'Fotos Extra'); await p.press('.routes:not([hidden]) .tog-in', 'Enter');
+    await p.waitForTimeout(250);
+    ok((await p.textContent('#cards')).includes('Fotos Extra'), 'nova pasta pelo menu não virou destino');
+    await (await p.$$('.routes:not([hidden]) select')).pop().selectOption('Fotos'); await p.waitForTimeout(250);
     for (const c of await p.$$('.card')) if ((await c.innerText()).includes('SONY_JRS')) {
       await (await c.$('.dest .link')).click(); break; }
     await p.screenshot({path: SHOTS + '/e2e-2-cartoes.png', fullPage: true});
@@ -176,9 +193,14 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
     await p.waitForSelector('#vDone.on', {timeout: 120000}); await p.waitForTimeout(800);
     const t = await p.innerText('#vDone');
     // os clipes de teste sao bytes aleatorios: o relatorio acusa "corrompido", entao o titulo certo e "com alertas"
-    ok(/copiado e conferido/i.test(t) && !/não formate/i.test(t), 'não terminou tudo ok: ' + t.slice(0, 200));
-    ok(t.includes('com alertas'), 'alerta vermelho com selo verde de sucesso');
+    ok(/copiados e conferidos/i.test(t) && !/não formate/i.test(t), 'não terminou tudo ok: ' + t.slice(0, 200));
+    // ainda faltam cartoes para Making Of e Áudio: o titulo diz isso em vez de comemorar
+    ok(/Faltam cartões: Making Of, Áudio/.test(t), 'não disse que faltam cartões: ' + t.slice(0, 200));
+    ok(!(await p.$eval('#abBtn', b => b.classList.contains('ghost'))), 'Copiar mais cartões deveria ser o botão principal');
+    ok((await p.textContent('#abInfo')).includes('faltam: Making Of, Áudio'), 'barra não lista o que falta');
     ok(t.includes('já ejetados'), 'não mostrou ejetados');
+    const cp = JSON.parse(require('fs').readFileSync(S + '/home/settings.json', 'utf8')).camera_prefs || {};
+    ok(cp['SONY|ILCE-7M4|5012345'] && cp['SONY|ILCE-7M4|5012345']['Vídeos'] === 'Fixa', 'câmera não guardou o destino: ' + JSON.stringify(cp));
     ok(t.includes('Áudio continua vazia'), 'não avisou pasta vazia');
     await p.screenshot({path: SHOTS + '/e2e-3-pronto.png', fullPage: true});
   });

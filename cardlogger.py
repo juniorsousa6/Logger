@@ -215,18 +215,63 @@ def mounted_volumes(job_dir=None):
         return []
 
 
+def _matches(vol: Path, p) -> bool:
+    rule = p.get("match", {})
+    names = rule.get("volume_name")
+    if names and not any(fnmatch.fnmatch(vol.name.upper(), n.upper()) for n in names):
+        return False
+    has = rule.get("has_any_path")
+    if has and not any(next(iter(vol.glob(g)), None) for g in has):
+        return False
+    return True
+
+
 def identify(vol: Path, profiles):
-    """Devolve o primeiro perfil cujas regras batem com o cartao."""
-    for p in profiles:
-        rule = p.get("match", {})
-        names = rule.get("volume_name")
-        if names and not any(fnmatch.fnmatch(vol.name.upper(), n.upper()) for n in names):
-            continue
-        has = rule.get("has_any_path")
-        if has and not any(next(iter(vol.glob(g)), None) for g in has):
-            continue
-        return p
-    return None
+    """Perfil do cartao. Um cartao pode ter coisa de dois aparelhos (ex.: o mesmo SD usado no
+    drone e no gravador TASCAM): o primeiro perfil que bate manda, e as rotas dos outros perfis
+    que batem entram junto, mas so as que pegam arquivos que ninguem antes pegou."""
+    hits = [p for p in profiles if _matches(vol, p)]
+    if not hits:
+        return None
+    base = hits[0]
+    if len(hits) == 1:
+        return base
+    skip = [x.upper() for h in hits for x in h.get("skip", [])]
+    rels = []
+    for src in walk(vol):
+        rel = src.relative_to(vol).as_posix().upper()
+        if not any(fnmatch.fnmatch(rel, x) for x in skip):
+            rels.append(rel)
+
+    def caught(routes):
+        return {r for r in rels for rt in routes if any(fnmatch.fnmatch(r, pat.upper()) for pat in rt["patterns"])}
+
+    routes = [dict(r) for r in base["routes"]]
+    names = [base["name"]]
+    have = caught(routes)
+    labels = {r.get("label", r["to"]) for r in routes}
+    for h in hits[1:]:
+        for r in h["routes"]:
+            got = caught([r]) - have
+            if not got:
+                continue
+            r = dict(r)
+            lab = r.get("label", r["to"])
+            if lab in labels:
+                r["label"] = f"{lab} ({h['name']})"
+            labels.add(r.get("label", r["to"]))
+            routes.append(r)
+            have |= got
+            if h["name"] not in names:
+                names.append(h["name"])
+    if len(names) == 1:
+        return base
+    for r in routes:  # com dois aparelhos, "Tudo" nao diz nada: usa o nome do aparelho
+        if r.get("label") == "Tudo":
+            r["label"] = base["name"]
+    merged = dict(base)
+    merged.update({"name": " + ".join(names), "routes": routes, "skip": sorted(set(skip))})
+    return merged
 
 
 def sub_dir(parent: Path, name: str) -> Path:
@@ -248,6 +293,116 @@ def walk(vol: Path):
             if name in SKIP_NAMES or name.startswith("."):
                 continue
             yield Path(root) / name
+
+
+# ---------------------------------------------------------------- camera (numero de serie)
+_CAM_CACHE = {}
+_SONY_DEV = re.compile(rb'<Device\b([^>]*)>', re.S)
+_ATTR = re.compile(rb'(\w+)="([^"]*)"')
+_CAM_EXT = {"XML", "JPG", "JPEG", "ARW", "DNG", "CR2", "CR3", "NEF", "HIF", "RAF", "RW2"}
+
+
+def _tiff_tags(buf: bytes, base: int):
+    """Le Make/Model/numero de serie de um bloco TIFF (EXIF de JPG ou o proprio ARW/DNG)."""
+    if buf[base:base + 2] == b"II":
+        e = "<"
+    elif buf[base:base + 2] == b"MM":
+        e = ">"
+    else:
+        return {}
+    import struct
+
+    def u16(o):
+        return struct.unpack(e + "H", buf[o:o + 2])[0]
+
+    def u32(o):
+        return struct.unpack(e + "I", buf[o:o + 4])[0]
+
+    out, seen = {}, set()
+
+    def ifd(off):
+        if off in seen or not (0 < base + off < len(buf) - 2):
+            return
+        seen.add(off)
+        o = base + off
+        n = u16(o)
+        for k in range(min(n, 400)):
+            p = o + 2 + 12 * k
+            if p + 12 > len(buf):
+                return
+            tag, typ, cnt = u16(p), u16(p + 2), u32(p + 4)
+            if tag in (0x010F, 0x0110, 0xA431, 0xC62F) and typ == 2:
+                raw = buf[p + 8:p + 8 + cnt] if cnt <= 4 else buf[base + u32(p + 8):base + u32(p + 8) + cnt]
+                out[tag] = raw.split(b"\0")[0].decode("ascii", "replace").strip()
+            elif tag == 0x8769:  # ponteiro para o bloco EXIF (onde fica o numero de serie)
+                ifd(u32(p + 8))
+
+    try:
+        ifd(u32(base + 4))
+    except Exception:  # noqa: BLE001  arquivo cortado ou estranho: sem camera
+        return out
+    return out
+
+
+def camera_of_file(path: Path):
+    """(fabricante, modelo, serie) lidos de um XML da Sony ou do EXIF de uma foto; None se nao achar."""
+    try:
+        with open(path, "rb") as f:
+            buf = f.read(262144)
+    except OSError:
+        return None
+    ext = path.suffix.upper().lstrip(".")
+    if ext == "XML":
+        m = _SONY_DEV.search(buf)   # Sony: <Device manufacturer="Sony" modelName="ILCE-7M4" serialNo="..."/>
+        if not m:
+            return None
+        a = {k.decode(): v.decode("utf-8", "replace").strip() for k, v in _ATTR.findall(m.group(1))}
+        return (a.get("manufacturer", ""), a.get("modelName", ""), a.get("serialNo", "")) if a.get("modelName") else None
+    if buf[:2] == b"\xff\xd8":  # JPG: procura o bloco Exif
+        i = buf.find(b"Exif\0\0")
+        if i < 0:
+            return None
+        t = _tiff_tags(buf, i + 6)
+    else:
+        t = _tiff_tags(buf, 0)
+    if not t.get(0x0110):
+        return None
+    return (t.get(0x010F, ""), t[0x0110], t.get(0xA431) or t.get(0xC62F, ""))
+
+
+def camera_id(vol: Path):
+    """Qual camera gravou este cartao: {'key', 'label'}. A chave usa o numero de serie (a camera
+    e a mesma, troque o cartao que for); sem numero de serie, nao ha chave (so o nome, para mostrar)."""
+    try:
+        st = os.stat(vol)
+    except OSError:
+        return None
+    files = []
+    for src in walk(vol):
+        if src.suffix.upper().lstrip(".") in _CAM_EXT and "THMBNL" not in src.as_posix().upper():
+            files.append(src)
+        if len(files) >= 400:
+            break
+    sig = (str(vol), st.st_dev, len(files), files[0].name if files else "", files[-1].name if files else "")
+    if sig in _CAM_CACHE:
+        return _CAM_CACHE[sig]
+    # o XML de clipe vem primeiro (diz a camera do video); depois fotos
+    files.sort(key=lambda p: (p.suffix.upper() != ".XML", p.as_posix()))
+    found = None
+    for src in files[:12]:
+        cam = camera_of_file(src)
+        if cam and cam[1]:
+            found = cam
+            if cam[2]:
+                break
+    res = None
+    if found:
+        mk, md, sn = found
+        label = " ".join(x for x in (mk.title() if mk.isupper() else mk, md) if x)
+        res = {"label": label + (f" · nº …{sn[-4:]}" if sn else ""),
+               "key": f"{mk}|{md}|{sn}".upper() if sn else ""}
+    _CAM_CACHE[sig] = res
+    return res
 
 
 def route_index(rel: str, profile):
@@ -537,7 +692,7 @@ def scan_card(vol: Path, profile, ledger):
                 continue
             missing += 1           # a copia sumiu do HD: volta a ser copiavel
         items.append({"src": src, "rel": rel, "size": st.st_size, "key": key, "route": ri,
-                      "recopy": rec is not None})
+                      "recopy": rec is not None, "mtime": st.st_mtime})
     ignored_media = [r for r in ignored if Path(r).suffix.upper().lstrip(".") in MEDIA_EXT]
     # "pode formatar": nada a copiar, nenhuma midia fora das regras e toda copia conferida no HD
     return {"volume": vol.name, "path": str(vol), "uuid": uuid, "profile": profile["name"], "profile_def": profile,

@@ -21,6 +21,8 @@ for i in range(1, 4):
 put("SONY_JRS/DCIM/100MSDCF/JRS00001.ARW", 90_000)
 for i in range(1, 3):
     put(f"SONY_C/PRIVATE/M4ROOT/CLIP/C{8970 + i}.MP4", 300_000 + i)
+(V / "SONY_C/PRIVATE/M4ROOT/CLIP/C8971M01.XML").write_text(   # a camera do DJ booth, pelo numero de serie
+    '<?xml version="1.0"?><NonRealTimeMeta><Device manufacturer="Sony" modelName="ILCE-7M4" serialNo="5012345"/></NonRealTimeMeta>')
 put("DJI/DCIM/DJI_001/DJI_0001.MP4", 500_000)
 put("DJI/DCIM/DJI_001/DJI_0001.SRT", 2_000)
 put("Extreme Pro/2026_10_01 - Show/Áudio/TASCAM_0001.wav", 1000)   # HD de trabalho
