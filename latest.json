@@ -1,6 +1,6 @@
 {
-  "version": "1.4.0",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.4.0.zip",
-  "sha256": "4487fd1aa37591676add50e02db1ffb486e5c2d646ef8182c6926345a15bf9a2",
-  "notes": "Botões Drops (renomeia os drops depois do render, com o nome da música do VIOT) e Fotos (limpa a pasta Fotos depois do select do Lightroom, pela Lixeira). Inclui a 1.3.7."
+  "version": "1.4.1",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.4.1.zip",
+  "sha256": "de0deacd320f42df6e33bd663831cd455520106c492b4115922bba8d0c28078b",
+  "notes": "Drops com a música certa (respeita o fim de cada música), Fotos copia o select sozinho e confere antes de limpar, botão Desmarcar todas nas pastas."
 }
