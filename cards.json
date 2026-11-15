@@ -46,7 +46,8 @@
         }
       ],
       "skip": [
-        "PRIVATE/M4ROOT/THMBNL/*"
+        "PRIVATE/M4ROOT/THMBNL/*",
+        "M4ROOT/THMBNL/*"
       ]
     },
     {
