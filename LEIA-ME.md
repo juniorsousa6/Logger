@@ -37,10 +37,11 @@ o título na prévia (o Logger lembra) e ligar/desligar o VIOT de um drop. Nada 
 *Desfazer* volta os nomes do render. Se o render ainda estiver rodando, o Logger fica de olho e avisa.
 Precisa do DaVinci aberto com *Preferences > System > General > External scripting using* em **Local**.
 
-**Limpar fotos** (botão *Fotos*): depois de arrastar as fotos com estrela para `Select Fotos` no Lightroom,
-o Logger lê o catálogo (uma cópia, o Lightroom pode estar aberto), confere que **toda** foto com estrela
-está no Select Fotos e mostra o que vai sair. Só manda a pasta Fotos para a **Lixeira** (pelo Finder, dá
-para recuperar) depois de dois cliques seus. Se faltar uma foto com estrela, não deixa limpar.
+**Limpar fotos** (botão *Fotos*): marque as estrelas no Lightroom e escolha a festa. O Logger lê o
+catálogo (uma cópia, o Lightroom pode estar aberto), copia as fotos com estrela (RAW e o `.xmp`, se houver)
+para `Select Fotos` dentro da festa, confere cada cópia por SHA-256 e nunca sobrescreve um arquivo que já
+esteja lá. Só depois manda a pasta Fotos para a **Lixeira** (pelo Finder, dá para recuperar), e só depois de
+dois cliques seus. Se uma foto com estrela sumiu do disco ou uma cópia não bater, nada vai para a Lixeira.
 
 ## Segurança e conferência
 - Cada arquivo é lido do cartão, gravado, relido do HD e comparado por checksum (BLAKE2b) antes de valer.
