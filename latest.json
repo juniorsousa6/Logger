@@ -1,6 +1,6 @@
 {
-  "version": "1.4.1",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.4.1.zip",
-  "sha256": "de0deacd320f42df6e33bd663831cd455520106c492b4115922bba8d0c28078b",
-  "notes": "Drops com a música certa (respeita o fim de cada música), Fotos copia o select sozinho e confere antes de limpar, botão Desmarcar todas nas pastas."
+  "version": "1.5.0",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.5.0.zip",
+  "sha256": "599fd11bd8b6b5d108cb9a61f1c016148a35df7b21c95200b73eda7e8a000d13",
+  "notes": "Meus HDs: mapa dos seus HDs em grade ou lista, navegável mesmo com o HD desligado, busca de arquivos em todos os HDs; HD novo pergunta se quer mapear e HD conhecido se atualiza sozinho ao conectar (só leitura)."
 }
