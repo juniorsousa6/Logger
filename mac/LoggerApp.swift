@@ -6,16 +6,65 @@
 
 import Cocoa
 import CryptoKit
+import LocalAuthentication
 import WebKit
 
 let info = Bundle.main.infoDictionary ?? [:]
 let APP_VERSION = info["CFBundleShortVersionString"] as? String ?? "0"
 let UPDATE_URL = (info["LoggerUpdateURL"] as? String ?? "").trimmingCharacters(in: .whitespaces)
 let BUILT_ON = info["LoggerBuiltOn"] as? String ?? ""
+// chave pública de quem assina as atualizações (vem do repositório, mac/UPDATE_KEY)
+let BUNDLE_KEY = (info["LoggerUpdateKey"] as? String ?? "").trimmingCharacters(in: .whitespaces)
+let MAX_UPDATE_BYTES = 200 * 1024 * 1024
 let SUPPORT = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Application Support/Logger")
 let LOG_FILE = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Logs/Logger.log")
+// a chave de assinatura mora no chip de segurança deste Mac (Secure Enclave): o arquivo abaixo
+// só funciona neste Mac e só assina depois do Touch ID ou da senha.
+let SIGN_KEY_FILE = SUPPORT.appendingPathComponent("assinatura.chave")
+let LOCAL_PUB_FILE = SUPPORT.appendingPathComponent("assinatura.pub")
+
+/// O texto exato que é assinado. Tem que bater com tools/updatesig.py.
+func updateMessage(version: String, sha: String, size: Int) -> Data {
+    Data("logger-update:v1\n\(version)\n\(sha.lowercased())\n\(size)".utf8)
+}
+
+/// Chaves aceitas: a que veio no app e a criada neste Mac. Vazio = ainda sem assinatura.
+func trustedKeys() -> [P256.Signing.PublicKey] {
+    var raw = [BUNDLE_KEY]
+    if let l = try? String(contentsOf: LOCAL_PUB_FILE, encoding: .utf8) { raw.append(l) }
+    return raw.compactMap { s in
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty, !t.hasPrefix("__"), let d = Data(base64Encoded: t) else { return nil }
+        return try? P256.Signing.PublicKey(x963Representation: d)
+    }
+}
+
+/// nil = assinatura válida (ou app ainda sem chave); texto = motivo da recusa.
+func signatureProblem(_ j: [String: Any], version: String, sha: String) -> String? {
+    let keys = trustedKeys()
+    if keys.isEmpty { return nil }
+    guard let size = j["size"] as? Int, size > 0 else { return "a versão não informa o tamanho" }
+    guard let b64 = j["sig"] as? String, let d = Data(base64Encoded: b64),
+          let sig = try? P256.Signing.ECDSASignature(derRepresentation: d) else { return "a versão não está assinada" }
+    let msg = updateMessage(version: version, sha: sha, size: size)
+    return keys.contains { $0.isValidSignature(sig, for: msg) } ? nil : "a assinatura não confere"
+}
+
+func sha256Hex(_ u: URL) -> String {
+    (try? Data(contentsOf: u)).map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() } ?? ""
+}
+
+func fileSize(_ u: URL) -> Int {
+    ((try? FileManager.default.attributesOfItem(atPath: u.path))?[.size] as? NSNumber)?.intValue ?? -1
+}
+
+/// Só aceita endereços do repositório do Logger no GitHub.
+func isRepoURL(_ s: String) -> Bool {
+    guard let u = URL(string: s), u.scheme == "https", u.host == "raw.githubusercontent.com" else { return false }
+    return u.path.hasPrefix("/juniorsousa6/Logger/")
+}
 
 final class TextBox { var text = ""; var found = false }
 
@@ -227,8 +276,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                     return
                 }
                 if self.newer(v, than: APP_VERSION) {
+                    if let why = signatureProblem(j, version: v, sha: sha) {
+                        self.log("atualização \(v) recusada: \(why)")
+                        if manual { self.say("Não vou instalar a versão \(v)", "Por segurança: \(why). Nada foi baixado. Fale com quem publica o Logger.") }
+                        return
+                    }
+                    let size = j["size"] as? Int ?? 0
+                    if size > MAX_UPDATE_BYTES { return }
                     if !manual && self.copyRunning() { return }  // não interrompe cópia; avisa na próxima abertura
-                    self.offerUpdate(v, zip: zip, sha: sha, notes: j["notes"] as? String ?? "")
+                    self.offerUpdate(v, zip: zip, sha: sha, size: size, notes: j["notes"] as? String ?? "")
                 } else if manual {
                     self.say("Você já está na versão mais nova", "Logger \(APP_VERSION).")
                 }
@@ -236,7 +292,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         }.resume()
     }
 
-    func offerUpdate(_ v: String, zip: String, sha: String, notes: String) {
+    func offerUpdate(_ v: String, zip: String, sha: String, size: Int, notes: String) {
         let a = NSAlert()
         a.messageText = "Logger \(v) disponível"
         a.informativeText = (notes.isEmpty ? "" : notes + "\n\n") + "Você está na \(APP_VERSION). A atualização leva menos de um minuto e mantém suas pastas, cartões lembrados e histórico."
@@ -253,9 +309,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             let z = dir.appendingPathComponent("pacote.zip")
             try? FileManager.default.moveItem(at: tmp, to: z)
-            // so instala se o pacote baixado for exatamente o publicado (impressao digital SHA-256)
-            let got = (try? Data(contentsOf: z)).map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() } ?? ""
-            guard got == sha.lowercased() else {
+            // so instala se o pacote baixado for exatamente o publicado (tamanho + impressao digital SHA-256,
+            // e os dois estao dentro da assinatura conferida antes de oferecer)
+            let n = fileSize(z)
+            guard n > 0, n <= MAX_UPDATE_BYTES, size == 0 || n == size, sha256Hex(z) == sha.lowercased() else {
                 DispatchQueue.main.async { self.say("O pacote baixado não confere", "A atualização foi cancelada por segurança. Tente de novo mais tarde.") }
                 return
             }
@@ -306,6 +363,128 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         NSApp.terminate(nil)
     }
 
+    // MARK: assinatura das versões (só no Mac de quem publica)
+    func log(_ t: String) {
+        guard let h = try? FileHandle(forWritingTo: LOG_FILE) else { return }
+        h.seekToEndOfFile(); h.write(Data("[\(Date())] \(t)\n".utf8)); try? h.close()
+    }
+
+    func copyToClipboard(_ t: String) {
+        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(t, forType: .string)
+    }
+
+    func localPublicKey() -> String? {
+        (try? String(contentsOf: LOCAL_PUB_FILE, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    @objc func signingKeyMenu(_ s: Any?) {
+        if let pub = localPublicKey(), FileManager.default.fileExists(atPath: SIGN_KEY_FILE.path) {
+            copyToClipboard(pub)
+            say("Este Mac já tem a chave de assinatura", "A parte pública foi copiada. Cole na conversa se pedirem:\n\n\(pub)")
+            return
+        }
+        guard SecureEnclave.isAvailable else {
+            say("Este Mac não tem chip de segurança", "Não dá para criar a chave aqui."); return
+        }
+        let a = NSAlert()
+        a.messageText = "Criar a chave de assinatura neste Mac?"
+        a.informativeText = "Ela fica presa no chip de segurança deste Mac e não sai dele. Cada versão nova do Logger só vale depois que você assinar aqui, com Touch ID ou senha.\n\nSe este Mac sumir, a chave vai junto: aí é só instalar o Logger de novo pelo instalador."
+        a.addButton(withTitle: "Criar chave"); a.addButton(withTitle: "Cancelar")
+        guard a.runModal() == .alertFirstButtonReturn else { return }
+        do {
+            var err: Unmanaged<CFError>?
+            guard let ac = SecAccessControlCreateWithFlags(nil, kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+                                                           [.privateKeyUsage, .userPresence], &err) else {
+                throw err!.takeRetainedValue() as Error
+            }
+            let key = try SecureEnclave.P256.Signing.PrivateKey(accessControl: ac)
+            try FileManager.default.createDirectory(at: SUPPORT, withIntermediateDirectories: true)
+            try key.dataRepresentation.write(to: SIGN_KEY_FILE, options: .atomic)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: SIGN_KEY_FILE.path)
+            let pub = key.publicKey.x963Representation.base64EncodedString()
+            try pub.write(to: LOCAL_PUB_FILE, atomically: true, encoding: .utf8)
+            copyToClipboard(pub)
+            log("chave de assinatura criada")
+            say("Chave criada", "A parte pública (pode mostrar, não é segredo) foi copiada. Cole na conversa:\n\n\(pub)")
+        } catch {
+            say("Não consegui criar a chave", error.localizedDescription)
+        }
+    }
+
+    @objc func signReleaseMenu(_ s: Any?) {
+        guard let blob = try? Data(contentsOf: SIGN_KEY_FILE) else {
+            say("Este Mac ainda não tem chave", "Primeiro use Logger › Chave de Assinatura…"); return
+        }
+        let a = NSAlert()
+        a.messageText = "Assinar versão nova"
+        a.informativeText = "Cole o link da versão que te mandaram na conversa."
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 420, height: 24))
+        let clip = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        field.stringValue = isRepoURL(clip) ? clip : ""
+        field.placeholderString = "https://raw.githubusercontent.com/juniorsousa6/Logger/…/latest.json"
+        a.accessoryView = field
+        a.addButton(withTitle: "Conferir"); a.addButton(withTitle: "Cancelar")
+        a.window.initialFirstResponder = field
+        guard a.runModal() == .alertFirstButtonReturn else { return }
+        let link = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isRepoURL(link), let u = URL(string: link) else {
+            say("Link não aceito", "Só assino versões do repositório do Logger no GitHub."); return
+        }
+        var req = URLRequest(url: u); req.cachePolicy = .reloadIgnoringLocalCacheData
+        URLSession.shared.dataTask(with: req) { d, _, _ in
+            let parsed = d.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+            guard let j = parsed, let v = j["version"] as? String, let zip = j["url"] as? String, isRepoURL(zip),
+                  let sha = j["sha256"] as? String, let size = j["size"] as? Int, size > 0, size <= MAX_UPDATE_BYTES,
+                  let zu = URL(string: zip) else {
+                DispatchQueue.main.async { self.say("Esse link não é de uma versão", "Confira o link e tente de novo.") }
+                return
+            }
+            // baixa o pacote e confere com os próprios olhos do Mac: o que for assinado é o que você baixou
+            URLSession.shared.downloadTask(with: zu) { tmp, _, err in
+                guard let tmp = tmp, err == nil else {
+                    DispatchQueue.main.async { self.say("O download falhou", err?.localizedDescription ?? "") }
+                    return
+                }
+                let n = fileSize(tmp), got = sha256Hex(tmp)
+                DispatchQueue.main.async {
+                    guard n == size, got == sha.lowercased() else {
+                        self.say("O pacote não confere com a versão", "Não assinei nada. Avise na conversa."); return
+                    }
+                    let c = NSAlert()
+                    c.messageText = "Assinar o Logger \(v)?"
+                    let mb = String(format: "%.1f MB", Double(size) / 1_048_576)
+                    let notes = j["notes"] as? String ?? ""
+                    c.informativeText = (notes.isEmpty ? "" : notes + "\n\n") +
+                        "Pacote conferido: \(mb), impressão digital \(got.prefix(8))…\(got.suffix(8)).\n\nSó assine se foi você que pediu esta versão."
+                    c.addButton(withTitle: "Assinar"); c.addButton(withTitle: "Cancelar")
+                    guard c.runModal() == .alertFirstButtonReturn else { return }
+                    self.signNow(blob: blob, version: v, sha: got, size: size)
+                }
+            }.resume()
+        }.resume()
+    }
+
+    func signNow(blob: Data, version: String, sha: String, size: Int) {
+        let ctx = LAContext()
+        ctx.localizedReason = "assinar o Logger \(version)"
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                let key = try SecureEnclave.P256.Signing.PrivateKey(dataRepresentation: blob, authenticationContext: ctx)
+                let msg = updateMessage(version: version, sha: sha, size: size)
+                let sig = try key.signature(for: msg)
+                guard key.publicKey.isValidSignature(sig, for: msg) else { throw CocoaError(.featureUnsupported) }
+                let b64 = sig.derRepresentation.base64EncodedString()
+                DispatchQueue.main.async {
+                    self.copyToClipboard(b64)
+                    self.log("versão \(version) assinada")
+                    self.say("Logger \(version) assinado", "A assinatura foi copiada. Cole na conversa:\n\n\(b64)")
+                }
+            } catch {
+                DispatchQueue.main.async { self.say("Não assinei", error.localizedDescription) }
+            }
+        }
+    }
+
     // MARK: menus e avisos
     func say(_ t: String, _ m: String) {
         let a = NSAlert(); a.messageText = t; a.informativeText = m; a.runModal()
@@ -330,6 +509,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         sub("Logger", [
             item("Sobre o Logger", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
             item("Procurar Atualizações…", #selector(checkUpdatesMenu(_:)), target: self),
+            .separator(),
+            item("Chave de Assinatura…", #selector(signingKeyMenu(_:)), target: self),
+            item("Assinar Versão Nova…", #selector(signReleaseMenu(_:)), target: self),
             .separator(),
             item("Ocultar Logger", #selector(NSApplication.hide(_:)), "h"),
             item("Ocultar Outros", #selector(NSApplication.hideOtherApplications(_:)), "h", mods: [.command, .option]),

@@ -13,7 +13,11 @@ O instalador monta o app no próprio Mac, então ele sai certo para a versão do
 - O Logger confere no GitHub (juniorsousa6/Logger) se tem versão nova toda vez que abre, e também em **Logger > Procurar Atualizações…**. Com um clique ele baixa, refaz o app e reabre.
 - Se o macOS for atualizado, o Logger percebe na próxima abertura e oferece se refazer para a versão nova do sistema.
 - Atualizar nunca mexe nas suas configurações, nos cartões lembrados nem no histórico (`~/.cardlogger`).
-- Para publicar uma versão: aumente o número em `VERSION`, rode `python3 tools/release.py "o que mudou"` e envie para o GitHub.
+- **Assinatura:** cada versão nova só é instalada se estiver assinada pela chave que mora no chip de segurança do Mac de quem publica. Mesmo que alguém tome a conta do GitHub, não consegue empurrar uma versão falsa.
+  - Criar a chave (uma vez): **Logger > Chave de Assinatura…**. A parte pública vai para `mac/UPDATE_KEY`.
+  - Assinar: **Logger > Assinar Versão Nova…**, colar o link do `latest.json` da versão, conferir e confirmar com Touch ID ou senha. A assinatura copiada entra com `python3 tools/release.py --sig ASSINATURA`.
+  - Se o Mac da chave sumir, instale o Logger de novo pelo instalador e crie outra chave.
+- Para publicar uma versão: aumente o número em `VERSION`, rode `python3 tools/release.py "o que mudou"`, assine e envie para o GitHub.
 
 ## Sem instalar (modo navegador)
 **Abrir Logger.command** ainda funciona: abre o Logger no navegador. Feche a janela do Terminal para encerrar.
