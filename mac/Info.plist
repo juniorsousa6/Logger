@@ -20,6 +20,7 @@
   <key>NSNetworkVolumesUsageDescription</key><string>O Logger pode salvar trabalhos em HDs de rede.</string>
   <key>NSAppleEventsUsageDescription</key><string>O Logger usa o Finder para ejetar cartões e mostrar notificações.</string>
   <key>LoggerUpdateURL</key><string>__UPDATE_URL__</string>
+  <key>LoggerUpdateKey</key><string>__UPDATE_KEY__</string>
   <key>LoggerBuiltOn</key><string>__BUILT_ON__</string>
 </dict>
 </plist>

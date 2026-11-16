@@ -1,6 +1,7 @@
 {
-  "version": "1.5.0",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.5.0.zip",
-  "sha256": "599fd11bd8b6b5d108cb9a61f1c016148a35df7b21c95200b73eda7e8a000d13",
-  "notes": "Meus HDs: mapa dos seus HDs em grade ou lista, navegável mesmo com o HD desligado, busca de arquivos em todos os HDs; HD novo pergunta se quer mapear e HD conhecido se atualiza sozinho ao conectar (só leitura)."
+  "version": "1.6.0",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.6.0.zip",
+  "sha256": "731893235f998e36856d6e139991751f93dd827355b88baa8d8c10b6ea0ed591",
+  "size": 216696,
+  "notes": "Atualizações assinadas: depois que você criar a chave (menu Logger › Chave de Assinatura…), o Logger só instala versões assinadas no seu Mac com Touch ID ou senha. Pasta do trabalho sempre dentro do HD."
 }

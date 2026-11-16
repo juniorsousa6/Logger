@@ -213,7 +213,10 @@ def hd_job_path(body):
     d, root = hd_mount(body["drive"])
     if root is None:
         raise ValueError("Conecte o HD %s primeiro." % d["name"])
-    return str(root / body["path"])
+    target = (root / str(body["path"])).resolve()
+    if target == root.resolve() or root.resolve() not in target.parents:
+        raise ValueError("Essa pasta não está dentro do HD %s." % d["name"])
+    return str(target)
 
 
 def catalog_hd(path):
@@ -959,8 +962,19 @@ class H(BaseHTTPRequestHandler):
             return self.send(400, {"error": str(e)})
 
 
+def protect_state_dir():
+    """~/.cardlogger guarda o mapa de todos os HDs, o historico dos cartoes e os ajustes:
+    so o seu usuario do Mac le (outro usuario do mesmo Mac nao)."""
+    try:
+        cl.STATE_DIR.mkdir(parents=True, exist_ok=True)
+        os.chmod(cl.STATE_DIR, 0o700)
+    except OSError:
+        pass
+
+
 def main():
     import urllib.request
+    protect_state_dir()
     port = int(os.environ.get("LOGGER_PORT", "8765"))
     srv = None
     parent = int(os.environ.get("LOGGER_PARENT_PID", "0") or 0)

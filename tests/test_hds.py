@@ -306,6 +306,11 @@ class Api(unittest.TestCase):
             st, j = call("/api/hds/job", {"drive": did, "path": "2026_01_01 - Teste"})
             self.assertEqual(st, 200)
             self.assertTrue(j["job_dir"].endswith("HD1/2026_01_01 - Teste"))
+            # pasta fora do HD (../) nao vira pasta de trabalho
+            self.assertEqual(call("/api/hds/job", {"drive": did, "path": "../../.."})[0], 400)
+            self.assertEqual(call("/api/hds/job", {"drive": did, "path": ""})[0], 400)
+            # a pasta com o mapa dos HDs so e lida pelo proprio usuario
+            self.assertEqual(oct((d / "home").stat().st_mode & 0o777), "0o700")
             self.assertEqual(call("/api/hds/rescan", {"drive": did})[0], 200)
             self.assertEqual(call("/api/hds/forget", {"drive": did})[0], 200)
             self.assertEqual(call("/api/hds")[1]["drives"], [])
