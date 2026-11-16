@@ -1,7 +1,7 @@
 {
-  "version": "1.6.0",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.6.0.zip",
-  "sha256": "731893235f998e36856d6e139991751f93dd827355b88baa8d8c10b6ea0ed591",
-  "size": 216696,
-  "notes": "Atualizações assinadas: depois que você criar a chave (menu Logger › Chave de Assinatura…), o Logger só instala versões assinadas no seu Mac com Touch ID ou senha. Pasta do trabalho sempre dentro do HD."
+  "version": "1.6.1",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.6.1.zip",
+  "sha256": "d873f36ff2930f3f8c951fbecc56b375e60ae56b055d80f308006d1d5bccce3b",
+  "size": 216785,
+  "notes": "Primeira versão assinada: a chave do seu Mac agora vai dentro do Logger."
 }
