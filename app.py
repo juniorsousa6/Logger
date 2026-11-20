@@ -331,6 +331,16 @@ def resolve_dest(want, subs):
     return near[0] if len(near) == 1 else None
 
 
+# pastas que nunca sao da camera principal (Sony/A7 IV): action cams, drone, audio, fotos
+NOT_MAIN = ("action", "drone", "audio", "som", "sound", "foto", "photo", "gopro", "osmo", "insta",
+            "360", "dji", "drop", "entrega", "export", "render", "proxy", "thumb", "miniatura", "musica", "music")
+
+
+def main_folders(subs):
+    """Pastas do trabalho que podem receber a camera principal (Ronin, Vídeos, Fixa Wide, Dj Booth...)."""
+    return [x for x in subs if not _fold(x).startswith(NOT_MAIN)]
+
+
 def job_days(target):
     """Dias aceitos para os arquivos do trabalho: a data da pasta e o dia seguinte (evento que vira a meia-noite)."""
     for part in [Path(target)] + list(Path(target).parents) if target else []:
@@ -363,11 +373,18 @@ def card_routes(prof, items, remembered, subs, days=None):
         b = sum(it["size"] for it in items if it["route"] == i)
         dest, why = None, ""
         mem = None if r.get("lock") else remembered.get(label)
+        main = r.get("main_cam")
         if mem and (resolve_dest(mem, subs) or not subs):
             dest, why = resolve_dest(mem, subs) or mem, "lembrado"
+        elif not subs:
+            dest, why = r["to"] or None, "regra" if r["to"] else ""
         else:
-            dest = (resolve_dest(r["to"], subs) if subs else r["to"]) or None
+            dest = None if main == "only" else resolve_dest(r["to"], subs)
             why = "regra" if dest else ""
+            if not dest and main:
+                cands = main_folders(subs)
+                if len(cands) == 1:   # so uma pasta de camera principal: nao tem o que perguntar
+                    dest, why = cands[0], "única pasta"
         old, old_day = other_days([it for it in items if it["route"] == i], days or set())
         routes.append({"label": label, "dest": dest if dest is not None else "", "default": r["to"],
                        "ask": dest is None and n > 0, "why": why, "files": n, "bytes": cl.human(b),
@@ -420,7 +437,7 @@ def list_cards(target, backup=""):
     out = []
     exclude = [p for p in (target, backup) if p]
     for vol in cl.mounted_volumes(exclude):
-        prof = cl.identify(vol, cfg["profiles"])
+        prof = cl.identify_card(vol, cfg["profiles"])
         kind, why = classify_volume(vol, prof, s, work)
         if kind == "drive":
             out.append({"volume": vol.name, "path": str(vol), "uuid": cl.volume_uuid(vol), "profile": None,
@@ -489,7 +506,7 @@ def _start_log(body):
         vol = Path(sel["path"])
         if not vol.is_dir():  # tirado do leitor entre a tela e o clique: nao some calado do relatorio
             raise ValueError(f"O cartão {vol.name} não está mais conectado. Coloque de novo ou desmarque ele.")
-        prof = cl.identify(vol, cfg["profiles"])
+        prof = cl.identify_card(vol, cfg["profiles"])
         if not prof:
             raise ValueError(f"Não reconheço mais o cartão {vol.name}. Atualize a tela e tente de novo.")
         c = cl.scan_card(vol, prof, ledger)  # escaneia de novo na hora de copiar

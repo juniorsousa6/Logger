@@ -29,6 +29,7 @@ O instalador monta o app no próprio Mac, então ele sai certo para a versão do
 - As pastas (Ronin, Fotos, Áudio, Action, Drone, Fixa Wide) são editáveis e ficam salvas como seu padrão.
 - **Backup opcional:** escolha um segundo HD e ele grava nos dois ao mesmo tempo, lendo o cartão uma vez só.
 - **Cartões:** aparecem sozinhos quando você pluga. Cada um mostra o tipo reconhecido, quantos arquivos novos tem e para qual pasta vai. Dá para trocar o destino (ex.: Sony → `Fixa Wide`) e ele lembra a escolha para aquele cartão.
+- **Para onde vai a Sony (A7 IV e outras):** se o trabalho tem só uma pasta de câmera principal (Ronin, Vídeos, Dj Booth…), a Sony vai direto para ela, vídeos e fotos. Action, Drone, Áudio e Fotos não contam. Com duas ou mais (ex.: Ronin + Fixa Wide), o app pergunta, e a câmera lembra a escolha pelo número de série. Arquivos JRS continuam indo para Ronin. Miniaturas da câmera (pasta `THMBNL`) nunca são copiadas; fotos JPG/ARW do `DCIM` sim.
 - **Continuar trabalho existente:** para logar mais cartões num trabalho já criado (ex.: segundo dia).
 
 ## Depois da edição
@@ -73,5 +74,5 @@ dois cliques seus. Se uma foto com estrela sumiu do disco ou uma cópia não bat
 - **Manifesto padrão cinema (ASC MHL, opcional):** cria a pasta `ascmhl` com o checksum de cada arquivo, no formato que produtoras e finalizadoras usam.
 
 ## Reconhecimento dos cartões
-Fica em `cards.json`. Hoje reconhece pela estrutura de pastas: Sony (`PRIVATE/M4ROOT`), drone DJI (`DCIM/DJI_…` com arquivos `.SRT`), action Osmo/GoPro/Insta360 (Osmo Action usa `DCIM/DJI_…` sem `.SRT`), gravador de áudio (`.WAV`) e "Outra câmera" (qualquer cartão com `DCIM`/`PRIVATE`, vai para `Fixa Wide` por padrão).
+Fica em `cards.json`. Hoje reconhece pela estrutura de pastas: Sony (`PRIVATE/M4ROOT` ou `M4ROOT`, ou qualquer cartão cujo XML/foto diga Sony), drone DJI (`DCIM/DJI_…` com arquivos `.SRT`), action Osmo/GoPro/Insta360 (Osmo Action usa `DCIM/DJI_…` sem `.SRT`), gravador de áudio (`.WAV`) e "Outra câmera" (qualquer cartão com `DCIM`/`PRIVATE`, vai para `Fixa Wide` por padrão).
 Pelo Terminal também roda sem janela: `python3 cardlogger.py "/caminho/do/trabalho" --dry-run`.

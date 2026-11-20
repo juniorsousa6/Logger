@@ -150,7 +150,11 @@ class API(unittest.TestCase):
         a = next(c for c in cards if c["volume"] == "SONY_A")
         b = next(c for c in cards if c["volume"] == "SONY_B")
         self.assertEqual([r["dest"] for r in a["routes"] if r["files"]], ["Ronin"])
-        self.assertEqual([r["dest"] for r in b["routes"] if r["files"]], ["Fixa"])
+        # Sony sem JRS com Ronin + Fixa no trabalho: o app nao tem como adivinhar, pergunta (1.6.2)
+        self.assertTrue(b["ask"])
+        self.assertEqual([r["dest"] for r in b["routes"] if r["files"]], [""])
+        for r in b["routes"]:
+            r["dest"] = r["dest"] or ("Fixa" if r["files"] else "")   # voce escolhe Fixa
         body = {"job_dir": j["job_dir"], "target": target}
         self.assertEqual(call("/api/log", {**body, "cards": [{"path": a["path"], "dests": ["Ronin"]}]})[0], 400)
         self.assertEqual(call("/api/log", {**body, "cards": [{"path": a["path"], "dests": [None, "Fixa", "Fotos"]}]})[0], 400)
