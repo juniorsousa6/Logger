@@ -5,6 +5,7 @@ Abre uma janela no navegador (so no seu Mac, endereco 127.0.0.1).
 Feche a janela do Terminal para encerrar.
 """
 import copy
+import collections
 import datetime as dt
 import json
 import re
@@ -362,6 +363,17 @@ def other_days(items, days):
     return len(out), common.strftime("%d/%m")
 
 
+SIDECAR_EXT = {"XML", "SRT", "LRF", "LRV", "THM", "SIDECAR", "XMP", "BIM"}
+
+
+def route_kinds(rels):
+    """Tipos de arquivo de uma rota, para a tela dizer o que vai: '835 ARW', '120 JPG + 120 ARW'.
+    Arquivos de apoio (XML da Sony, SRT do drone...) nao entram na conta."""
+    n = collections.Counter(Path(r).suffix.upper().lstrip(".") for r in rels)
+    main = [(e, k) for e, k in n.most_common() if e and e not in SIDECAR_EXT]
+    return " + ".join(f"{k} {e}" for e, k in main)
+
+
 def card_routes(prof, items, remembered, subs, days=None):
     """Destino de cada rota: escolha lembrada (se a pasta existe) > padrao do perfil.
     'ask' = o app nao tem certeza e precisa que voce escolha a pasta."""
@@ -385,9 +397,10 @@ def card_routes(prof, items, remembered, subs, days=None):
                 cands = main_folders(subs)
                 if len(cands) == 1:   # so uma pasta de camera principal: nao tem o que perguntar
                     dest, why = cands[0], "única pasta"
+        kinds = route_kinds(it["rel"] for it in items if it["route"] == i and "rel" in it)
         old, old_day = other_days([it for it in items if it["route"] == i], days or set())
         routes.append({"label": label, "dest": dest if dest is not None else "", "default": r["to"],
-                       "ask": dest is None and n > 0, "why": why, "files": n, "bytes": cl.human(b),
+                       "ask": dest is None and n > 0, "why": why, "files": n, "kinds": kinds, "bytes": cl.human(b),
                        "other_day": old, "other_day_date": old_day})
     return routes
 

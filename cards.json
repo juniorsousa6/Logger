@@ -52,7 +52,11 @@
       ],
       "skip": [
         "PRIVATE/M4ROOT/THMBNL/*",
-        "M4ROOT/THMBNL/*"
+        "M4ROOT/THMBNL/*",
+        "M4ROOT/MEDIAPRO.XML",
+        "M4ROOT/STATUS.XML",
+        "PRIVATE/M4ROOT/MEDIAPRO.XML",
+        "PRIVATE/M4ROOT/STATUS.XML"
       ]
     },
     {

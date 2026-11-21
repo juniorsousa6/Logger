@@ -1,7 +1,7 @@
 {
   "version": "1.6.2",
   "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/claude/project-thread-rkli45/dist/Logger-1.6.2.zip",
-  "sha256": "7c7d609c9362b7c3dd75f6c9883ed112bab6926813a8b7a30700489de734f689",
-  "size": 217752,
-  "notes": "Sony vai direto para a única pasta de câmera do trabalho (Action, Drone, Áudio e Fotos não contam); com duas ou mais, pergunta. A7 IV com M4ROOT na raiz agora é reconhecida como Sony. Miniaturas THMBNL nunca são copiadas, fotos JPG/ARW sim."
+  "sha256": "49e6f0ebf7c32a0998dbb9318e863f1018ad20b77ea797f69e419248e8184990",
+  "size": 218050,
+  "notes": "Sony vai direto para a única pasta de câmera do trabalho (Action, Drone, Áudio e Fotos não contam); com duas ou mais, pergunta. A7 IV com M4ROOT na raiz reconhecida como Sony. Miniaturas THMBNL e índices da câmera (MEDIAPRO.XML) nunca são copiados, fotos JPG/ARW sim. O cartão mostra o tipo do que vai (ex.: Fotos → Fotos (835 ARW))."
 }

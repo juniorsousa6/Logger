@@ -234,6 +234,29 @@ class Regras(unittest.TestCase):
         canon = make_card("CANON", {"DCIM/100CANON/IMG_0001.CR3": b"x"})
         self.assertEqual(cl.identify_card(canon, CFG["profiles"])["name"], "Outra camera")
 
+    def test_a7iv_real_com_arw_e_lixo_da_camera(self):
+        """Estrutura real do 'Untitled' da A7 IV (2026-11-21): 835 ARW em DCIM, JRS em M4ROOT na raiz,
+        MEDIAPRO.XML e pastas de sistema. Os ARW sao fotos; o indice MEDIAPRO.XML nao vira 'Videos (1)'."""
+        files = {f"DCIM/100MSDCF/DSC0{i:04d}.ARW": b"r" for i in range(5)}
+        files.update({f"M4ROOT/CLIP/JRS0{i:04d}.MP4": b"v" for i in range(3)})
+        files.update({f"M4ROOT/CLIP/JRS0{i:04d}M01.XML": b"<x/>" for i in range(3)})
+        files.update({f"M4ROOT/THMBNL/JRS0{i:04d}T01.JPG": b"t" for i in range(3)})
+        files.update({"M4ROOT/MEDIAPRO.XML": b"<x/>", "M4ROOT/STATUS.XML": b"<x/>", "SONY/SONYCARD.IND": b"i",
+                      "PRIVATE/DATABASE/DATABASE.BIN": b"d", "AVF_INFO/AVIN0001.INP": b"a"})
+        vol = make_card("Untitled", files)
+        prof = cl.identify_card(vol, CFG["profiles"])
+        self.assertEqual(prof["name"], "Sony", "indice da camera nao pode juntar o perfil Outra camera")
+        c = cl.scan_card(vol, prof, {"cards": {}})
+        rs = app.card_routes(prof, c["items"], None, ["Fotos", "Ronin", "Áudio"])
+        got = {r["label"]: (r["dest"], r["files"], r["kinds"]) for r in rs if r["files"]}
+        self.assertEqual(got, {"Vídeos JRS": ("Ronin", 6, "3 MP4"), "Fotos": ("Fotos", 5, "5 ARW")})
+        self.assertFalse(c["ignored_media"])
+
+    def test_route_kinds(self):
+        self.assertEqual(app.route_kinds(["a/1.JPG", "a/1.ARW", "a/2.ARW"]), "2 ARW + 1 JPG")
+        self.assertEqual(app.route_kinds(["C1.MP4", "C1M01.XML"]), "1 MP4")
+        self.assertEqual(app.route_kinds([]), "")
+
     def test_miniatura_nunca_foto_sempre(self):
         """THMBNL nunca e copiada (qualquer perfil); JPG/ARW do DCIM sempre."""
         self.assertTrue(cl.is_thumbnail("PRIVATE/M4ROOT/THMBNL/C0001T01.JPG"))
