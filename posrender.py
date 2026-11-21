@@ -105,7 +105,9 @@ def drop_target_name(n, party, title=""):
 
 
 # ---------------------------------------------------------------- plano
-FILE_RE = re.compile(r"^V(\d+)-\d+_(.+)$")  # "V1-0001_Drop 1" (Individual clips, nomes unicos)
+FILE_RE = re.compile(r"^V(\d+)-(\d+)_(.+)$")  # "V1-0001_Drop 1" (Individual clips, nomes unicos)
+# Com "Custom name" no render, o DaVinci poe o MESMO nome em todos ("V1-0001_9x16 · Drops"): ai o numero
+# depois do V1- (ordem do clipe no render) e o que diz qual clipe e.
 
 
 def song_at(markers, frame):
@@ -139,7 +141,8 @@ def plan_job(job, files, titles_fix=None):
     clips = [c for c in job["clips"] if (mi is None or c["end"] > mi) and (mo is None or c["start"] <= mo)]
     clips.sort(key=lambda c: c["start"])
     drops = sorted(m["frame"] for m in job["markers"] if re.match(r"^DROP\b", m.get("name") or "", re.I))
-    by_name = {}
+    by_name, by_n = {}, {}
+    all_names = {c["name"] for c in job["clips"]}   # inclusive fora do In/Out: esse nao vale pelo numero
     for n, c in enumerate(clips, 1):
         inside = [f for f in drops if c["start"] <= f < c["end"]]
         at = inside[0] if inside else (c["start"] + c["end"]) // 2
@@ -149,8 +152,9 @@ def plan_job(job, files, titles_fix=None):
         if viot:
             title = clean_title(parse_song(song["name"])[1])
             title = titles_fix.get(title, title)
-        by_name.setdefault((c.get("track", 1), c["name"]), []).append({"n": n, "song": song["name"].lstrip("♪♫ ") if song else "",
-                                                   "viot": viot, "title": title})
+        info = {"n": n, "song": song["name"].lstrip("♪♫ ") if song else "", "viot": viot, "title": title}
+        by_name.setdefault((c.get("track", 1), c["name"]), []).append(info)
+        by_n[n] = (c.get("track", 1), info)
     rows, taken = [], set(files)
     for f in sorted(files, key=lambda x: _natkey(x)):
         stem, ext = os.path.splitext(f)
@@ -165,8 +169,10 @@ def plan_job(job, files, titles_fix=None):
                 row["status"] = "não é um drop deste render"
             rows.append(row)
             continue
-        track, clip = int(m.group(1)), m.group(2)
+        track, num, clip = int(m.group(1)), int(m.group(2)), m.group(3)
         hits = by_name.get((track, clip))
+        if not hits and clip not in all_names and num in by_n and by_n[num][0] == track:
+            hits = [by_n[num][1]]   # nome do render (Custom name) no lugar do nome do clipe
         if not hits:
             row["status"] = "clipe não achado na timeline"
             rows.append(row)

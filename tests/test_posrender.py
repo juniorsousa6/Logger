@@ -63,6 +63,19 @@ class Plano(unittest.TestCase):
         self.assertTrue(all(r["status"] == "ok" for r in rows.values()))
         self.assertEqual(sorted(int(r["new"].split("_")[0]) for r in rows.values()), list(range(1, 53)))
 
+    def test_render_com_nome_proprio(self):
+        """Lagun (2026-11-21): render com Custom name, todo arquivo vira 'V1-0001_9x16 · Drops'.
+        O numero do V1- diz qual clipe e."""
+        files = [f"V{c['track']}-{i:04d}_9x16 · Drops.mp4" for i, c in enumerate(self.j["clips"], 1)]
+        rows = {r["old"]: r for r in self.plan(files)["rows"]}
+        self.assertEqual(rows["V1-0001_9x16 · Drops.mp4"]["new"], "1_Eco Club.mp4")
+        self.assertEqual(rows["V1-0011_9x16 · Drops.mp4"]["new"], "11_Eco Club Cardio.mp4")
+        self.assertEqual(rows["V2-0052_9x16 · Drops.mp4"]["new"], "52_Eco Club Como Eu Te Quero.mp4")
+        self.assertTrue(all(r["status"] == "ok" for r in rows.values()))
+        # numero que nao existe ou trilha errada: nao chuta
+        rows = {r["old"]: r for r in self.plan(["V1-0999_9x16 · Drops.mp4", "V2-0001_9x16 · Drops.mp4"])["rows"]}
+        self.assertTrue(all(r["status"] == "clipe não achado na timeline" for r in rows.values()))
+
     def test_musica_so_vale_no_trecho_dela(self):
         # Eco Club 15/11: a Cardio tem 3 drops (10-12); 13-16 sao de uma musica que o Ghost nao reconheceu
         rows = {r["old"]: r for r in self.plan()["rows"]}
