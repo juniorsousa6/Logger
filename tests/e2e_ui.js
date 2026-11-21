@@ -155,13 +155,20 @@ const api = async (p, b) => (await fetch(U + p.replace(/^\//, ''), b ? {method:'
   await step('Cartões: pergunta a pasta do drone (não tem pasta Drone) e trava a cópia', async () => {
     ok(await p.isDisabled('#abBtn'), 'copiar deveria travar enquanto falta escolher');
     ok((await p.textContent('#abInfo')).includes('escolha a pasta'), 'falta a dica');
-    // desmarcar o cartão que pergunta destrava; marcar de novo trava
-    const dji = (await p.$$('.card')).find(async c => (await c.innerText()).includes('DJI'));
-    for (const c of await p.$$('.card')) if ((await c.innerText()).includes('DJI')) { await (await c.$('.tick')).click(); break; }
+    const card = async name => { for (const c of await p.$$('.card')) if ((await c.innerText()).includes(name)) return c; };
+    // 1.6.2: Sony sem JRS com várias pastas de câmera (Ronin, Fixa, Making Of) também pergunta
+    ok(await (await card('SONY_C')).$('.ask'), 'Sony sem JRS com 2+ pastas de câmera deveria perguntar');
+    ok(!(await (await card('SONY_JRS')).$('.ask')), 'Sony JRS tem regra própria (Ronin), não pergunta');
+    // desmarcar os cartões que perguntam destrava; marcar de novo trava
+    for (const n of ['DJI', 'SONY_C']) await (await (await card(n)).$('.tick')).click();
     await p.waitForTimeout(150); ok(!(await p.isDisabled('#abBtn')), 'desmarcar o cartão deveria destravar');
-    for (const c of await p.$$('.card')) if ((await c.innerText()).includes('DJI')) { await (await c.$('.tick')).click(); break; }
+    for (const n of ['DJI', 'SONY_C']) await (await (await card(n)).$('.tick')).click();
     await p.waitForTimeout(150);
-    await p.click('.ask .tog.add'); await p.fill('.ask .tog-in', 'Drone'); await p.press('.ask .tog-in', 'Enter');
+    ok(await p.isDisabled('#abBtn'), 'marcar de novo deveria travar');
+    await (await (await card('SONY_C')).$('.ask .tog[data-f="Fixa"]')).click();
+    await p.waitForTimeout(200);
+    await (await (await card('DJI')).$('.ask .tog.add')).click();
+    await p.fill('.ask .tog-in', 'Drone'); await p.press('.ask .tog-in', 'Enter');
     await p.waitForTimeout(200);
     ok(!(await p.isDisabled('#abBtn')), 'continuou travado depois de escolher');
   });

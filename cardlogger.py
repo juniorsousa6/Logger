@@ -226,6 +226,25 @@ def _matches(vol: Path, p) -> bool:
     return True
 
 
+def is_thumbnail(rel: str) -> bool:
+    """Miniatura que a camera gera sozinha (Sony: pasta THMBNL). Nunca e copiada, em nenhum perfil.
+    So a PASTA conta: foto JPG/ARW de verdade (DCIM) continua sendo copiada."""
+    return "THMBNL" in rel.upper().replace("\\", "/").split("/")[:-1]
+
+
+def identify_card(vol: Path, profiles):
+    """identify + camera: cartao que cai em 'Outra camera' mas foi gravado por uma Sony
+    (XML/EXIF dizem a marca) usa o perfil Sony, com as regras de destino da Sony."""
+    prof = identify(vol, profiles)
+    if prof and prof.get("name") == "Outra camera":
+        cam = camera_id(vol)
+        if cam and cam.get("label", "").upper().startswith("SONY"):
+            sony = next((p for p in profiles if p.get("name") == "Sony"), None)
+            if sony:
+                return sony
+    return prof
+
+
 def identify(vol: Path, profiles):
     """Perfil do cartao. Um cartao pode ter coisa de dois aparelhos (ex.: o mesmo SD usado no
     drone e no gravador TASCAM): o primeiro perfil que bate manda, e as rotas dos outros perfis
@@ -240,7 +259,7 @@ def identify(vol: Path, profiles):
     rels = []
     for src in walk(vol):
         rel = src.relative_to(vol).as_posix().upper()
-        if not any(fnmatch.fnmatch(rel, x) for x in skip):
+        if not is_thumbnail(rel) and not any(fnmatch.fnmatch(rel, x) for x in skip):
             rels.append(rel)
 
     def caught(routes):
@@ -675,7 +694,7 @@ def scan_card(vol: Path, profile, ledger):
     moved = {}
     for src in walk(vol):
         rel = src.relative_to(vol).as_posix()
-        if skip and any(fnmatch.fnmatch(rel.upper(), s) for s in skip):
+        if is_thumbnail(rel) or (skip and any(fnmatch.fnmatch(rel.upper(), s) for s in skip)):
             continue
         ri = route_index(rel, profile)
         if ri is None:
@@ -1052,7 +1071,7 @@ def main():
     ledger = load_ledger()
     cards = []
     for vol in mounted_volumes(job_dir):
-        prof = identify(vol, cfg["profiles"])
+        prof = identify_card(vol, cfg["profiles"])
         if not prof:
             print(f"? {vol.name}: nao reconheci esse cartao, pulei")
             continue

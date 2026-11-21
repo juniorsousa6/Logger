@@ -1,11 +1,12 @@
 {
-  "_ajuda": "Perfis sao testados em ordem; o primeiro que bate ganha. volume_name aceita curingas (*). has_any_path sao caminhos/curingas que precisam existir no cartao. Cada rota tem um 'label' (o que aparece no app), 'to' (subpasta padrao, pode ser trocada no app) e 'patterns'. Arquivos que nao batem em nenhuma rota sao ignorados e listados no relatorio. Drone DJI e Osmo Action usam a mesma pasta DCIM/DJI_*; o drone e reconhecido pelos arquivos .SRT de telemetria. Se errar, troque o destino no app uma vez e ele lembra para aquele cartao. Sony: arquivos que comecam com JRS (nome configurado na camera do Junior) vao para Ronin; a outra Sony vai para a pasta Fixa (qualquer pasta que comece com 'Fixa'). Se a pasta nao existir no trabalho, ou houver duas parecidas, o app pergunta. 'lock': true faz a rota ignorar a escolha lembrada do cartao.",
+  "_ajuda": "Perfis sao testados em ordem; o primeiro que bate ganha. volume_name aceita curingas (*). has_any_path sao caminhos/curingas que precisam existir no cartao. Cada rota tem um 'label' (o que aparece no app), 'to' (subpasta padrao, pode ser trocada no app) e 'patterns'. Arquivos que nao batem em nenhuma rota sao ignorados e listados no relatorio. Drone DJI e Osmo Action usam a mesma pasta DCIM/DJI_*; o drone e reconhecido pelos arquivos .SRT de telemetria. Se errar, troque o destino no app uma vez e ele lembra para aquele cartao. Sony: arquivos que comecam com JRS (nome configurado na camera do Junior) vao para Ronin. 'main_cam': se o trabalho tem so UMA pasta de camera principal (tudo menos Action, Drone, Audio, Fotos e parecidas), a Sony vai direto para ela; com duas ou mais (ex.: Ronin + Fixa Wide) o app pergunta ('only') ou tenta antes a pasta padrao ('fallback'). Miniaturas (pasta THMBNL) nunca sao copiadas; fotos JPG/ARW do DCIM sim. 'lock': true faz a rota ignorar a escolha lembrada do cartao.",
   "profiles": [
     {
       "name": "Sony",
       "match": {
         "has_any_path": [
           "PRIVATE/M4ROOT",
+          "M4ROOT",
           "DCIM/*MSDCF"
         ]
       },
@@ -21,7 +22,8 @@
             "*/JRS*.MOV",
             "*/JRS*.MTS",
             "JRS*.MOV"
-          ]
+          ],
+          "main_cam": "fallback"
         },
         {
           "label": "Vídeos",
@@ -29,10 +31,12 @@
           "patterns": [
             "PRIVATE/M4ROOT/CLIP/*.MP4",
             "PRIVATE/M4ROOT/CLIP/*.XML",
+            "M4ROOT/CLIP/*.XML",
             "*.MTS",
             "*.MOV",
             "*.MP4"
-          ]
+          ],
+          "main_cam": "only"
         },
         {
           "label": "Fotos",
@@ -42,12 +46,17 @@
             "DCIM/*.ARW",
             "DCIM/*.HIF",
             "DCIM/*.HEIF"
-          ]
+          ],
+          "main_cam": "fallback"
         }
       ],
       "skip": [
         "PRIVATE/M4ROOT/THMBNL/*",
-        "M4ROOT/THMBNL/*"
+        "M4ROOT/THMBNL/*",
+        "M4ROOT/MEDIAPRO.XML",
+        "M4ROOT/STATUS.XML",
+        "PRIVATE/M4ROOT/MEDIAPRO.XML",
+        "PRIVATE/M4ROOT/STATUS.XML"
       ]
     },
     {
