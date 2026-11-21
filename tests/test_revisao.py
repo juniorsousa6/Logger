@@ -56,7 +56,9 @@ def card_for_run(vol, ledger, job, skip_labels=()):
     prof = cl.identify(vol, CFG["profiles"])
     c = cl.scan_card(vol, prof, ledger)
     routes = app.card_routes(prof, c["items"], None, app.subfolders(job))
-    dests = ["" if r["label"] in skip_labels else (r["dest"] or "") for r in routes]
+    # rota que pergunta: simula voce escolhendo a pasta padrao da rota (ex.: Fixa)
+    dests = ["" if r["label"] in skip_labels else (r["dest"] or app.resolve_dest(r["default"], app.subfolders(job)) or "")
+             for r in routes]
     c["items"] = [it for it in c["items"] if dests[it["route"]]]
     c["bytes"] = sum(it["size"] for it in c["items"])
     c["dests"] = [d or "_ignorado" for d in dests]
@@ -339,7 +341,9 @@ class Servidor(unittest.TestCase):
                                    "folders": ["Ronin", "Fixa", "Fotos"]})[1]
         tgt = job["targets"][0]
         cards = [c for c in call("/api/cards?target=" + urllib.request.quote(tgt))[1] if c.get("profile")]
-        sel = [{"path": c["path"], "dests": [r["dest"] for r in c["routes"]]} for c in cards]
+        # Sony sem JRS com Ronin + Fixa: o app pergunta; voce escolhe Fixa
+        sel = [{"path": c["path"], "dests": [r["dest"] or (r["default"] if r["ask"] else "") for r in c["routes"]]}
+               for c in cards]
         os.rename(SV / "V" / "SUMIU", SV / "SUMIU-fora")
         code, r = call("/api/log", {"job_dir": job["job_dir"], "target": tgt, "cards": sel, "auto_eject": True})
         self.assertEqual(code, 400, "comecou a copia com um cartao que nao esta mais conectado")

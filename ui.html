@@ -799,7 +799,7 @@ function renderCards(){
     const total = (c.already||0) + (c.new||0), frac = total ? (c.already||0)/total : 0;
     const d = document.createElement("div"); d.className = "hud card" + (ch.use ? " sel" : "") + (c.new ? "" : " dim");
     const destTxt = c.routes.map((r,i) => { if (!r.files || ch.dests[i] === null) return ""; const dest = ch.dests[i], miss = dest && !S.subs.includes(dest);
-      return `<span>${esc(r.label)} → <b class="${miss?"warnf":""}">${dest ? esc(dest) : "não copiar"}</b> (${r.files})</span>`; }).join("");
+      return `<span>${esc(r.label)} → <b class="${miss?"warnf":""}">${dest ? esc(dest) : "não copiar"}</b> (${esc(r.kinds || String(r.files))})</span>`; }).join("");
     d.innerHTML = `<div class="crow"><button class="tick" ${c.new?"":"disabled"} aria-label="Selecionar ${esc(c.volume)}">${ICON.check}</button>
         <div><div class="cname">${esc(c.volume)}</div><div class="ctype">${esc(c.profile)}${c.camera ? ` · <span class="cam" title="${c.camera_known ? "Destino lembrado desta câmera, em qualquer cartão" : "Câmera reconhecida pelo número de série"}">${esc(c.camera.toLowerCase().startsWith(c.profile.split(" ")[0].toLowerCase() + " ") ? c.camera.slice(c.profile.split(" ")[0].length + 1) : c.camera)}${c.camera_known ? " · destino lembrado" : ""}</span>` : ""}${c.kind==="drive_card"?` · HD usado como cartão <button class="link" data-drive="1">não é cartão</button>`:""}${c.already?` · ${c.already} já copiados antes`:""}</div></div>
         <div class="cstat">${status}</div></div>

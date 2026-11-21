@@ -80,7 +80,9 @@ def card_for_run(vol, ledger, dests=None):
     prof = cl.identify(vol, CFG["profiles"])
     c = cl.scan_card(vol, prof, ledger)
     routes = app.card_routes(prof, c["items"], None, app.subfolders(TMP / "HD" / "2026_11_14 - Teste"))
-    c["dests"] = dests or [r["dest"] or "_ignorado" for r in routes]
+    # rota que pergunta: simula voce escolhendo a pasta padrao da rota (ex.: Fixa)
+    subs = app.subfolders(TMP / "HD" / "2026_11_14 - Teste")
+    c["dests"] = dests or [r["dest"] or app.resolve_dest(r["default"], subs) or "_ignorado" for r in routes]
     c["path"] = str(vol)
     return c
 
@@ -154,24 +156,125 @@ class Regras(unittest.TestCase):
     def test_card_routes_pergunta_quando_nao_sabe(self):
         p = PROFILES["Sony"]
         items = [{"route": 0, "size": 1}, {"route": 1, "size": 1}]
+        # 1.6.2: so uma pasta de camera principal (Fotos nao conta): a Sony vai direto para ela
         rs = app.card_routes(p, items, None, ["Ronin", "Fotos"])
+        self.assertEqual([r["dest"] for r in rs[:2]], ["Ronin", "Ronin"])
+        self.assertFalse(any(r["ask"] for r in rs))
+        # duas pastas de camera (Ronin + Fixa): a Sony sem JRS pergunta; JRS continua no Ronin
+        rs = app.card_routes(p, items, None, ["Ronin", "Fixa", "Fotos"])
         self.assertEqual(rs[0]["dest"], "Ronin")
-        self.assertTrue(rs[1]["ask"])            # nao tem Fixa: pergunta
+        self.assertTrue(rs[1]["ask"])
         self.assertFalse(rs[2]["ask"])           # sem fotos: nao pergunta
         # lembranca no formato antigo (lista) e ignorada
         rs = app.card_routes(p, items, ["Fotos", "Fotos"], ["Ronin", "Fixa", "Fotos"])
-        self.assertEqual([r["dest"] for r in rs[:2]], ["Ronin", "Fixa"])
+        self.assertTrue(rs[1]["ask"])
         # lembranca nova vale, mas nao na rota travada (JRS)
         rs = app.card_routes(p, items, {"Vídeos JRS": "Fixa", "Vídeos": "Ronin"}, ["Ronin", "Fixa", "Fotos"])
         self.assertEqual([r["dest"] for r in rs[:2]], ["Ronin", "Ronin"])
-        # lembranca de pasta que nao existe neste trabalho: cai na regra
+        # lembranca de pasta que nao existe neste trabalho: cai na regra (duas pastas: pergunta)
         rs = app.card_routes(p, items, {"Vídeos": "Zoom"}, ["Ronin", "Fixa"])
-        self.assertEqual(rs[1]["dest"], "Fixa")
+        self.assertTrue(rs[1]["ask"])
+        rs = app.card_routes(p, items, {"Vídeos": "Zoom"}, ["Ronin", "Action", "Áudio"])
+        self.assertEqual(rs[1]["dest"], "Ronin")
         # 1.3.5: "nao copiar" antigo NAO vale mais (deixava gravacao no cartao em silencio): volta a regra
-        rs = app.card_routes(p, items, {"Vídeos": ""}, ["Ronin", "Fixa"])
+        rs = app.card_routes(p, items, {"Vídeos": ""}, ["Fixa", "Fotos"])
         self.assertEqual(rs[1]["dest"], "Fixa")
         rs = app.card_routes(p, items, {"Vídeos": ""}, ["Ronin", "Dj Booth"])
-        self.assertTrue(rs[1]["ask"], "sem Fixa no trabalho tem que perguntar, nao pular")
+        self.assertTrue(rs[1]["ask"], "duas pastas de camera tem que perguntar, nao pular")
+
+    def test_sony_uma_pasta_principal_vai_direto(self):
+        """Regra do Junior (2026-11-19): so 1 pasta de camera principal = Sony vai direto, sem perguntar.
+        Action/Drone/Audio/Fotos nao contam. Com 2+ (Ronin + Fixa Wide), pergunta."""
+        p = PROFILES["Sony"]
+        items = [{"route": 0, "size": 1}, {"route": 1, "size": 1}, {"route": 2, "size": 1}]
+        for subs, want in [(["Action", "Ronin"], "Ronin"), (["Vídeos", "Áudio", "Drone"], "Vídeos"),
+                           (["Action (Osmo)", "Dj Booth"], "Dj Booth")]:
+            rs = app.card_routes(p, items, None, subs)
+            self.assertEqual([r["dest"] for r in rs], [want, want, want], subs)
+            self.assertFalse(any(r["ask"] for r in rs), subs)
+        # com pasta Fotos, a foto vai para Fotos
+        rs = app.card_routes(p, items, None, ["Action", "Ronin", "Fotos"])
+        self.assertEqual([r["dest"] for r in rs], ["Ronin", "Ronin", "Fotos"])
+        # duas pastas de camera: Sony sem JRS e foto sem pasta Fotos perguntam; JRS tem regra propria
+        rs = app.card_routes(p, items, None, ["Action", "Ronin", "Fixa Wide"])
+        self.assertEqual(rs[0]["dest"], "Ronin")
+        self.assertTrue(rs[1]["ask"] and rs[2]["ask"])
+        # JRS sem pasta Ronin, mas com uma pasta so de camera: vai para ela
+        rs = app.card_routes(p, items, None, ["Vídeos", "Action"])
+        self.assertEqual(rs[0]["dest"], "Vídeos")
+        # so action cam no trabalho: nao tem para onde mandar a Sony, pergunta
+        rs = app.card_routes(p, items, None, ["Action", "Drone"])
+        self.assertTrue(all(r["ask"] for r in rs))
+        # destino lembrado da camera vale quando a pasta existe
+        rs = app.card_routes(p, items, {"Vídeos": "Fixa Wide"}, ["Ronin", "Fixa Wide"])
+        self.assertEqual(rs[1]["dest"], "Fixa Wide")
+
+    def test_a7iv_com_m4root_na_raiz_e_miniaturas(self):
+        """O caso da tela de 2026-11-19: A7 IV com M4ROOT na raiz caia em 'Outra camera', perguntava
+        a pasta e tratava as miniaturas THMBNL como fotos."""
+        xml = (b'<?xml version="1.0"?><NonRealTimeMeta><Device manufacturer="Sony" modelName="ILCE-7M4" '
+               b'serialNo="1234567295"/></NonRealTimeMeta>')
+        vol = make_card("Untitled", {"M4ROOT/CLIP/C0001.MP4": b"v1", "M4ROOT/CLIP/C0001M01.XML": xml,
+                                     "M4ROOT/THMBNL/C0001T01.JPG": b"thumb", "DCIM/.keep": b""})
+        prof = cl.identify_card(vol, CFG["profiles"])
+        self.assertEqual(prof["name"], "Sony")
+        c = cl.scan_card(vol, prof, {"cards": {}})
+        rels = sorted(it["rel"] for it in c["items"])
+        self.assertEqual(rels, ["M4ROOT/CLIP/C0001.MP4", "M4ROOT/CLIP/C0001M01.XML"])
+        rs = app.card_routes(prof, c["items"], None, ["Action", "Ronin"])
+        self.assertEqual({r["dest"] for r in rs if r["files"]}, {"Ronin"})
+        self.assertFalse(any(r["ask"] for r in rs))
+
+    def test_sony_que_cai_em_outra_camera_vira_sony(self):
+        xml = (b'<?xml version="1.0"?><NonRealTimeMeta><Device manufacturer="Sony" modelName="ILCE-7M4" '
+               b'serialNo="99"/></NonRealTimeMeta>')
+        vol = make_card("Untitled2", {"PRIVATE/SONY/C0001.MP4": b"v", "PRIVATE/SONY/C0001M01.XML": xml})
+        self.assertEqual(cl.identify(vol, CFG["profiles"])["name"], "Outra camera")
+        self.assertEqual(cl.identify_card(vol, CFG["profiles"])["name"], "Sony")
+        canon = make_card("CANON", {"DCIM/100CANON/IMG_0001.CR3": b"x"})
+        self.assertEqual(cl.identify_card(canon, CFG["profiles"])["name"], "Outra camera")
+
+    def test_a7iv_real_com_arw_e_lixo_da_camera(self):
+        """Estrutura real do 'Untitled' da A7 IV (2026-11-21): 835 ARW em DCIM, JRS em M4ROOT na raiz,
+        MEDIAPRO.XML e pastas de sistema. Os ARW sao fotos; o indice MEDIAPRO.XML nao vira 'Videos (1)'."""
+        files = {f"DCIM/100MSDCF/DSC0{i:04d}.ARW": b"r" for i in range(5)}
+        files.update({f"M4ROOT/CLIP/JRS0{i:04d}.MP4": b"v" for i in range(3)})
+        files.update({f"M4ROOT/CLIP/JRS0{i:04d}M01.XML": b"<x/>" for i in range(3)})
+        files.update({f"M4ROOT/THMBNL/JRS0{i:04d}T01.JPG": b"t" for i in range(3)})
+        files.update({"M4ROOT/MEDIAPRO.XML": b"<x/>", "M4ROOT/STATUS.XML": b"<x/>", "SONY/SONYCARD.IND": b"i",
+                      "PRIVATE/DATABASE/DATABASE.BIN": b"d", "AVF_INFO/AVIN0001.INP": b"a"})
+        vol = make_card("Untitled", files)
+        prof = cl.identify_card(vol, CFG["profiles"])
+        self.assertEqual(prof["name"], "Sony", "indice da camera nao pode juntar o perfil Outra camera")
+        c = cl.scan_card(vol, prof, {"cards": {}})
+        rs = app.card_routes(prof, c["items"], None, ["Fotos", "Ronin", "Áudio"])
+        got = {r["label"]: (r["dest"], r["files"], r["kinds"]) for r in rs if r["files"]}
+        self.assertEqual(got, {"Vídeos JRS": ("Ronin", 6, "3 MP4"), "Fotos": ("Fotos", 5, "5 ARW")})
+        self.assertFalse(c["ignored_media"])
+
+    def test_route_kinds(self):
+        self.assertEqual(app.route_kinds(["a/1.JPG", "a/1.ARW", "a/2.ARW"]), "2 ARW + 1 JPG")
+        self.assertEqual(app.route_kinds(["C1.MP4", "C1M01.XML"]), "1 MP4")
+        self.assertEqual(app.route_kinds([]), "")
+
+    def test_miniatura_nunca_foto_sempre(self):
+        """THMBNL nunca e copiada (qualquer perfil); JPG/ARW do DCIM sempre."""
+        self.assertTrue(cl.is_thumbnail("PRIVATE/M4ROOT/THMBNL/C0001T01.JPG"))
+        self.assertTrue(cl.is_thumbnail("m4root/thmbnl/c0001t01.jpg"))
+        self.assertFalse(cl.is_thumbnail("DCIM/100MSDCF/DSC00001.JPG"))
+        self.assertFalse(cl.is_thumbnail("DCIM/100MSDCF/THMBNL.JPG"))   # so a pasta conta
+        vol = make_card("SONYFOTO", {"DCIM/100MSDCF/DSC00001.JPG": b"j", "DCIM/100MSDCF/DSC00001.ARW": b"r",
+                                     "PRIVATE/M4ROOT/CLIP/C0001.MP4": b"v",
+                                     "PRIVATE/M4ROOT/THMBNL/C0001T01.JPG": b"t"})
+        prof = cl.identify_card(vol, CFG["profiles"])
+        c = cl.scan_card(vol, prof, {"cards": {}})
+        fotos = sorted(it["rel"] for it in c["items"] if prof["routes"][it["route"]]["label"] == "Fotos")
+        self.assertEqual(fotos, ["DCIM/100MSDCF/DSC00001.ARW", "DCIM/100MSDCF/DSC00001.JPG"])
+        self.assertFalse(any("THMBNL" in it["rel"] for it in c["items"]))
+        self.assertFalse(c["ignored_media"])
+        outra = make_card("OUTRA", {"DCIM/100X/IMG1.JPG": b"j", "CLIP/THMBNL/A1.JPG": b"t"})
+        prof = cl.identify_card(outra, CFG["profiles"])
+        self.assertEqual([it["rel"] for it in cl.scan_card(outra, prof, {"cards": {}})["items"]], ["DCIM/100X/IMG1.JPG"])
 
     def test_gravador_externo_sempre_pergunta(self):
         p = PROFILES["Gravador externo / Blackmagic"]
