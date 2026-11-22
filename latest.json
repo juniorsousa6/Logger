@@ -1,8 +1,7 @@
 {
-  "version": "1.6.2",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.6.2.zip",
-  "sha256": "c82cc966a5e929538fa633d9a7a4792153debf533693d194f6c29ffcb22ab3fa",
-  "size": 218257,
-  "notes": "Sony vai direto para a única pasta de câmera do trabalho (Action, Drone, Áudio e Fotos não contam); com duas ou mais, pergunta. A7 IV com M4ROOT na raiz reconhecida como Sony. Miniaturas THMBNL e índices da câmera (MEDIAPRO.XML) nunca são copiados, fotos JPG/ARW sim. O cartão mostra o tipo do que vai (ex.: 835 ARW). Renomear drops acha os clipes também quando o render usa nome próprio (V1-0001_9x16 · Drops).",
-  "sig": "MEQCIAi+S/oNwIJMfdJbjFqSqodEK0G7yfvAB0iFQGjjYtU8AiADB5vCOFp8Psi2qfX9BTbLiytpUjhsIlL/vK4jP4tU3A=="
+  "version": "1.6.3",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.6.3.zip",
+  "sha256": "60cab950110877ed0b510003b3a328bb34693536fef34bfba4277a7f532f57d7",
+  "size": 218438,
+  "notes": "Renomear drops: música do VIOT reconhecida quando o Ghost marca a música uns segundos depois do drop, ou quando outra música (marcador Sand) entra por cima da roxa. Ex.: drops 14, 15 e 16 do Prime MGF viram Flex."
 }

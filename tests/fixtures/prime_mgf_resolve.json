@@ -1,0 +1,556 @@
+{
+ "project": "Prime MGF",
+ "jobs": [
+  {
+   "timeline": "9x16 · Drops",
+   "target_dir": "/Users/j/Dropbox/VIOT/2026_11_21 - Prim MGF/9x16 Reels",
+   "mark_in": 89246,
+   "mark_out": 217023,
+   "status": "Complete",
+   "clips": [
+    {
+     "track": 1,
+     "name": "Drop 1",
+     "start": 89246,
+     "end": 93203
+    },
+    {
+     "track": 1,
+     "name": "Drop 2",
+     "start": 96440,
+     "end": 97159
+    },
+    {
+     "track": 1,
+     "name": "Drop 3",
+     "start": 99678,
+     "end": 100397
+    },
+    {
+     "track": 1,
+     "name": "Drop 4",
+     "start": 106876,
+     "end": 107594
+    },
+    {
+     "track": 1,
+     "name": "Drop 5",
+     "start": 110488,
+     "end": 111209
+    },
+    {
+     "track": 1,
+     "name": "Drop 6",
+     "start": 114061,
+     "end": 114784
+    },
+    {
+     "track": 1,
+     "name": "Drop 7",
+     "start": 117493,
+     "end": 118212
+    },
+    {
+     "track": 1,
+     "name": "Drop 8",
+     "start": 119819,
+     "end": 120628
+    },
+    {
+     "track": 1,
+     "name": "Drop 9",
+     "start": 122157,
+     "end": 122876
+    },
+    {
+     "track": 1,
+     "name": "Drop 10",
+     "start": 125034,
+     "end": 125754
+    },
+    {
+     "track": 1,
+     "name": "Drop 11",
+     "start": 127911,
+     "end": 128631
+    },
+    {
+     "track": 1,
+     "name": "Drop 12",
+     "start": 131872,
+     "end": 132577
+    },
+    {
+     "track": 1,
+     "name": "Drop 13",
+     "start": 134569,
+     "end": 134994
+    },
+    {
+     "track": 1,
+     "name": "Drop 14",
+     "start": 136545,
+     "end": 137264
+    },
+    {
+     "track": 1,
+     "name": "Drop 15",
+     "start": 138657,
+     "end": 139376
+    },
+    {
+     "track": 1,
+     "name": "Drop 16",
+     "start": 141939,
+     "end": 142658
+    },
+    {
+     "track": 1,
+     "name": "Drop 17",
+     "start": 144457,
+     "end": 145176
+    },
+    {
+     "track": 1,
+     "name": "Drop 18",
+     "start": 146975,
+     "end": 147694
+    },
+    {
+     "track": 1,
+     "name": "Drop 19",
+     "start": 149906,
+     "end": 150571
+    },
+    {
+     "track": 1,
+     "name": "Drop 20",
+     "start": 153796,
+     "end": 154516
+    },
+    {
+     "track": 1,
+     "name": "Drop 21",
+     "start": 156691,
+     "end": 157405
+    },
+    {
+     "track": 1,
+     "name": "Drop 22",
+     "start": 161488,
+     "end": 162202
+    },
+    {
+     "track": 1,
+     "name": "Drop 23",
+     "start": 165046,
+     "end": 165760
+    },
+    {
+     "track": 1,
+     "name": "Drop 24",
+     "start": 168251,
+     "end": 168975
+    },
+    {
+     "track": 1,
+     "name": "Drop 25",
+     "start": 171114,
+     "end": 171828
+    },
+    {
+     "track": 1,
+     "name": "Drop 26",
+     "start": 173401,
+     "end": 174483
+    },
+    {
+     "track": 1,
+     "name": "Drop 27",
+     "start": 177662,
+     "end": 178376
+    },
+    {
+     "track": 1,
+     "name": "Drop 28",
+     "start": 179458,
+     "end": 180172
+    },
+    {
+     "track": 1,
+     "name": "Drop 29",
+     "start": 182135,
+     "end": 182849
+    },
+    {
+     "track": 1,
+     "name": "Drop 30",
+     "start": 185347,
+     "end": 186061
+    },
+    {
+     "track": 1,
+     "name": "Drop 31",
+     "start": 188917,
+     "end": 189631
+    },
+    {
+     "track": 1,
+     "name": "Drop 32",
+     "start": 200250,
+     "end": 200964
+    },
+    {
+     "track": 1,
+     "name": "Drop 33",
+     "start": 209173,
+     "end": 209886
+    },
+    {
+     "track": 1,
+     "name": "Drop 34",
+     "start": 212028,
+     "end": 212741
+    },
+    {
+     "track": 1,
+     "name": "Drop 35",
+     "start": 213455,
+     "end": 214169
+    },
+    {
+     "track": 1,
+     "name": "Drop 36",
+     "start": 216310,
+     "end": 217024
+    }
+   ],
+   "markers": [
+    {
+     "frame": 87498,
+     "name": "♪ Viot - Blitz (Intro Mix)",
+     "color": "Purple",
+     "duration": 6828
+    },
+    {
+     "frame": 87993,
+     "name": "♪ Viot - Blitz (Original Mix)",
+     "color": "Sand",
+     "duration": 6423
+    },
+    {
+     "frame": 92843,
+     "name": "DROP 1",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 94876,
+     "name": "♪ Cajmere, Dajae - Brighter Days (Marco Lys Remix)",
+     "color": "Purple",
+     "duration": 6378
+    },
+    {
+     "frame": 96800,
+     "name": "DROP 2",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 100038,
+     "name": "DROP 3",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 107232,
+     "name": "DROP 4",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 110845,
+     "name": "DROP 5",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 114424,
+     "name": "DROP 6",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 117852,
+     "name": "DROP 7",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 117940,
+     "name": "♪ Viot - Cardio (Extended Mix)",
+     "color": "Purple",
+     "duration": 5476
+    },
+    {
+     "frame": 119999,
+     "name": "DROP 8",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 122516,
+     "name": "DROP 9",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 125394,
+     "name": "DROP 10",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 128271,
+     "name": "DROP 11",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 132220,
+     "name": "DROP 12",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 134639,
+     "name": "DROP 13",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 136904,
+     "name": "DROP 14",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 137214,
+     "name": "♪ Viot - Flex (Extended Mix)",
+     "color": "Purple",
+     "duration": 5409
+    },
+    {
+     "frame": 138229,
+     "name": "♪ Bocha, Carpanetto - Blitz (Original Mix)",
+     "color": "Sand",
+     "duration": 2551
+    },
+    {
+     "frame": 139017,
+     "name": "DROP 15",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 142299,
+     "name": "DROP 16",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 144369,
+     "name": "♪ Adrian Hour - Kickback (Original Mix)",
+     "color": "Purple",
+     "duration": 4069
+    },
+    {
+     "frame": 144817,
+     "name": "DROP 17",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 147335,
+     "name": "DROP 18",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 148759,
+     "name": "♪ Vintage Culture, Viot - Anthem (Original Mix)",
+     "color": "Purple",
+     "duration": 5402
+    },
+    {
+     "frame": 150211,
+     "name": "DROP 19",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 154158,
+     "name": "DROP 20",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 156006,
+     "name": "♪ Noir feat. Haze - Around (Viot, Gabe & Bhaskar Remix)",
+     "color": "Purple",
+     "duration": 7876
+    },
+    {
+     "frame": 157048,
+     "name": "DROP 21",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 161845,
+     "name": "DROP 22",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 165403,
+     "name": "DROP 23",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 165748,
+     "name": "♪ Italobros - Mi Vida",
+     "color": "Purple",
+     "duration": 1665
+    },
+    {
+     "frame": 168615,
+     "name": "DROP 24",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 168849,
+     "name": "♪ Job De Jong - Dub House (Kepler Remix)",
+     "color": "Purple",
+     "duration": 2089
+    },
+    {
+     "frame": 170773,
+     "name": "♪ Jorge Ben - Chove Chuva (Viot & Let BR Remix)",
+     "color": "Purple",
+     "duration": 6590
+    },
+    {
+     "frame": 171471,
+     "name": "DROP 25",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 174104,
+     "name": "DROP 26",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 177638,
+     "name": "♪ Viot & Vinter - Good Life (Inner City New Mix)",
+     "color": "Purple",
+     "duration": 6730
+    },
+    {
+     "frame": 178019,
+     "name": "DROP 27",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 179815,
+     "name": "DROP 28",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 182492,
+     "name": "DROP 29",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 184875,
+     "name": "♪ Adam Ten, Viot - Put Id Down 30.8",
+     "color": "Purple",
+     "duration": 6460
+    },
+    {
+     "frame": 185704,
+     "name": "DROP 30",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 189274,
+     "name": "DROP 31",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 191782,
+     "name": "♪ Khia - My Neck My Back (Beltran Funky Edit)",
+     "color": "Purple",
+     "duration": 7145
+    },
+    {
+     "frame": 198833,
+     "name": "♪ Amine Edge - Lovelee Dae",
+     "color": "Purple",
+     "duration": 6669
+    },
+    {
+     "frame": 200607,
+     "name": "DROP 32",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 205860,
+     "name": "♪ Freenzy, Ric J - Baile in Braza",
+     "color": "Purple",
+     "duration": 5991
+    },
+    {
+     "frame": 209529,
+     "name": "DROP 33",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 212317,
+     "name": "♪ Viot - Ratata (Original Mix)",
+     "color": "Purple",
+     "duration": 6403
+    },
+    {
+     "frame": 212385,
+     "name": "DROP 34",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 213812,
+     "name": "DROP 35",
+     "color": "Red",
+     "duration": 1
+    },
+    {
+     "frame": 216667,
+     "name": "DROP 36",
+     "color": "Red",
+     "duration": 1
+    }
+   ]
+  }
+ ]
+}

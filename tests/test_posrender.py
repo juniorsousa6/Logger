@@ -88,6 +88,23 @@ class Plano(unittest.TestCase):
         self.assertEqual(rows["V1-0020_Drop 20.mp4"]["new"], "20_Eco Club.mp4")
         self.assertEqual(rows["V1-0009_Drop 9.mp4"]["song"], "")   # Mousy ja tinha acabado
 
+    def test_prime_mgf_flex(self):
+        """Prime MGF 21/11: drops 14-16 sao a Flex. 14: o Ghost so marca a Flex 310 quadros depois do drop,
+        ainda dentro do clipe. 15: a Blitz (Sand) entra por cima da Flex (roxa). 16: a Blitz ja acabou,
+        mas a Flex continua."""
+        j = json.loads((FIX.parent / "prime_mgf_resolve.json").read_text(encoding="utf-8"))["jobs"][0]
+        rows = p.plan_job(j, [f"V1-{i:04d}_Drop {i}.mp4" for i in range(1, 37)])["rows"]
+        new = {int(r["old"].split("-")[1][:4]): r["new"] for r in rows}
+        for n in (14, 15, 16):
+            self.assertEqual(new[n], f"{n}_Prim MGF Flex.mp4")
+        for n in (7, 8, 9):   # mesmo caso da 14: Cardio entra logo depois do drop 7
+            self.assertEqual(new[n], f"{n}_Prim MGF Cardio.mp4")
+        for n in (4, 5, 6, 10, 11, 12, 13):   # musica que o Ghost nao reconheceu: sem titulo
+            self.assertEqual(new[n], f"{n}_Prim MGF.mp4")
+        self.assertEqual(new[17], "17_Prim MGF.mp4")          # Kickback nao e do VIOT
+        self.assertEqual(new[36], "36_Prim MGF Ratata.mp4")
+        self.assertTrue(all(r["status"] == "ok" for r in rows))
+
     def test_marcador_sem_duracao_vale_ate_o_proximo(self):
         ms = [{"frame": 100, "name": "♪ Viot - Cardio (Extended Mix)", "color": "Purple"}]
         self.assertIsNotNone(p.song_at(ms, 99999))
