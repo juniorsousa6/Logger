@@ -110,21 +110,34 @@ FILE_RE = re.compile(r"^V(\d+)-(\d+)_(.+)$")  # "V1-0001_Drop 1" (Individual cli
 # depois do V1- (ordem do clipe no render) e o que diz qual clipe e.
 
 
-def song_at(markers, frame):
+def song_at(markers, frame, until=None):
     """Musica (marcador ♪) tocando em `frame`. O Ghost marca cada musica do comeco ao fim (duracao do
-    marcador): fora desse trecho nao e mais ela, mesmo sem outro marcador depois (musica que o Ghost
-    nao reconheceu). Marcador sem duracao vale ate o proximo. Dois marcadores colados (ate 2 quadros,
-    ex.: Blitz Original + Intro Mix): fica o roxo, que e o que o Ghost poe."""
-    songs = sorted((m for m in markers if (m.get("name") or "").lstrip().startswith(("♪", "♫"))
-                    and m["frame"] <= frame), key=lambda m: m["frame"])
-    if not songs:
-        return None
-    last = songs[-1]
-    near = [m for m in songs if last["frame"] - m["frame"] <= 2]
-    playing = [m for m in near if not m.get("duration") or frame < m["frame"] + int(m["duration"])]
-    if not playing:
-        return None
-    return next((m for m in playing if m.get("color") == "Purple"), playing[-1])
+    marcador): fora desse trecho nao e mais ela (musica que o Ghost nao reconheceu). Marcador sem duracao
+    vale ate o proximo marcador de musica.
+    Duas tocando juntas (o Ghost poe uma alternativa em Sand por cima da roxa, ex.: Flex + Blitz no
+    Prime MGF): fica a roxa. Nenhuma tocando no drop, mas uma comeca antes do fim do clipe (`until`):
+    o Ghost reconhece a musica uns segundos depois de ela entrar (drop 14 do Prime MGF = Flex)."""
+    songs = sorted((m for m in markers if (m.get("name") or "").lstrip().startswith(("♪", "♫"))),
+                   key=lambda m: m["frame"])
+
+    def plays(i, m):
+        if m["frame"] > frame:
+            return False
+        if m.get("duration"):
+            return frame < m["frame"] + int(m["duration"])
+        nxt = songs[i + 1]["frame"] if i + 1 < len(songs) else None
+        return nxt is None or frame < nxt
+
+    playing = [m for i, m in enumerate(songs) if plays(i, m)]
+    if playing:
+        purple = [m for m in playing if m.get("color") == "Purple"]
+        return max(purple or playing, key=lambda m: m["frame"])
+    if until is not None:
+        later = [m for m in songs if frame < m["frame"] < until]
+        if later:
+            purple = [m for m in later if m.get("color") == "Purple"]
+            return min(purple or later, key=lambda m: m["frame"])
+    return None
 
 
 def plan_job(job, files, titles_fix=None):
@@ -146,7 +159,7 @@ def plan_job(job, files, titles_fix=None):
     for n, c in enumerate(clips, 1):
         inside = [f for f in drops if c["start"] <= f < c["end"]]
         at = inside[0] if inside else (c["start"] + c["end"]) // 2
-        song = song_at(job["markers"], at)
+        song = song_at(job["markers"], at, c["end"])
         viot = bool(song and is_viot(song["name"]))
         title = ""
         if viot:
