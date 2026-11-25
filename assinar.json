@@ -1,0 +1,7 @@
+{
+  "version": "1.6.4",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/claude/assinatura-developer-id/dist/Logger-1.6.4.zip",
+  "sha256": "e25b7f5b2051a48fc13d614fc8566ca9b66a871c50b02f723d9df4c320e6c289",
+  "size": 220364,
+  "notes": "App assinado com o certificado Developer ID da Apple e notarizado em segundo plano (quando o perfil do notarytool existe). O macOS para de pedir as permissões de novo a cada atualização."
+}

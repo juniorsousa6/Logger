@@ -1,8 +1,7 @@
 {
-  "version": "1.6.3",
-  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.6.3.zip",
-  "sha256": "60cab950110877ed0b510003b3a328bb34693536fef34bfba4277a7f532f57d7",
-  "size": 218438,
-  "notes": "Renomear drops: música do VIOT reconhecida quando o Ghost marca a música uns segundos depois do drop, ou quando outra música (marcador Sand) entra por cima da roxa. Ex.: drops 14, 15 e 16 do Prime MGF viram Flex.",
-  "sig": "MEUCIGzAaysZPezIlVWwCpsgAd4bpXs8dXgX0GO8F73S/VmVAiEAkq9Qq8Knk9f/VB9TUw4W7Gd4/mOSgST7LxQM0kope/g="
+  "version": "1.6.4",
+  "url": "https://raw.githubusercontent.com/juniorsousa6/Logger/main/dist/Logger-1.6.4.zip",
+  "sha256": "e25b7f5b2051a48fc13d614fc8566ca9b66a871c50b02f723d9df4c320e6c289",
+  "size": 220364,
+  "notes": "App assinado com o certificado Developer ID da Apple e notarizado em segundo plano (quando o perfil do notarytool existe). O macOS para de pedir as permissões de novo a cada atualização."
 }

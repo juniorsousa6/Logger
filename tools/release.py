@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 FILES = ["app.py", "cardlogger.py", "media.py", "posrender.py", "fotos.py", "hds.py", "cards.json", "ui.html", "VERSION",
          "Instalar Logger.command", "Abrir Logger.command", "LEIA-ME.md",
-         "mac/LoggerApp.swift", "mac/Info.plist", "mac/UPDATE_URL", "mac/UPDATE_KEY", "mac/icon.png"]
+         "mac/LoggerApp.swift", "mac/Info.plist", "mac/UPDATE_URL", "mac/UPDATE_KEY", "mac/icon.png", "mac/Logger.entitlements"]
 RAW = "https://raw.githubusercontent.com/juniorsousa6/Logger/main/"
 
 if sys.argv[1:2] == ["--sig"]:

@@ -61,8 +61,30 @@ if [ -f mac/icon.png ]; then
   iconutil -c icns "$SET" -o "$APP/Contents/Resources/Logger.icns" || true
 fi
 
-# assinatura local (o Mac confia no app compilado aqui)
-codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
+# assinatura do app
+# Com um certificado "Developer ID Application" no Keychain deste Mac, o app sai assinado com ele
+# (runtime endurecido + carimbo de hora da Apple). Assim a identidade do app é a mesma em toda versão:
+# o macOS não pede de novo as permissões (cartões, HDs, Finder) a cada atualização.
+# Sem certificado, assina só localmente, como antes. LOGGER_SIGN_ID força outra identidade.
+SIGN_ID="${LOGGER_SIGN_ID:-$(security find-identity -v -p codesigning 2>/dev/null | awk '/"Developer ID Application:/ {print $2; exit}')}"
+SIGNED=""
+if [ -n "$SIGN_ID" ]; then
+  ENT=(); [ -f mac/Logger.entitlements ] && ENT=(--entitlements mac/Logger.entitlements)
+  if codesign --force --options runtime --timestamp ${ENT[@]+"${ENT[@]}"} --sign "$SIGN_ID" "$APP" 2>"$WORK/sign.log"; then
+    SIGNED="developer-id"
+  elif codesign --force --options runtime --timestamp=none ${ENT[@]+"${ENT[@]}"} --sign "$SIGN_ID" "$APP" 2>>"$WORK/sign.log"; then
+    SIGNED="developer-id-sem-carimbo"   # sem internet: vale neste Mac, mas não dá para notarizar
+  else
+    cat "$WORK/sign.log"
+  fi
+fi
+if [ -n "$SIGNED" ] && codesign --verify --strict "$APP" 2>>"$WORK/sign.log"; then
+  say "Assinado com $(codesign -dvv "$APP" 2>&1 | sed -n 's/^Authority=\(Developer ID Application: .*\)/\1/p' | head -1) ($SIGNED)"
+else
+  if [ -n "$SIGN_ID" ]; then say "Não consegui assinar com o Developer ID; vou assinar só neste Mac."; fi
+  SIGNED=""
+  codesign --force --sign - "$APP" >/dev/null 2>&1 || true
+fi
 
 # 3. instala (troca a versão antiga só depois que a nova está pronta)
 DEST="/Applications"; [ -w "$DEST" ] || DEST="$HOME/Applications"
@@ -81,3 +103,27 @@ if [ "$SRC" != "$SUP" ]; then rsync -a --delete --exclude ".*" "$SRC/" "$SUP/"; 
 # remove o atalho antigo do terminal, se existir no mesmo lugar
 say "Logger $VER instalado em $DEST/Logger.app"
 open "$DEST/Logger.app"
+
+# 4. notarização (opcional, em segundo plano: o app já abriu e você pode usar)
+# Só roda se este Mac tiver o perfil do notarytool salvo no Keychain (nome em LOGGER_NOTARY_PROFILE,
+# padrão "logger-notary"). A Apple confere o app e o "bilhete" fica grudado nele (stapler).
+# Resultado em ~/Library/Logs/Logger-notarizacao.log. Sem perfil ou sem internet, nada muda.
+PROFILE="${LOGGER_NOTARY_PROFILE:-logger-notary}"
+if [ "$SIGNED" = "developer-id" ] && [ "${LOGGER_NO_NOTARIZE:-}" != "1" ] && xcrun --find notarytool >/dev/null 2>&1; then
+  NLOG="$HOME/Library/Logs/Logger-notarizacao.log"
+  mkdir -p "$(dirname "$NLOG")"
+  say "Notarizando na Apple em segundo plano (registro: $NLOG)"
+  nohup /bin/bash -c '
+    APPX="$1"; PROF="$2"; V="$3"
+    echo "[$(date "+%Y-%m-%d %H:%M:%S")] Logger $V: enviando para notarização"
+    T="$(mktemp -d)"; trap "rm -rf \"$T\"" EXIT
+    ditto -c -k --keepParent "$APPX" "$T/Logger.zip" || exit 1
+    if xcrun notarytool submit "$T/Logger.zip" --keychain-profile "$PROF" --wait --timeout 30m; then
+      xcrun stapler staple "$APPX" && echo "[$(date "+%Y-%m-%d %H:%M:%S")] Logger $V: notarizado e grampeado"
+      spctl -a -vv "$APPX" 2>&1
+    else
+      echo "[$(date "+%Y-%m-%d %H:%M:%S")] Logger $V: notarização não concluída (perfil \"$PROF\" existe? internet?)"
+    fi
+  ' _ "$DEST/Logger.app" "$PROFILE" "$VER" >>"$NLOG" 2>&1 </dev/null &
+  disown || true
+fi
