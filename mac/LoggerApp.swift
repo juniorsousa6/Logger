@@ -7,6 +7,7 @@
 import Cocoa
 import CryptoKit
 import LocalAuthentication
+import Security
 import WebKit
 
 let info = Bundle.main.infoDictionary ?? [:]
@@ -41,11 +42,58 @@ func trustedKeys() -> [P256.Signing.PublicKey] {
     }
 }
 
+// MARK: assinatura pelo certificado da Apple (Developer ID)
+// time da conta Apple de quem publica; tools/release.py assina cada versão com esse certificado, sem Touch ID
+let UPDATE_TEAM = "3S46YRW3J9"
+// Apple Root CA (a raiz de todos os certificados Developer ID), impressão digital SHA-256
+let APPLE_ROOT_CA_SHA256 = "b0b1730ecbc7ff4505142c49f1295e6eda6bcaed7e2c68c5be91b5a11001f024"
+
+func certHas(_ c: SecCertificate, oid: String) -> Bool {
+    let v = SecCertificateCopyValues(c, [oid] as CFArray, nil) as? [String: Any]
+    return v?[oid] != nil
+}
+
+func subjectOUs(_ c: SecCertificate) -> [String] {
+    let k = kSecOIDX509V1SubjectName as String
+    guard let v = SecCertificateCopyValues(c, [k] as CFArray, nil) as? [String: Any],
+          let s = v[k] as? [String: Any], let items = s[kSecPropertyKeyValue as String] as? [[String: Any]] else { return [] }
+    return items.compactMap { ($0[kSecPropertyKeyLabel as String] as? String) == (kSecOIDOrganizationalUnitName as String) ? $0[kSecPropertyKeyValue as String] as? String : nil }
+}
+
+/// Assinatura feita pelo certificado Developer ID da Apple (CMS/PKCS#7, gerada por tools/release.py).
+/// Aceita só se: a mensagem dentro é exatamente a esperada, a cadeia vai até a raiz da Apple
+/// e o certificado é Developer ID Application do time UPDATE_TEAM.
+func appleSignatureValid(_ b64: String, message: Data) -> Bool {
+    guard let blob = Data(base64Encoded: b64) else { return false }
+    var dec: CMSDecoder?
+    guard CMSDecoderCreate(&dec) == errSecSuccess, let d = dec else { return false }
+    let ok1 = blob.withUnsafeBytes { CMSDecoderUpdateMessage(d, $0.baseAddress!, blob.count) }
+    guard ok1 == errSecSuccess, CMSDecoderFinalizeMessage(d) == errSecSuccess else { return false }
+    var content: CFData?
+    guard CMSDecoderCopyContent(d, &content) == errSecSuccess, let c = content as Data?, c == message else { return false }
+    var n = 0
+    guard CMSDecoderGetNumSigners(d, &n) == errSecSuccess, n == 1 else { return false }
+    var status = CMSSignerStatus.unsigned, trust: SecTrust?, vr: OSStatus = 0
+    guard CMSDecoderCopySignerStatus(d, 0, SecPolicyCreateBasicX509(), true, &status, &trust, &vr) == errSecSuccess,
+          status == .valid, let t = trust else { return false }
+    guard SecTrustEvaluateWithError(t, nil) else { return false }
+    var chain: [SecCertificate] = []
+    for i in 0..<SecTrustGetCertificateCount(t) { if let x = SecTrustGetCertificateAtIndex(t, i) { chain.append(x) } }
+    // mesma regra que o macOS usa para "Developer ID": raiz da Apple, intermediário Developer ID, folha do time
+    guard chain.count >= 3, let leaf = chain.first, let root = chain.last else { return false }
+    let rootSHA = SHA256.hash(data: SecCertificateCopyData(root) as Data).map { String(format: "%02x", $0) }.joined()
+    guard rootSHA == APPLE_ROOT_CA_SHA256 else { return false }
+    guard certHas(chain[1], oid: "1.2.840.113635.100.6.2.6"), certHas(leaf, oid: "1.2.840.113635.100.6.1.13") else { return false }
+    return subjectOUs(leaf).contains(UPDATE_TEAM)
+}
+
 /// nil = assinatura válida (ou app ainda sem chave); texto = motivo da recusa.
 func signatureProblem(_ j: [String: Any], version: String, sha: String) -> String? {
     let keys = trustedKeys()
     if keys.isEmpty { return nil }
     guard let size = j["size"] as? Int, size > 0 else { return "a versão não informa o tamanho" }
+    let msg0 = updateMessage(version: version, sha: sha, size: size)
+    if let a = j["applesig"] as? String, appleSignatureValid(a, message: msg0) { return nil }
     guard let b64 = j["sig"] as? String, let d = Data(base64Encoded: b64),
           let sig = try? P256.Signing.ECDSASignature(derRepresentation: d) else { return "a versão não está assinada" }
     let msg = updateMessage(version: version, sha: sha, size: size)
