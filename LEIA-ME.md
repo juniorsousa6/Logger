@@ -20,7 +20,7 @@ O instalador monta o app no próprio Mac, então ele sai certo para a versão do
 - Para publicar uma versão: aumente o número em `VERSION`, rode `python3 tools/release.py "o que mudou"`, assine e envie para o GitHub.
 - **Certificado da Apple (Developer ID):** se o Keychain do Mac tiver um certificado *Developer ID Application*, o instalador assina o app com ele (runtime endurecido + carimbo de hora). A identidade do app fica igual em toda versão, então o macOS não pede de novo as permissões a cada atualização. Sem certificado, assina só no Mac, como antes.
   - **Notarização (opcional):** com o perfil do notarytool salvo uma vez no Keychain, cada instalação manda o app para a Apple conferir em segundo plano e grampeia o bilhete nele. Registro em `~/Library/Logs/Logger-notarizacao.log`. Criar o perfil (pede a senha de app, que fica só no Keychain):
-    `xcrun notarytool store-credentials logger-notary --apple-id SEU_APPLE_ID --team-id 3S46YRW3J9`
+    `xcrun notarytool store-credentials ghost-notary --apple-id SEU_APPLE_ID --team-id 3S46YRW3J9` (o perfil `ghost-notary` já existe neste Mac e serve para o Logger; outro nome vai em `LOGGER_NOTARY_PROFILE`)
   - Conferir: `codesign -dvv /Applications/Logger.app` e `spctl -a -vv /Applications/Logger.app`.
 
 ## Sem instalar (modo navegador)

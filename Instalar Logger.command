@@ -106,9 +106,9 @@ open "$DEST/Logger.app"
 
 # 4. notarização (opcional, em segundo plano: o app já abriu e você pode usar)
 # Só roda se este Mac tiver o perfil do notarytool salvo no Keychain (nome em LOGGER_NOTARY_PROFILE,
-# padrão "logger-notary"). A Apple confere o app e o "bilhete" fica grudado nele (stapler).
+# padrão "ghost-notary", o mesmo do Ghost: mesma conta Apple). A Apple confere o app e o "bilhete" fica grudado nele (stapler).
 # Resultado em ~/Library/Logs/Logger-notarizacao.log. Sem perfil ou sem internet, nada muda.
-PROFILE="${LOGGER_NOTARY_PROFILE:-logger-notary}"
+PROFILE="${LOGGER_NOTARY_PROFILE:-ghost-notary}"
 if [ "$SIGNED" = "developer-id" ] && [ "${LOGGER_NO_NOTARIZE:-}" != "1" ] && xcrun --find notarytool >/dev/null 2>&1; then
   NLOG="$HOME/Library/Logs/Logger-notarizacao.log"
   mkdir -p "$(dirname "$NLOG")"
